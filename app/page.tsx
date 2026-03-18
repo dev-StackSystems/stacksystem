@@ -6,7 +6,7 @@ import About from "@/components/sections/About"
 import Results from "@/components/sections/Results"
 import Contact from "@/components/sections/Contact"
 import Footer from "@/components/sections/Footer"
-
+ 
 export default function Home() {
   return (
     <main>

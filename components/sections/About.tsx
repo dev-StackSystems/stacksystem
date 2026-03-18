@@ -2,7 +2,7 @@
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2 } from "lucide-react"
-
+ 
 const values = [
   "Sistemas entregues no prazo e dentro do escopo",
   "Código limpo, escalável e bem documentado",
