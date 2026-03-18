@@ -6,7 +6,8 @@ import About from "@/components/sections/About"
 import Results from "@/components/sections/Results"
 import Contact from "@/components/sections/Contact"
 import Footer from "@/components/sections/Footer"
- 
+import Mascot from "@/components/Mascot"
+
 export default function Home() {
   return (
     <main>
@@ -18,6 +19,7 @@ export default function Home() {
       <Results />
       <Contact />
       <Footer />
+      <Mascot />
     </main>
   )
 }
