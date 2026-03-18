@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -v \"^\\\\.\\\\.$|^\\\\.\\\\.$\")",
+      "Bash(npm run:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm install:*)",
+      "Bash(sed -i 's/focus:ring-3/focus:ring-2/g' components/sections/Contact.tsx)",
+      "Bash(sed -i 's/bg-white\\\\/96/bg-white\\\\/95/g' components/sections/Navbar.tsx)",
+      "Bash(cd:*)",
+      "Bash(xargs wc:*)"
+    ]
+  }
+}
