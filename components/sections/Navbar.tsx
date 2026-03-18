@@ -3,23 +3,23 @@ import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
 
-const NAV_ITEMS = ["Início", "Serviços", "Sobre", "Resultados", "Contato"]
+const NAV_ITEMS = ["Início", "Soluções", "Sobre", "Resultados", "Contato"]
 
 const sectionMap: Record<string, string> = {
-  "Início":     "inicio",
-  "Serviços":   "servicos",
-  "Sobre":      "sobre",
-  "Resultados": "resultados",
-  "Contato":    "contato",
+  "Início":    "inicio",
+  "Soluções":  "solucoes",
+  "Sobre":     "sobre",
+  "Resultados":"resultados",
+  "Contato":   "contato",
 }
 
 const scrollToSection = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
 
 export default function Navbar() {
-  const [scrolled,  setScrolled]  = useState(false)
-  const [active,    setActive]    = useState("Início")
-  const [menuOpen,  setMenuOpen]  = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  const [active,   setActive]   = useState("Início")
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40)
@@ -38,40 +38,37 @@ export default function Navbar() {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 h-[68px] flex items-center justify-between px-[5%] transition-all duration-500",
         scrolled
-          ? "bg-white/95 backdrop-blur-2xl border-b border-neutral-100 shadow-[0_2px_20px_rgba(0,0,0,0.06)]"
+          ? "bg-white/95 backdrop-blur-2xl border-b border-slate-100 shadow-[0_2px_16px_rgba(0,0,0,0.06)]"
           : "bg-transparent"
       )}
     >
       {/* Logo */}
-      <button
-        onClick={() => handleNav("Início")}
-        className="flex items-center gap-3 group"
-      >
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-lg font-serif shadow-lg shadow-orange-300/50 group-hover:scale-105 transition-transform">
+      <button onClick={() => handleNav("Início")} className="flex items-center gap-3 group">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-lg font-serif shadow-md shadow-orange-200 group-hover:scale-105 transition-transform">
           S
         </div>
         <div className="leading-none">
-          <div className="font-serif text-[15px] font-bold tracking-tight text-neutral-900">
+          <div className="font-serif text-[15px] font-bold tracking-tight text-slate-900">
             Stack<span className="text-orange-500">Systems</span>
           </div>
-          <div className="text-[9px] text-neutral-400 uppercase tracking-[0.15em] font-semibold mt-0.5">
-            Soluções Empresariais
+          <div className="text-[9px] text-slate-400 uppercase tracking-[0.15em] font-semibold mt-0.5">
+            Sistemas &amp; Soluções
           </div>
         </div>
       </button>
 
-      {/* Desktop nav */}
+      {/* Desktop */}
       <div className="hidden md:flex items-center gap-7">
         {NAV_ITEMS.map(item => (
           <button
             key={item}
             onClick={() => handleNav(item)}
             className={cn(
-              "text-[11px] uppercase tracking-[0.12em] font-bold transition-colors relative pb-1 group",
+              "text-[11px] uppercase tracking-[0.12em] font-semibold transition-colors relative pb-1",
               "after:absolute after:bottom-0 after:left-0 after:h-[2px] after:rounded after:bg-orange-500 after:transition-all after:duration-300",
               active === item
                 ? "text-orange-500 after:w-full"
-                : "text-neutral-500 hover:text-neutral-900 after:w-0 hover:after:w-full"
+                : "text-slate-500 hover:text-slate-900 after:w-0 hover:after:w-full"
             )}
           >
             {item}
@@ -87,7 +84,7 @@ export default function Navbar() {
 
       {/* Mobile toggle */}
       <button
-        className="md:hidden text-neutral-600 hover:text-orange-500 transition-colors p-1"
+        className="md:hidden text-slate-500 hover:text-orange-500 transition-colors p-1"
         onClick={() => setMenuOpen(v => !v)}
         aria-label="Toggle menu"
       >
@@ -96,16 +93,16 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {menuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-white/98 backdrop-blur-xl border-b border-neutral-100 shadow-xl p-6 flex flex-col gap-3 md:hidden">
+        <div className="absolute top-full left-0 right-0 bg-white/98 backdrop-blur-xl border-b border-slate-100 shadow-xl p-6 flex flex-col gap-3 md:hidden">
           {NAV_ITEMS.map(item => (
             <button
               key={item}
               onClick={() => handleNav(item)}
               className={cn(
-                "text-sm uppercase tracking-[0.1em] font-bold text-left py-2 px-3 rounded-lg transition-all",
+                "text-sm uppercase tracking-[0.1em] font-semibold text-left py-2 px-3 rounded-lg transition-all",
                 active === item
                   ? "text-orange-500 bg-orange-50"
-                  : "text-neutral-600 hover:text-orange-500 hover:bg-orange-50"
+                  : "text-slate-600 hover:text-orange-500 hover:bg-orange-50"
               )}
             >
               {item}

@@ -8,8 +8,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans:  ["var(--font-dm-sans)", "DM Sans", "ui-sans-serif", "system-ui", "sans-serif"],
-        serif: ["var(--font-playfair)", "Playfair Display", "Georgia", "ui-serif", "serif"],
+        sans:  ["var(--font-body)", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        serif: ["var(--font-heading)", "Space Grotesk", "ui-sans-serif", "sans-serif"],
       },
       colors: {
         orange: {
@@ -29,8 +29,9 @@ const config: Config = {
       animation: {
         "float":       "float 3.5s ease-in-out infinite",
         "spin-slow":   "spin-slow 14s linear infinite",
-        "marquee":     "marquee 18s linear infinite",
+        "marquee":     "marquee 22s linear infinite",
         "pulse-glow":  "pulse-glow 2.5s ease-in-out infinite",
+        "shimmer":     "shimmer 2.5s linear infinite",
       },
       keyframes: {
         float: {
@@ -46,15 +47,13 @@ const config: Config = {
           to:   { transform: "translateX(-50%)" },
         },
         "pulse-glow": {
-          "0%, 100%": { boxShadow: "0 0 24px rgba(249,115,22,0.5), 0 4px 24px rgba(249,115,22,0.2)" },
-          "50%":      { boxShadow: "0 0 48px rgba(249,115,22,0.9), 0 8px 40px rgba(249,115,22,0.4)" },
+          "0%, 100%": { boxShadow: "0 0 24px rgba(249,115,22,0.4), 0 4px 24px rgba(249,115,22,0.15)" },
+          "50%":      { boxShadow: "0 0 60px rgba(249,115,22,0.8), 0 8px 40px rgba(249,115,22,0.35)" },
         },
-      },
-      ringWidth: {
-        "3": "3px",
-      },
-      ringOpacity: {
-        DEFAULT: "1",
+        shimmer: {
+          from: { backgroundPosition: "-200% 0" },
+          to:   { backgroundPosition: "200% 0" },
+        },
       },
     },
   },
