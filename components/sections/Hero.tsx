@@ -15,6 +15,12 @@ const metrics = [
 const bars = [38, 60, 48, 75, 55, 88, 70, 100]
 const ease = [0.22, 1, 0.36, 1] as const
 
+const pills = [
+  { icon: "⚡", label: "Entrega Ágil" },
+  { icon: "🎯", label: "100% Personalizado" },
+  { icon: "🤝", label: "Atendimento Direto" },
+]
+
 export default function Hero() {
   return (
     <section
@@ -23,13 +29,10 @@ export default function Hero() {
     >
       {/* Dot grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:28px_28px] opacity-60 pointer-events-none" />
-
-      {/* Orange glow — top right */}
+      {/* Orange glow */}
       <div className="absolute -top-32 -right-32 w-[750px] h-[750px] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.09)_0%,transparent_65%)] pointer-events-none" />
-      {/* Soft blue tint — bottom left */}
       <div className="absolute bottom-0 -left-40 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.04)_0%,transparent_65%)] pointer-events-none" />
-
-      {/* Spinning rings */}
+      {/* Rings */}
       <div className="absolute top-[14%] right-[5%] w-[280px] h-[280px] border border-dashed border-orange-200/70 rounded-full animate-spin-slow pointer-events-none hidden lg:block" />
       <div className="absolute top-[14%] right-[5%] w-[200px] h-[200px] border border-dashed border-orange-100 rounded-full animate-spin-slow [animation-direction:reverse] [animation-duration:20s] pointer-events-none hidden lg:block" style={{ top: 'calc(14% + 40px)', right: 'calc(5% + 40px)' }} />
 
@@ -65,17 +68,35 @@ export default function Hero() {
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, delay: 0.2, ease }}
-            className="text-slate-500 text-base leading-relaxed max-w-md mb-10"
+            className="text-slate-500 text-base leading-relaxed max-w-md mb-8"
           >
             Desenvolvemos sistemas e soluções sob medida para otimizar a gestão,
             automatizar processos e impulsionar os resultados do seu negócio.{" "}
             <span className="text-slate-700 font-medium">Do planejamento à entrega.</span>
           </motion.p>
 
+          {/* Diferenciais pills */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.28, ease }}
+            className="flex flex-wrap gap-2 mb-8 justify-center lg:justify-start"
+          >
+            {pills.map(({ icon, label }) => (
+              <div
+                key={label}
+                className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600"
+              >
+                <span>{icon}</span>
+                {label}
+              </div>
+            ))}
+          </motion.div>
+
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.3, ease }}
+            transition={{ duration: 0.65, delay: 0.35, ease }}
             className="flex gap-4 flex-wrap justify-center lg:justify-start"
           >
             <button
@@ -90,25 +111,6 @@ export default function Hero() {
             >
               Ver Soluções
             </button>
-          </motion.div>
-
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.45, ease }}
-            className="flex gap-8 mt-14 pt-8 border-t border-slate-100 justify-center lg:justify-start"
-          >
-            {[
-              ["200+", "Sistemas Entregues"],
-              ["98%",  "Satisfação"],
-              ["10+",  "Anos no Mercado"],
-            ].map(([val, label]) => (
-              <div key={label} className="text-center lg:text-left">
-                <div className="font-serif text-3xl font-bold text-orange-500 leading-none">{val}</div>
-                <div className="text-[10px] text-slate-400 uppercase tracking-[0.14em] mt-1.5 font-semibold">{label}</div>
-              </div>
-            ))}
           </motion.div>
         </div>
 
@@ -161,9 +163,7 @@ export default function Hero() {
                   className="bg-slate-900/80 border border-slate-800/80 hover:border-orange-900/40 rounded-2xl p-4 transition-colors"
                 >
                   <div className="text-[10px] text-slate-500 font-medium mb-1.5 uppercase tracking-wider">{label}</div>
-                  <div className={`font-serif text-[15px] font-bold ${up ? "text-orange-400" : "text-red-400"}`}>
-                    {val}
-                  </div>
+                  <div className={`font-serif text-[15px] font-bold ${up ? "text-orange-400" : "text-red-400"}`}>{val}</div>
                   <div className={`text-[10px] mt-1 font-medium ${up ? "text-orange-500/60" : "text-red-500/60"}`}>
                     {up ? "↑ 12% vs mês anterior" : "↓ 3% vs mês anterior"}
                   </div>
@@ -172,7 +172,6 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Floating badge — bottom left */}
           <div className="absolute -bottom-5 -left-5 bg-white border border-orange-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-2xl shadow-orange-100/60">
             <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-xl">⚡</div>
             <div>
@@ -181,7 +180,6 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Floating badge — top right */}
           <div className="absolute -top-4 -right-4 bg-orange-500 text-white rounded-2xl px-4 py-2.5 shadow-xl shadow-orange-300/40">
             <div className="text-[10px] font-semibold uppercase tracking-wider opacity-90">Uptime</div>
             <div className="font-serif text-2xl font-bold leading-none">99.9%</div>

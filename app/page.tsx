@@ -2,6 +2,7 @@ import Navbar from "@/components/sections/Navbar"
 import Hero from "@/components/sections/Hero"
 import Marquee from "@/components/sections/Marquee"
 import Services from "@/components/sections/Services"
+import Migration from "@/components/sections/Migration"
 import About from "@/components/sections/About"
 import Results from "@/components/sections/Results"
 import Contact from "@/components/sections/Contact"
@@ -15,6 +16,7 @@ export default function Home() {
       <Hero />
       <Marquee />
       <Services />
+      <Migration />
       <About />
       <Results />
       <Contact />
