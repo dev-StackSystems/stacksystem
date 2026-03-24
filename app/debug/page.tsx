@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic"
+
 import { db } from "@/lib/db"
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
