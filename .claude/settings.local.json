@@ -15,7 +15,11 @@
       "Bash(echo DATABASE_URL=\"\"postgresql://user:pass@localhost:5432/stacksystem\"\")",
       "Bash(npx tsc:*)",
       "Bash(taskkill //F //IM node.exe)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)",
+      "Bash(rm -rf \"app/dashboard$dir\")",
+      "Bash(git commit:*)"
     ]
   }
 }

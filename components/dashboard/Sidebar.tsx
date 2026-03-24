@@ -1,35 +1,102 @@
 "use client"
 import { useState } from "react"
 import { signOut } from "next-auth/react"
-import { LayoutDashboard, Users, Settings, LogOut, X, Menu } from "lucide-react"
+import {
+  LayoutDashboard, Users, Settings, LogOut, X, Menu,
+  GraduationCap, BookOpen, Layers, Play, DollarSign,
+  Award, Building2, ShieldCheck,
+} from "lucide-react"
 import { SidebarNavLink } from "./SidebarNavLink"
 
-const NAV_BY_ROLE: Record<string, { icon: typeof LayoutDashboard; label: string; href: string }[]> = {
+type NavItem = { icon: typeof LayoutDashboard; label: string; href: string }
+type NavGroup = { label: string | null; items: NavItem[] }
+
+const GROUPS_BY_ROLE: Record<string, NavGroup[]> = {
   A: [
-    { icon: LayoutDashboard, label: "Dashboard",      href: "/dashboard" },
-    { icon: Users,           label: "Usuários",       href: "/dashboard/usuarios" },
-    { icon: Settings,        label: "Configurações",  href: "/dashboard/configuracoes" },
+    {
+      label: null,
+      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
+    },
+    {
+      label: "Acadêmico",
+      items: [
+        { icon: GraduationCap, label: "Alunos",      href: "/dashboard/alunos" },
+        { icon: BookOpen,      label: "Matrículas",  href: "/dashboard/matriculas" },
+        { icon: Layers,        label: "Cursos",      href: "/dashboard/cursos" },
+      ],
+    },
+    {
+      label: "Conteúdo",
+      items: [
+        { icon: Play,     label: "Aulas",    href: "/dashboard/aulas" },
+      ],
+    },
+    {
+      label: "Financeiro",
+      items: [
+        { icon: DollarSign, label: "Baixas",       href: "/dashboard/baixas" },
+        { icon: Award,      label: "Certificados", href: "/dashboard/certificados" },
+      ],
+    },
+    {
+      label: "Sistema",
+      items: [
+        { icon: Building2,  label: "Empresas",       href: "/dashboard/empresas" },
+        { icon: Users,      label: "Usuários",        href: "/dashboard/usuarios" },
+        { icon: ShieldCheck,label: "Segurança",       href: "/dashboard/seguranca" },
+        { icon: Settings,   label: "Configurações",   href: "/dashboard/configuracoes" },
+      ],
+    },
   ],
   T: [
-    { icon: LayoutDashboard, label: "Dashboard",  href: "/dashboard" },
-    { icon: Users,           label: "Usuários",   href: "/dashboard/usuarios" },
+    {
+      label: null,
+      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
+    },
+    {
+      label: "Acadêmico",
+      items: [
+        { icon: GraduationCap, label: "Alunos",     href: "/dashboard/alunos" },
+        { icon: BookOpen,      label: "Matrículas", href: "/dashboard/matriculas" },
+        { icon: Layers,        label: "Cursos",     href: "/dashboard/cursos" },
+      ],
+    },
+    {
+      label: "Conteúdo",
+      items: [
+        { icon: Play, label: "Aulas", href: "/dashboard/aulas" },
+      ],
+    },
+    {
+      label: "Sistema",
+      items: [
+        { icon: Users, label: "Usuários", href: "/dashboard/usuarios" },
+      ],
+    },
   ],
   F: [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
+    {
+      label: null,
+      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
+    },
+    {
+      label: "Conteúdo",
+      items: [
+        { icon: Layers, label: "Cursos", href: "/dashboard/cursos" },
+        { icon: Play,   label: "Aulas",  href: "/dashboard/aulas" },
+      ],
+    },
   ],
 }
 
-interface Props {
-  role: string
-}
+interface Props { role: string }
 
 export function Sidebar({ role }: Props) {
   const [open, setOpen] = useState(false)
-  const navItems = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.F
+  const groups = GROUPS_BY_ROLE[role] ?? GROUPS_BY_ROLE.F
 
   return (
     <>
-      {/* Botão hamburger — mobile */}
       <button
         className="fixed top-4 left-4 z-40 lg:hidden bg-slate-950 text-white p-2 rounded-xl border border-white/10 shadow"
         onClick={() => setOpen(true)}
@@ -37,12 +104,8 @@ export function Sidebar({ role }: Props) {
         <Menu size={20} />
       </button>
 
-      {/* Overlay mobile */}
       {open && (
-        <div
-          className="fixed inset-0 bg-black/40 z-20 lg:hidden"
-          onClick={() => setOpen(false)}
-        />
+        <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setOpen(false)} />
       )}
 
       <aside
@@ -58,23 +121,26 @@ export function Sidebar({ role }: Props) {
           <span className="font-serif text-[15px] font-bold text-white">
             Stack<span className="text-orange-400">Systems</span>
           </span>
-          <button
-            className="ml-auto lg:hidden text-white/40 hover:text-white"
-            onClick={() => setOpen(false)}
-          >
+          <button className="ml-auto lg:hidden text-white/40 hover:text-white" onClick={() => setOpen(false)}>
             <X size={18} />
           </button>
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-3 py-4 flex flex-col gap-1">
-          {navItems.map((item) => (
-            <SidebarNavLink
-              key={item.href}
-              href={item.href}
-              label={item.label}
-              icon={item.icon}
-            />
+        <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
+          {groups.map((group, gi) => (
+            <div key={gi}>
+              {group.label && (
+                <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                  {group.label}
+                </p>
+              )}
+              <div className="flex flex-col gap-0.5">
+                {group.items.map(item => (
+                  <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
 

@@ -13,6 +13,7 @@ enum UserRole {
   F // Corpo Docente
 }
 
+// ─── Auth / Usuários internos ──────────────────────────
 model User {
   id         String    @id @default(cuid())
   name       String
@@ -26,8 +27,9 @@ model User {
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
+  accounts      Account[]
+  sessions      Session[]
+  segurancaLogs SegurancaUser[]
 
   @@map("users")
 }
@@ -70,4 +72,172 @@ model VerificationToken {
 
   @@unique([identifier, token])
   @@map("verification_tokens")
+}
+
+// ─── Empresas ─────────────────────────────────────────
+model Empresa {
+  id        String     @id @default(cuid())
+  nome      String
+  cnpj      String?    @unique
+  email     String?
+  telefone  String?
+  ativa     Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  cursos EmpCurso[]
+
+  @@map("empresas")
+}
+
+// ─── Cursos por empresa ────────────────────────────────
+model EmpCurso {
+  id           String  @id @default(cuid())
+  empresaId    String
+  nome         String
+  descricao    String?
+  cargaHoraria Int?
+  ativo        Boolean @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  empresa      Empresa      @relation(fields: [empresaId], references: [id])
+  modulos      Modulo[]
+  matriculas   Matricula[]
+  certificados Certificado[]
+
+  @@map("emp_cursos")
+}
+
+// ─── Módulos ───────────────────────────────────────────
+model Modulo {
+  id          String   @id @default(cuid())
+  empCursoId  String
+  nome        String
+  descricao   String?
+  ordem       Int      @default(0)
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  empCurso EmpCurso @relation(fields: [empCursoId], references: [id])
+  aulas    Aula[]
+
+  @@map("modulos")
+}
+
+// ─── Aulas ────────────────────────────────────────────
+model Aula {
+  id        String   @id @default(cuid())
+  moduloId  String
+  nome      String
+  tipo      String   @default("video") // video, online, texto, pdf
+  duracao   Int?     // em minutos
+  url       String?
+  ordem     Int      @default(0)
+  ativa     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  modulo     Modulo          @relation(fields: [moduloId], references: [id])
+  andamentos AlunoAndamento[]
+
+  @@map("aulas")
+}
+
+// ─── Alunos ───────────────────────────────────────────
+model Aluno {
+  id        String    @id @default(cuid())
+  nome      String
+  email     String    @unique
+  cpf       String?   @unique
+  telefone  String?
+  dataNasc  DateTime?
+  ativo     Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  matriculas   Matricula[]
+  certificados Certificado[]
+
+  @@map("alunos")
+}
+
+// ─── Matrículas ───────────────────────────────────────
+model Matricula {
+  id         String   @id @default(cuid())
+  alunoId    String
+  empCursoId String
+  status     String   @default("ativa") // ativa, concluida, cancelada
+  dataInicio DateTime @default(now())
+  dataFim    DateTime?
+  valor      Decimal  @default(0) @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  aluno      Aluno          @relation(fields: [alunoId], references: [id])
+  empCurso   EmpCurso       @relation(fields: [empCursoId], references: [id])
+  andamentos AlunoAndamento[]
+  baixas     Baixa[]
+
+  @@map("matriculas")
+}
+
+// ─── Andamento dos alunos ─────────────────────────────
+model AlunoAndamento {
+  id          String    @id @default(cuid())
+  matriculaId String
+  aulaId      String
+  concluida   Boolean   @default(false)
+  dataConc    DateTime?
+  createdAt   DateTime  @default(now())
+
+  matricula Matricula @relation(fields: [matriculaId], references: [id])
+  aula      Aula      @relation(fields: [aulaId], references: [id])
+
+  @@unique([matriculaId, aulaId])
+  @@map("alunos_andamento")
+}
+
+// ─── Baixas financeiras ───────────────────────────────
+model Baixa {
+  id          String   @id @default(cuid())
+  matriculaId String?
+  descricao   String?
+  valor       Decimal  @db.Decimal(10, 2)
+  tipo        String   @default("mensalidade") // mensalidade, matricula, certificado, outros
+  status      String   @default("pendente")    // pago, pendente, cancelado
+  dataPag     DateTime?
+  dataVenc    DateTime?
+  createdAt   DateTime @default(now())
+
+  matricula Matricula? @relation(fields: [matriculaId], references: [id])
+
+  @@map("baixas")
+}
+
+// ─── Certificados ─────────────────────────────────────
+model Certificado {
+  id          String   @id @default(cuid())
+  alunoId     String
+  empCursoId  String
+  codigo      String   @unique @default(cuid())
+  dataEmissao DateTime @default(now())
+
+  aluno    Aluno    @relation(fields: [alunoId], references: [id])
+  empCurso EmpCurso @relation(fields: [empCursoId], references: [id])
+
+  @@map("certificados")
+}
+
+// ─── Auditoria de segurança ───────────────────────────
+model SegurancaUser {
+  id        String   @id @default(cuid())
+  userId    String
+  acao      String   // login, logout, create_user, edit_user, etc.
+  detalhes  String?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("seguranca_user")
 }
