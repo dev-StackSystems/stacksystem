@@ -14,16 +14,25 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Senha", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("MISSING_FIELDS")
+        }
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email },
-        })
+        let user
+        try {
+          user = await db.user.findUnique({
+            where: { email: credentials.email },
+          })
+        } catch (err) {
+          console.error("[Auth] Erro ao conectar no banco:", err)
+          throw new Error("DB_ERROR")
+        }
 
-        if (!user || !user.active) return null
+        if (!user) throw new Error("USER_NOT_FOUND")
+        if (!user.active) throw new Error("USER_INACTIVE")
 
         const passwordMatch = await bcrypt.compare(credentials.password, user.password)
-        if (!passwordMatch) return null
+        if (!passwordMatch) throw new Error("WRONG_PASSWORD")
 
         return {
           id: user.id,

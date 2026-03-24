@@ -56,7 +56,14 @@ export default function LoginPage() {
     setLoading(false)
 
     if (result?.error) {
-      setError("E-mail ou senha incorretos. Tente novamente.")
+      const errorMessages: Record<string, string> = {
+        USER_NOT_FOUND:  "Nenhuma conta encontrada com este e-mail.",
+        WRONG_PASSWORD:  "Senha incorreta. Tente novamente.",
+        USER_INACTIVE:   "Este usuário está inativo. Contate o administrador.",
+        MISSING_FIELDS:  "Preencha e-mail e senha para continuar.",
+        DB_ERROR:        "Erro ao conectar no banco de dados. Verifique as configurações do servidor.",
+      }
+      setError(errorMessages[result.error] ?? `Erro de autenticação: ${result.error}`)
       return
     }
 
