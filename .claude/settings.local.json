@@ -19,7 +19,11 @@
       "Bash(ls:*)",
       "Bash(git add:*)",
       "Bash(rm -rf \"app/dashboard$dir\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(for f:*)",
+      "Bash(do echo:*)",
+      "Read(//c/Users/i3Soluções/Documents/scripts/stacksystem/**)",
+      "Bash(done)"
     ]
   }
 }

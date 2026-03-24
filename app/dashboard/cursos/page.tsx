@@ -1,19 +1,59 @@
-import { Layers } from "lucide-react"
+import { db } from "@/lib/db"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { UserRole } from "@prisma/client"
+import { CursoTable } from "@/components/dashboard/CursoTable"
+import { CursoFormModal } from "@/components/dashboard/CursoFormModal"
+import { Plus } from "lucide-react"
 
-export default function CursosPage() {
+export default async function CursosPage() {
+  const session = await getServerSession(authOptions)
+
+  if (!session) redirect("/login")
+
+  // F (Corpo Docente) não tem acesso à gestão de cursos
+  if (session.user.role === UserRole.F) redirect("/dashboard")
+
+  const isAdmin = session.user.role === UserRole.A
+
+  const [cursos, empresas] = await Promise.all([
+    db.empCurso.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        empresa: { select: { nome: true } },
+      },
+    }),
+    db.empresa.findMany({
+      where: { ativa: true },
+      orderBy: { nome: "asc" },
+      select: { id: true, nome: true },
+    }),
+  ])
+
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl font-bold text-slate-900">Cursos</h1>
-        <p className="text-sm text-slate-400 mt-0.5">Cursos cadastrados por empresa</p>
-      </div>
-      <div className="bg-white border border-slate-100 rounded-2xl p-10 flex flex-col items-center text-center shadow-sm">
-        <div className="w-14 h-14 rounded-2xl bg-purple-50 border border-purple-100 flex items-center justify-center mb-4">
-          <Layers size={24} className="text-purple-500" />
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-serif text-2xl font-bold text-slate-900">Cursos</h1>
+          <p className="text-sm text-slate-400 mt-0.5">
+            Cursos cadastrados por empresa
+          </p>
         </div>
-        <h2 className="font-serif text-lg font-bold text-slate-800 mb-2">Módulo em desenvolvimento</h2>
-        <p className="text-slate-400 text-sm max-w-sm">Criação e gerenciamento de cursos e módulos em breve.</p>
+
+        <CursoFormModal
+          mode="create"
+          empresas={empresas}
+          trigger={
+            <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
+              <Plus size={16} />
+              Novo Curso
+            </button>
+          }
+        />
       </div>
+
+      <CursoTable cursos={cursos} empresas={empresas} isAdmin={isAdmin} />
     </div>
   )
 }
