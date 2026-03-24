@@ -8,13 +8,15 @@ export const dynamic = "force-dynamic"
 
 interface Props {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ join?: string }>
 }
 
-export default async function SalaVideoPage({ params }: Props) {
+export default async function SalaVideoPage({ params, searchParams }: Props) {
   const session = await getServerSession(authOptions)
   if (!session?.user) redirect("/login")
 
   const { id } = await params
+  const { join } = await searchParams
 
   const sala = await db.sala.findUnique({
     where: { id },
@@ -34,7 +36,7 @@ export default async function SalaVideoPage({ params }: Props) {
     <VideoRoom
       salaId={sala.id}
       salaCodigo={sala.codigo}
-      nome={sala.nome}
+      nomeSala={sala.nome}
       userName={session.user.name ?? "Usuário"}
     />
   )

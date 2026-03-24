@@ -35,7 +35,7 @@ export default async function UsuariosPage() {
     }),
     db.empresa.findMany({
       where: { ativa: true },
-      select: { id: true, nome: true },
+      select: { id: true, nome: true, tipoSistema: true, cor: true },
       orderBy: { nome: "asc" },
     }),
   ])

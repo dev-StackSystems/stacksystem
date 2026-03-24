@@ -18,6 +18,8 @@ interface UserData {
 interface Empresa {
   id: string
   nome: string
+  tipoSistema?: string | null
+  cor?: string | null
 }
 
 interface Props {
@@ -32,6 +34,12 @@ const ROLES = [
   { value: "T", label: "Técnico" },
   { value: "F", label: "Corpo Docente" },
 ]
+
+const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
+const inputClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+const selectClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
 export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
   const router = useRouter()
@@ -78,6 +86,11 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
       setError("Senha é obrigatória para novo usuário.")
       return
     }
+    // empresaId obrigatório para não-Admin
+    if (form.role !== "A" && !form.empresaId) {
+      setError("Empresa é obrigatória para este perfil de usuário.")
+      return
+    }
 
     setLoading(true)
 
@@ -117,19 +130,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
     }
   }
 
-  const field = (label: string, key: keyof typeof form, type = "text", required = false) => (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-        {label}{required && <span className="text-red-400 ml-0.5">*</span>}
-      </label>
-      <input
-        type={type}
-        value={form[key]}
-        onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
-      />
-    </div>
-  )
+  const empresaSelecionada = empresas.find((e) => e.id === form.empresaId)
+  const empresaRequired = form.role !== "A"
 
   return (
     <>
@@ -138,80 +140,163 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <h2 className="font-serif text-lg font-bold text-slate-900">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="font-serif text-base font-bold text-slate-900">
                 {mode === "create" ? "Novo Usuário" : "Editar Usuário"}
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              {field("Nome completo", "name", "text", true)}
-              {field("E-mail", "email", "email", true)}
-              {field(mode === "create" ? "Senha" : "Nova senha (opcional)", "password", "password", mode === "create")}
-
-              {/* Role */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-                  Perfil<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <select
-                  value={form.role}
-                  onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
-                >
-                  {ROLES.map((r) => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
+            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+              {/* Linha 1: Nome | Email */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Nome completo <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                    className={inputClass}
+                    placeholder="João Silva"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    E-mail <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className={inputClass}
+                    placeholder="joao@empresa.com"
+                  />
+                </div>
               </div>
 
-              {field("Departamento", "department")}
-              {field("Telefone", "phone")}
-
-              {/* Empresa */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-                  Empresa
+              {/* Linha 2: Senha (full width) */}
+              <div>
+                <label className={labelClass}>
+                  {mode === "create" ? (
+                    <>Senha <span className="text-red-400">*</span></>
+                  ) : (
+                    "Nova senha (opcional)"
+                  )}
                 </label>
-                <select
-                  value={form.empresaId}
-                  onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
-                >
-                  <option value="">— Nenhuma empresa —</option>
-                  {empresas.map((emp) => (
-                    <option key={emp.id} value={emp.id}>{emp.nome}</option>
-                  ))}
-                </select>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                  className={inputClass}
+                  placeholder={mode === "create" ? "Mínimo 8 caracteres" : "Deixe em branco para manter"}
+                />
+              </div>
+
+              {/* Linha 3: Role | Empresa */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Perfil <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.role}
+                    onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
+                    className={selectClass}
+                  >
+                    {ROLES.map((r) => (
+                      <option key={r.value} value={r.value}>{r.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Empresa {empresaRequired && <span className="text-red-400">*</span>}
+                  </label>
+                  {empresas.length === 0 ? (
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      Cadastre uma empresa antes de criar usuários.
+                    </p>
+                  ) : (
+                    <select
+                      value={form.empresaId}
+                      onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
+                      className={selectClass}
+                    >
+                      {!empresaRequired && <option value="">— Nenhuma —</option>}
+                      {empresas.map((emp) => (
+                        <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                      ))}
+                    </select>
+                  )}
+                  {/* Badge com tipo de sistema da empresa selecionada */}
+                  {empresaSelecionada?.tipoSistema && (
+                    <span
+                      className="inline-block mt-1 text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full"
+                      style={{
+                        backgroundColor: empresaSelecionada.cor ? `${empresaSelecionada.cor}20` : "#f97316" + "20",
+                        color: empresaSelecionada.cor ?? "#f97316",
+                        border: `1px solid ${empresaSelecionada.cor ?? "#f97316"}40`,
+                      }}
+                    >
+                      {empresaSelecionada.tipoSistema}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Linha 4: Departamento | Telefone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Departamento</label>
+                  <input
+                    type="text"
+                    value={form.department}
+                    onChange={(e) => setForm((f) => ({ ...f, department: e.target.value }))}
+                    className={inputClass}
+                    placeholder="Ex: Coordenação"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Telefone</label>
+                  <input
+                    type="text"
+                    value={form.phone}
+                    onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
+                    className={inputClass}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600 font-medium">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-medium">
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm transition-all"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                   {mode === "create" ? "Criar Usuário" : "Salvar"}
                 </button>
               </div>

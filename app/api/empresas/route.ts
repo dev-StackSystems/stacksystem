@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getCurrentUser, requireRole } from "@/lib/auth-helpers"
 import { UserRole } from "@prisma/client"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/lib/sistemas"
 
 // GET /api/empresas — qualquer usuário autenticado pode listar
 export async function GET() {
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult
 
   const body = await request.json()
-  const { nome, cnpj, email, telefone } = body
+  const { nome, cnpj, email, telefone, cor, logo, banner, tipoSistema, descricao } = body
 
   if (!nome || typeof nome !== "string" || nome.trim() === "") {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 })
@@ -46,8 +47,27 @@ export async function POST(request: NextRequest) {
       cnpj: cnpj?.trim() || null,
       email: email?.trim() || null,
       telefone: telefone?.trim() || null,
+      cor: cor?.trim() || null,
+      logo: logo?.trim() || null,
+      banner: banner?.trim() || null,
+      tipoSistema: tipoSistema?.trim() || null,
+      descricao: descricao?.trim() || null,
     },
   })
+
+  // Criar módulos automaticamente baseados no tipo de sistema
+  if (tipoSistema && tipoSistema !== "personalizado") {
+    const tipo = TIPOS_SISTEMA.find((t) => t.key === tipoSistema)
+    if (tipo) {
+      await db.empresaModulo.createMany({
+        data: MODULOS_DISPONIVEIS.map((m) => ({
+          empresaId: empresa.id,
+          modulo: m.key,
+          ativo: tipo.modulos.includes(m.key),
+        })),
+      })
+    }
+  }
 
   return NextResponse.json(empresa, { status: 201 })
 }

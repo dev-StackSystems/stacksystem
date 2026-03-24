@@ -80,14 +80,22 @@ model VerificationToken {
 
 // ─── Empresas ─────────────────────────────────────────
 model Empresa {
-  id        String     @id @default(cuid())
-  nome      String
-  cnpj      String?    @unique
-  email     String?
-  telefone  String?
-  ativa     Boolean    @default(true)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id          String   @id @default(cuid())
+  nome        String
+  cnpj        String?  @unique
+  email       String?
+  telefone    String?
+  ativa       Boolean  @default(true)
+  // Identidade visual
+  cor         String?  // hex: #f97316
+  logo        String?  // URL da logo
+  banner      String?  // URL do banner
+  // Configuração do sistema
+  tipoSistema String?  // escola | treinamento | consultoria | clinica | personalizado
+  descricao   String?
+  anuncios    String?  // JSON: [{titulo, texto, cor}]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   cursos   EmpCurso[]
   usuarios User[]
@@ -114,17 +122,35 @@ model EmpresaModulo {
 model Sala {
   id              String   @id @default(cuid())
   nome            String
-  codigo          String   @unique @default(cuid())
+  codigo          String   @unique
   empresaId       String?
   criadoPorId     String
   maxParticipantes Int     @default(10)
   ativa           Boolean  @default(true)
   createdAt       DateTime @default(now())
 
-  empresa    Empresa? @relation(fields: [empresaId], references: [id])
-  criadoPor  User     @relation(fields: [criadoPorId], references: [id])
+  empresa    Empresa?    @relation(fields: [empresaId], references: [id])
+  criadoPor  User        @relation(fields: [criadoPorId], references: [id])
+  signal     SalaSignal?
 
   @@map("salas")
+}
+
+// ─── Sinalização WebRTC (HTTP polling) ────────────────
+model SalaSignal {
+  id         String   @id @default(cuid())
+  salaId     String   @unique
+  offer      String?  @db.Text
+  answer     String?  @db.Text
+  callerName String?
+  calleeName String?
+  iceCaller  String   @default("[]") @db.Text
+  iceCallee  String   @default("[]") @db.Text
+  updatedAt  DateTime @updatedAt
+
+  sala Sala @relation(fields: [salaId], references: [id], onDelete: Cascade)
+
+  @@map("sala_signals")
 }
 
 // ─── Cursos por empresa ────────────────────────────────

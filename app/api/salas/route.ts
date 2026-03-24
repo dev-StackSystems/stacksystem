@@ -3,6 +3,10 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { db } from "@/lib/db"
 
+function genCode(): string {
+  return Math.random().toString(36).substring(2, 8).toUpperCase()
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
 
@@ -47,9 +51,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Nome da sala é obrigatório" }, { status: 400 })
     }
 
+    // Gera código único de 6 chars (ex: ABC123)
+    let codigo = genCode()
+    // Garante unicidade tentando até 5 vezes
+    for (let i = 0; i < 5; i++) {
+      const existe = await db.sala.findUnique({ where: { codigo } })
+      if (!existe) break
+      codigo = genCode()
+    }
+
     const sala = await db.sala.create({
       data: {
         nome: nome.trim(),
+        codigo,
         maxParticipantes: maxParticipantes ? Number(maxParticipantes) : 10,
         criadoPorId: session.user.id,
         empresaId: session.user.empresaId ?? null,
@@ -59,6 +73,9 @@ export async function POST(req: NextRequest) {
         empresa: { select: { nome: true } },
       },
     })
+
+    // Cria o SalaSignal inicial vazio
+    await db.salaSignal.create({ data: { salaId: sala.id } })
 
     return NextResponse.json(sala, { status: 201 })
   } catch (error) {

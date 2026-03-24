@@ -40,6 +40,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
   }
 
+  // empresaId é obrigatório para roles não-Admin.
+  // Apenas Admin (A) pode criar outro Admin sem empresa.
+  if (role !== UserRole.A && !empresaId) {
+    return NextResponse.json(
+      { error: "Empresa é obrigatória para este perfil de usuário." },
+      { status: 400 }
+    )
+  }
+
   const existing = await db.user.findUnique({ where: { email } })
   if (existing) {
     return NextResponse.json({ error: "E-mail já cadastrado" }, { status: 409 })
@@ -57,7 +66,17 @@ export async function POST(request: NextRequest) {
       phone,
       ...(empresaId ? { empresaId } : {}),
     },
-    select: { id: true, name: true, email: true, role: true, department: true, active: true, createdAt: true, empresaId: true, empresa: { select: { nome: true } } },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      department: true,
+      active: true,
+      createdAt: true,
+      empresaId: true,
+      empresa: { select: { nome: true } },
+    },
   })
 
   return NextResponse.json(user, { status: 201 })

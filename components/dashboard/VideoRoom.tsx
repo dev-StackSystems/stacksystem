@@ -1,482 +1,641 @@
 "use client"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
-import { io, Socket } from "socket.io-client"
-import { Mic, MicOff, Video, VideoOff, PhoneOff, Users, Copy, Check, Wifi, WifiOff } from "lucide-react"
+import {
+  Mic,
+  MicOff,
+  Video,
+  VideoOff,
+  PhoneOff,
+  Copy,
+  Check,
+  Wifi,
+  WifiOff,
+  Clock,
+} from "lucide-react"
 
 interface Props {
   salaId: string
   salaCodigo: string
-  nome: string
+  nomeSala: string
   userName: string
 }
 
-interface RemoteVideo {
-  peerId: string
-  stream: MediaStream
+type CallState = "lobby" | "waiting" | "connected" | "ended"
+
+const ICE_CONFIG = {
+  iceServers: [
+    { urls: "stun:stun.l.google.com:19302" },
+    { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun.cloudflare.com:3478" },
+  ],
 }
 
-const ICE_SERVERS = [
-  { urls: "stun:stun.l.google.com:19302" },
-  { urls: "stun:stun1.l.google.com:19302" },
-]
-
-export function VideoRoom({ salaId, salaCodigo, nome, userName }: Props) {
+export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
   const router = useRouter()
+
+  // ── Refs ────────────────────────────────────────────────────────────────
   const localVideoRef = useRef<HTMLVideoElement>(null)
-  const remoteVideoRefs = useRef<Map<string, HTMLVideoElement>>(new Map())
+  const remoteVideoRef = useRef<HTMLVideoElement>(null)
+  const pcRef = useRef<RTCPeerConnection | null>(null)
+  const localStreamRef = useRef<MediaStream | null>(null)
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const knownIceRef = useRef({ caller: 0, callee: 0 })
 
-  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map())
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null)
-  const socketRef = useRef<Socket | null>(null)
-  const peersRef = useRef<Map<string, RTCPeerConnection>>(new Map())
-
+  // ── State ────────────────────────────────────────────────────────────────
+  const [callState, setCallState] = useState<CallState>("lobby")
+  const [role, setRole] = useState<"caller" | "callee" | null>(null)
+  const [joinCode, setJoinCode] = useState("")
+  const [activeCode, setActiveCode] = useState("")
+  const [remoteName, setRemoteName] = useState("")
   const [micOn, setMicOn] = useState(true)
   const [camOn, setCamOn] = useState(true)
-  const [connected, setConnected] = useState(false)
-  const [participants, setParticipants] = useState<string[]>([])
-  const [error, setError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [elapsed, setElapsed] = useState(0)
+  const [status, setStatus] = useState("Aguardando...")
+  const [iceState, setIceState] = useState<"connecting" | "connected" | "disconnected">("connecting")
+  const [error, setError] = useState("")
 
-  // Assign stream to video element when ref or stream changes
-  const assignRemoteRef = useCallback((peerId: string, el: HTMLVideoElement | null) => {
-    if (!el) return
-    remoteVideoRefs.current.set(peerId, el)
-    const stream = remoteStreams.get(peerId)
-    if (stream && el.srcObject !== stream) {
-      el.srcObject = stream
-    }
-  }, [remoteStreams])
-
-  const createPeerConnection = useCallback(
-    (peerId: string, sock: Socket, stream: MediaStream): RTCPeerConnection => {
-      const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
-
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream))
-
-      pc.onicecandidate = (e) => {
-        if (e.candidate) {
-          sock.emit("ice-candidate", {
-            roomId: salaId,
-            candidate: e.candidate,
-            to: peerId,
-          })
+  // ── API helper ───────────────────────────────────────────────────────────
+  async function api(action: string, room: string, body?: object) {
+    const url = `/api/salas/signal?action=${action}&room=${encodeURIComponent(room)}`
+    const opts: RequestInit = body
+      ? {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         }
-      }
+      : { method: "GET" }
+    const res = await fetch(url, opts)
+    return res.json()
+  }
 
-      pc.ontrack = (e) => {
-        const incoming = e.streams[0]
-        setRemoteStreams((prev) => {
-          const next = new Map(prev)
-          next.set(peerId, incoming)
-          return next
-        })
-        // Assign immediately if ref already exists
-        const videoEl = remoteVideoRefs.current.get(peerId)
-        if (videoEl && videoEl.srcObject !== incoming) {
-          videoEl.srcObject = incoming
-        }
-      }
+  // ── startCall ────────────────────────────────────────────────────────────
+  async function startCall(myRole: "caller" | "callee", code: string) {
+    setError("")
+    setRole(myRole)
+    setActiveCode(code)
 
-      pc.onconnectionstatechange = () => {
-        if (
-          pc.connectionState === "failed" ||
-          pc.connectionState === "disconnected" ||
-          pc.connectionState === "closed"
-        ) {
-          setRemoteStreams((prev) => {
-            const next = new Map(prev)
-            next.delete(peerId)
-            return next
-          })
-          setParticipants((prev) =>
-            prev.filter((p) => !p.startsWith(peerId.slice(0, 8)))
-          )
-          peersRef.current.delete(peerId)
-        }
-      }
-
-      return pc
-    },
-    [salaId]
-  )
-
-  useEffect(() => {
-    let sock: Socket
+    // Captura mídia
     let stream: MediaStream
-    let mounted = true
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      localStreamRef.current = stream
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream
+      }
+    } catch {
+      setError("Não foi possível acessar câmera/microfone. Verifique as permissões do navegador.")
+      setCallState("lobby")
+      return
+    }
 
-    async function init() {
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        if (!mounted) {
-          stream.getTracks().forEach((t) => t.stop())
-          return
-        }
+    // Cria RTCPeerConnection
+    const pc = new RTCPeerConnection(ICE_CONFIG)
+    pcRef.current = pc
 
-        setLocalStream(stream)
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream
-        }
+    stream.getTracks().forEach((track) => pc.addTrack(track, stream))
 
-        sock = io({ path: "/socket.io" })
-        socketRef.current = sock
+    // Recebe stream remoto
+    pc.ontrack = (e) => {
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = e.streams[0]
+      }
+      setCallState("connected")
+      setStatus("Conectado")
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000)
+    }
 
-        sock.on("connect", () => {
-          if (!mounted) return
-          setConnected(true)
-          sock.emit("join-room", salaId)
-          setParticipants(["Você"])
-        })
-
-        sock.on("disconnect", () => {
-          if (!mounted) return
-          setConnected(false)
-        })
-
-        // Novo usuário entrou → eu crio a oferta para ele
-        sock.on("user-joined", async (peerId: string) => {
-          if (!mounted) return
-          const pc = createPeerConnection(peerId, sock, stream)
-          peersRef.current.set(peerId, pc)
-
-          try {
-            const offer = await pc.createOffer()
-            await pc.setLocalDescription(offer)
-            sock.emit("offer", { roomId: salaId, offer, to: peerId })
-          } catch (err) {
-            console.error("[WebRTC] Erro ao criar offer:", err)
-          }
-
-          setParticipants((prev) =>
-            prev.includes(peerId.slice(0, 8)) ? prev : [...prev, peerId.slice(0, 8)]
-          )
-        })
-
-        // Recebi uma oferta → crio resposta
-        sock.on(
-          "offer",
-          async ({ offer, from }: { offer: RTCSessionDescriptionInit; from: string }) => {
-            if (!mounted) return
-            const pc = createPeerConnection(from, sock, stream)
-            peersRef.current.set(from, pc)
-
-            try {
-              await pc.setRemoteDescription(new RTCSessionDescription(offer))
-              const answer = await pc.createAnswer()
-              await pc.setLocalDescription(answer)
-              sock.emit("answer", { roomId: salaId, answer, to: from })
-            } catch (err) {
-              console.error("[WebRTC] Erro ao processar offer:", err)
-            }
-
-            setParticipants((prev) =>
-              prev.includes(from.slice(0, 8)) ? prev : [...prev, from.slice(0, 8)]
-            )
-          }
-        )
-
-        // Recebi uma resposta à minha oferta
-        sock.on(
-          "answer",
-          async ({ answer, from }: { answer: RTCSessionDescriptionInit; from: string }) => {
-            if (!mounted) return
-            const pc = peersRef.current.get(from)
-            if (pc && pc.signalingState !== "stable") {
-              try {
-                await pc.setRemoteDescription(new RTCSessionDescription(answer))
-              } catch (err) {
-                console.error("[WebRTC] Erro ao processar answer:", err)
-              }
-            }
-          }
-        )
-
-        // ICE candidates
-        sock.on(
-          "ice-candidate",
-          ({ candidate, from }: { candidate: RTCIceCandidateInit; from: string }) => {
-            if (!mounted) return
-            const pc = peersRef.current.get(from)
-            if (pc && pc.remoteDescription) {
-              pc.addIceCandidate(new RTCIceCandidate(candidate)).catch((err) =>
-                console.error("[WebRTC] Erro ao adicionar ICE candidate:", err)
-              )
-            }
-          }
-        )
-
-        // Usuário saiu
-        sock.on("user-left", (peerId: string) => {
-          if (!mounted) return
-          const pc = peersRef.current.get(peerId)
-          if (pc) {
-            pc.close()
-            peersRef.current.delete(peerId)
-          }
-          setRemoteStreams((prev) => {
-            const next = new Map(prev)
-            next.delete(peerId)
-            return next
-          })
-          setParticipants((prev) =>
-            prev.filter((p) => !p.startsWith(peerId.slice(0, 8)))
-          )
-        })
-      } catch (err) {
-        console.error("[VideoRoom] Erro ao inicializar:", err)
-        if (mounted) {
-          setError(
-            "Não foi possível acessar câmera/microfone. Verifique as permissões do navegador."
-          )
-        }
+    // Envia ICE candidates
+    pc.onicecandidate = async (e) => {
+      if (e.candidate) {
+        await api("ice", code, { role: myRole, candidate: e.candidate.toJSON() })
       }
     }
 
-    init()
-
-    return () => {
-      mounted = false
-      stream?.getTracks().forEach((t) => t.stop())
-      if (sock) {
-        sock.emit("leave-room", salaId)
-        sock.disconnect()
-      }
-      peersRef.current.forEach((pc) => pc.close())
-      peersRef.current.clear()
+    pc.oniceconnectionstatechange = () => {
+      const state = pc.iceConnectionState
+      if (state === "connected" || state === "completed") setIceState("connected")
+      else if (state === "disconnected" || state === "failed") setIceState("disconnected")
     }
-  }, [salaId, createPeerConnection])
 
-  // Sync remote stream to video element when remoteStreams map changes
-  useEffect(() => {
-    remoteStreams.forEach((stream, peerId) => {
-      const el = remoteVideoRefs.current.get(peerId)
-      if (el && el.srcObject !== stream) {
-        el.srcObject = stream
-      }
+    if (myRole === "caller") {
+      await doCaller(pc, code)
+    } else {
+      await doCallee(pc, code)
+    }
+
+    // Inicia polling a cada 1500ms
+    pollTimerRef.current = setInterval(() => pollSignaling(pc, code, myRole), 1500)
+  }
+
+  // ── Caller: cria offer ───────────────────────────────────────────────────
+  async function doCaller(pc: RTCPeerConnection, code: string) {
+    const offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+    await api("set", code, {
+      offer: { type: offer.type, sdp: offer.sdp },
+      caller_name: userName,
     })
-  }, [remoteStreams])
+    setCallState("waiting")
+    setStatus("Aguardando outro participante...")
+  }
 
+  // ── Callee: lê offer, cria answer ────────────────────────────────────────
+  async function doCallee(pc: RTCPeerConnection, code: string) {
+    const data = await api("get", code)
+    if (!data.offer) {
+      setError("Sala não encontrada ou sem oferta ativa. Peça ao criador para aguardar.")
+      stopAll(false)
+      return
+    }
+    await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
+    if (data.caller_name) setRemoteName(data.caller_name)
+    const answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
+    await api("set", code, {
+      answer: { type: answer.type, sdp: answer.sdp },
+      callee_name: userName,
+    })
+    setCallState("waiting")
+    setStatus("Conectando...")
+  }
+
+  // ── Polling de sinalização ───────────────────────────────────────────────
+  async function pollSignaling(
+    pc: RTCPeerConnection,
+    code: string,
+    myRole: "caller" | "callee"
+  ) {
+    if (!pc || pc.signalingState === "closed") return
+    try {
+      const data = await api("get", code)
+
+      // Caller: recebe answer quando callee responder
+      if (myRole === "caller" && data.answer && pc.signalingState === "have-local-offer") {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
+        if (data.callee_name) setRemoteName(data.callee_name)
+        setStatus("Conectando...")
+      }
+
+      // Processa ICE candidates do peer remoto
+      const remoteKey = myRole === "caller" ? "ice_callee" : "ice_caller"
+      const remoteCandidates: RTCIceCandidateInit[] = data[remoteKey] || []
+      const known =
+        myRole === "caller" ? knownIceRef.current.callee : knownIceRef.current.caller
+
+      for (let i = known; i < remoteCandidates.length; i++) {
+        if (pc.remoteDescription) {
+          await pc.addIceCandidate(new RTCIceCandidate(remoteCandidates[i]))
+        }
+      }
+
+      if (myRole === "caller") knownIceRef.current.callee = remoteCandidates.length
+      else knownIceRef.current.caller = remoteCandidates.length
+    } catch {
+      // ignora erros transitórios de polling
+    }
+  }
+
+  // ── Criar sala (como caller) ─────────────────────────────────────────────
+  async function createRoom() {
+    setError("")
+    await api("reset", salaCodigo)
+    await startCall("caller", salaCodigo)
+  }
+
+  // ── Entrar em sala (como callee) ─────────────────────────────────────────
+  async function joinRoom() {
+    const code = joinCode.trim().toUpperCase()
+    if (!code) {
+      setError("Digite o código da sala.")
+      return
+    }
+    await startCall("callee", code)
+  }
+
+  // ── Limpeza interna ──────────────────────────────────────────────────────
+  function stopAll(doReset: boolean) {
+    if (pollTimerRef.current) {
+      clearInterval(pollTimerRef.current)
+      pollTimerRef.current = null
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current)
+      timerRef.current = null
+    }
+    if (pcRef.current) {
+      pcRef.current.close()
+      pcRef.current = null
+    }
+    if (localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach((t) => t.stop())
+      localStreamRef.current = null
+    }
+    if (doReset && activeCode && role === "caller") {
+      api("reset", activeCode).catch(() => {})
+    }
+    knownIceRef.current = { caller: 0, callee: 0 }
+  }
+
+  async function hangUp() {
+    const wasRole = role
+    const wasCode = activeCode
+    stopAll(false)
+    if (wasRole === "caller" && wasCode) {
+      await api("reset", wasCode)
+    }
+    setCallState("ended")
+    setElapsed(0)
+  }
+
+  // ── Controles de mídia ───────────────────────────────────────────────────
   function toggleMic() {
-    if (!localStream) return
-    localStream.getAudioTracks().forEach((t) => {
-      t.enabled = !t.enabled
+    if (!localStreamRef.current) return
+    const newVal = !micOn
+    localStreamRef.current.getAudioTracks().forEach((t) => {
+      t.enabled = newVal
     })
-    setMicOn((prev) => !prev)
+    setMicOn(newVal)
   }
 
   function toggleCam() {
-    if (!localStream) return
-    localStream.getVideoTracks().forEach((t) => {
-      t.enabled = !t.enabled
+    if (!localStreamRef.current) return
+    const newVal = !camOn
+    localStreamRef.current.getVideoTracks().forEach((t) => {
+      t.enabled = newVal
     })
-    setCamOn((prev) => !prev)
+    setCamOn(newVal)
   }
 
-  function handleLeave() {
-    localStream?.getTracks().forEach((t) => t.stop())
-    if (socketRef.current) {
-      socketRef.current.emit("leave-room", salaId)
-      socketRef.current.disconnect()
+  // ── Copy helpers ─────────────────────────────────────────────────────────
+  function getActiveCode() {
+    return role === "caller" ? salaCodigo : activeCode
+  }
+
+  function copyCode() {
+    navigator.clipboard.writeText(getActiveCode()).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  function copyLink() {
+    const link = `${window.location.origin}/dashboard/salas/${salaId}?join=${getActiveCode()}`
+    navigator.clipboard.writeText(link).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const formatTime = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
+
+  // ── Cleanup ao desmontar ──────────────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      stopAll(false)
     }
-    peersRef.current.forEach((pc) => pc.close())
-    peersRef.current.clear()
-    router.back()
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  async function handleCopyCodigo() {
-    try {
-      await navigator.clipboard.writeText(salaCodigo)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2500)
-    } catch {
-      // ignore
-    }
-  }
+  // ── Auto-join via ?join=CODE ──────────────────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const joinParam = params.get("join")
+    if (joinParam) setJoinCode(joinParam.toUpperCase())
+  }, [])
 
-  const remoteEntries = Array.from(remoteStreams.entries())
+  // ════════════════════════════════════════════════════════════════════════
+  // RENDER
+  // ════════════════════════════════════════════════════════════════════════
 
-  // ─── Estado de erro ───────────────────────────────────────────────────────
-  if (error) {
+  // ── LOBBY ────────────────────────────────────────────────────────────────
+  if (callState === "lobby") {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
-        <div className="bg-slate-900 border border-white/10 rounded-2xl p-8 max-w-md w-full text-center">
-          <div className="w-14 h-14 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-4">
-            <VideoOff size={24} className="text-red-400" />
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+        <div className="w-full max-w-sm">
+          {/* Card */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            {/* Header */}
+            <div className="bg-slate-800/60 border-b border-slate-800 px-6 py-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-500/10 border border-orange-500/20 flex items-center justify-center shrink-0">
+                <Video size={16} className="text-orange-400" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                  Sala de Vídeo
+                </p>
+                <h1 className="font-serif font-bold text-white text-sm leading-tight truncate">
+                  {nomeSala}
+                </h1>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Erro */}
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                  <p className="text-red-400 text-xs leading-relaxed">{error}</p>
+                </div>
+              )}
+
+              {/* Criar sala */}
+              <div>
+                <p className="text-slate-400 text-xs mb-3 font-medium">Iniciar como criador</p>
+                <button
+                  onClick={createRoom}
+                  className="w-full bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-bold py-3 rounded-xl text-sm transition-all shadow-lg shadow-orange-500/20 flex items-center justify-center gap-2"
+                >
+                  <Video size={16} />
+                  Iniciar chamada
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-slate-800" />
+                <span className="text-slate-600 text-xs font-medium">ou entre em uma existente</span>
+                <div className="flex-1 h-px bg-slate-800" />
+              </div>
+
+              {/* Entrar em sala */}
+              <div className="space-y-2">
+                <p className="text-slate-400 text-xs font-medium">Entrar com código</p>
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => e.key === "Enter" && joinRoom()}
+                  placeholder="Ex: ABC123"
+                  maxLength={6}
+                  className="w-full bg-slate-800 border border-slate-700 focus:border-orange-500 rounded-xl px-4 py-3 text-white text-sm font-mono placeholder-slate-600 outline-none transition-colors text-center tracking-widest uppercase"
+                />
+                <button
+                  onClick={joinRoom}
+                  className="w-full bg-slate-700 hover:bg-slate-600 active:bg-slate-500 text-white font-bold py-3 rounded-xl text-sm transition-all border border-slate-600 hover:border-slate-500"
+                >
+                  Entrar na sala
+                </button>
+              </div>
+            </div>
           </div>
-          <h2 className="font-serif text-lg font-bold text-white mb-2">Erro de Acesso</h2>
-          <p className="text-sm text-slate-400 mb-6">{error}</p>
+
+          <p className="text-center text-slate-700 text-[10px] mt-4">
+            Código da sala: <span className="font-mono text-slate-600">{salaCodigo}</span>
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── WAITING (caller aguardando) ───────────────────────────────────────────
+  if (callState === "waiting") {
+    const displayCode = role === "caller" ? salaCodigo : activeCode
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 gap-6">
+        {/* Vídeo local pequeno */}
+        <div className="relative w-48 aspect-video rounded-2xl overflow-hidden border-2 border-orange-500/40 shadow-xl bg-slate-900">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5">
+            <span className="text-white text-[9px] font-semibold">Você</span>
+          </div>
+        </div>
+
+        {/* Card de aguardo */}
+        <div className="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+          {/* Status */}
+          <div className="flex items-center gap-2 mb-5">
+            <span className="w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
+            <span className="text-orange-400 text-xs font-semibold">{status}</span>
+          </div>
+
+          {/* Código em destaque */}
+          <div className="text-center mb-5">
+            <p className="text-slate-500 text-xs font-medium mb-2 uppercase tracking-wider">
+              Código da sala
+            </p>
+            <div className="bg-slate-800 border border-slate-700 rounded-2xl py-4 px-6">
+              <span className="font-mono font-black text-4xl text-white tracking-[0.25em]">
+                {displayCode}
+              </span>
+            </div>
+            <p className="text-slate-600 text-xs mt-2">
+              Compartilhe este código com os participantes
+            </p>
+          </div>
+
+          {/* Botões de compartilhamento */}
+          <div className="flex gap-2 mb-5">
+            <button
+              onClick={copyCode}
+              className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold py-2.5 rounded-xl transition-all"
+            >
+              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+              {copied ? "Copiado!" : "Copiar código"}
+            </button>
+            <button
+              onClick={copyLink}
+              className="flex-1 flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-semibold py-2.5 rounded-xl transition-all"
+            >
+              <Copy size={13} />
+              Copiar link
+            </button>
+          </div>
+
+          {/* Encerrar */}
           <button
-            onClick={() => router.back()}
-            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-6 py-2.5 rounded-xl text-sm transition-all"
+            onClick={hangUp}
+            className="w-full flex items-center justify-center gap-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold py-3 rounded-xl text-sm transition-all"
           >
-            Voltar
+            <PhoneOff size={15} />
+            Encerrar
           </button>
         </div>
       </div>
     )
   }
 
-  // ─── Layout principal ─────────────────────────────────────────────────────
-  return (
-    <div className="min-h-screen bg-slate-950 flex flex-col">
-      {/* Header da sala */}
-      <header className="bg-slate-900/80 backdrop-blur border-b border-white/10 px-6 py-3 flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
-            <Video size={15} className="text-orange-400" />
+  // ── CONNECTED ─────────────────────────────────────────────────────────────
+  if (callState === "connected") {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col relative overflow-hidden">
+        {/* Header */}
+        <header className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/80 to-transparent px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-500/10 border border-orange-500/20 flex items-center justify-center">
+              <Video size={14} className="text-orange-400" />
+            </div>
+            <div>
+              <h1 className="font-serif font-bold text-white text-sm leading-none">{nomeSala}</h1>
+              {remoteName && (
+                <p className="text-[10px] text-slate-400 mt-0.5">{remoteName}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="font-serif font-bold text-white text-sm leading-none">{nome}</h1>
-            <p className="text-[10px] text-slate-500 mt-0.5">Sala de vídeo ao vivo</p>
+
+          <div className="flex items-center gap-2">
+            {/* Badge AO VIVO */}
+            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur border border-white/10 rounded-full px-2.5 py-1">
+              <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-white text-[10px] font-bold">AO VIVO</span>
+            </div>
+
+            {/* Timer */}
+            <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur border border-white/10 rounded-full px-2.5 py-1">
+              <Clock size={11} className="text-slate-400" />
+              <span className="text-white text-[10px] font-mono font-semibold">
+                {formatTime(elapsed)}
+              </span>
+            </div>
+
+            {/* ICE state */}
+            <div className="flex items-center gap-1 bg-black/60 backdrop-blur border border-white/10 rounded-full px-2.5 py-1">
+              {iceState === "connected" ? (
+                <Wifi size={11} className="text-emerald-400" />
+              ) : iceState === "disconnected" ? (
+                <WifiOff size={11} className="text-red-400" />
+              ) : (
+                <Wifi size={11} className="text-yellow-400 animate-pulse" />
+              )}
+              <span
+                className={`text-[10px] font-semibold ${
+                  iceState === "connected"
+                    ? "text-emerald-400"
+                    : iceState === "disconnected"
+                    ? "text-red-400"
+                    : "text-yellow-400"
+                }`}
+              >
+                {iceState === "connected"
+                  ? "Conectado"
+                  : iceState === "disconnected"
+                  ? "Desconectado"
+                  : "Conectando"}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Vídeo remoto — ocupa tudo */}
+        <div className="flex-1 relative bg-black">
+          <video
+            ref={remoteVideoRef}
+            autoPlay
+            playsInline
+            className="w-full h-full object-cover"
+          />
+          {/* Label remoto */}
+          {remoteName && (
+            <div className="absolute bottom-24 left-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1.5">
+              <span className="text-white text-xs font-semibold">{remoteName}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Vídeo local — picture-in-picture */}
+        <div className="absolute bottom-24 right-4 z-30 w-36 aspect-video rounded-xl overflow-hidden border-2 border-orange-500 shadow-2xl shadow-orange-500/20 bg-slate-900">
+          <video
+            ref={localVideoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover"
+          />
+          {!camOn && (
+            <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+              <VideoOff size={18} className="text-slate-500" />
+            </div>
+          )}
+          <div className="absolute bottom-1 left-1.5 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5">
+            <span className="text-white text-[9px] font-semibold">Você</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Status de conexão */}
-          <div className="flex items-center gap-1.5">
-            {connected ? (
-              <Wifi size={13} className="text-emerald-400" />
-            ) : (
-              <WifiOff size={13} className="text-slate-500" />
-            )}
-            <span className={`text-[10px] font-semibold ${connected ? "text-emerald-400" : "text-slate-500"}`}>
-              {connected ? "Conectado" : "Conectando…"}
-            </span>
-          </div>
-
-          {/* Código da sala */}
+        {/* Barra de controles */}
+        <footer className="absolute bottom-0 left-0 right-0 z-20 bg-slate-900/95 backdrop-blur border-t border-white/10 px-6 py-4 flex items-center justify-center gap-3">
+          {/* Mic */}
           <button
-            onClick={handleCopyCodigo}
-            className="hidden sm:flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-white/10 rounded-lg px-3 py-1.5 transition-colors group"
-            title="Copiar código para compartilhar"
+            onClick={toggleMic}
+            title={micOn ? "Mutar microfone" : "Ativar microfone"}
+            className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
+              micOn
+                ? "bg-slate-800 border-white/10 text-white hover:bg-slate-700"
+                : "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
+            }`}
           >
-            <span className="text-[10px] text-slate-500 font-bold uppercase">Código</span>
-            <span className="text-xs text-slate-300 font-mono">{salaCodigo.slice(0, 8)}…</span>
-            {copied ? (
-              <Check size={11} className="text-emerald-400" />
-            ) : (
-              <Copy size={11} className="text-slate-500 group-hover:text-slate-300 transition-colors" />
-            )}
+            {micOn ? <Mic size={18} /> : <MicOff size={18} />}
           </button>
 
-          {/* Participantes */}
-          <div className="flex items-center gap-1.5 bg-slate-800 border border-white/10 rounded-lg px-3 py-1.5">
-            <Users size={13} className="text-slate-400" />
-            <span className="text-xs text-slate-300 font-semibold">{participants.length}</span>
-          </div>
+          {/* Cam */}
+          <button
+            onClick={toggleCam}
+            title={camOn ? "Desligar câmera" : "Ligar câmera"}
+            className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
+              camOn
+                ? "bg-slate-800 border-white/10 text-white hover:bg-slate-700"
+                : "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
+            }`}
+          >
+            {camOn ? <Video size={18} /> : <VideoOff size={18} />}
+          </button>
+
+          {/* Encerrar */}
+          <button
+            onClick={hangUp}
+            title="Encerrar chamada"
+            className="h-12 px-6 bg-red-500 hover:bg-red-600 active:bg-red-700 text-white font-bold rounded-full flex items-center gap-2 transition-all shadow-lg shadow-red-500/25"
+          >
+            <PhoneOff size={18} />
+            <span className="text-sm hidden sm:inline">Encerrar</span>
+          </button>
+
+          {/* Copiar código */}
+          <button
+            onClick={copyCode}
+            title="Copiar código da sala"
+            className="w-12 h-12 rounded-full flex items-center justify-center border bg-slate-800 border-white/10 text-slate-300 hover:bg-slate-700 transition-all"
+          >
+            {copied ? <Check size={16} className="text-emerald-400" /> : <Copy size={16} />}
+          </button>
+        </footer>
+      </div>
+    )
+  }
+
+  // ── ENDED ─────────────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl">
+        <div className="w-14 h-14 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center mx-auto mb-4">
+          <PhoneOff size={22} className="text-slate-400" />
         </div>
-      </header>
-
-      {/* Área de vídeos */}
-      <main className="flex-1 p-4 pb-28 overflow-auto">
-        {remoteEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-center">
-            <div className="w-16 h-16 rounded-2xl bg-slate-800 border border-white/10 flex items-center justify-center mb-4">
-              <Users size={24} className="text-slate-600" />
-            </div>
-            <p className="text-slate-500 font-semibold text-sm">Aguardando outros participantes…</p>
-            <p className="text-slate-600 text-xs mt-1.5">
-              Compartilhe o código da sala para convidar alguém.
-            </p>
-            <button
-              onClick={handleCopyCodigo}
-              className="mt-4 flex items-center gap-2 bg-slate-800 hover:bg-slate-700 border border-white/10 text-slate-300 text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
-            >
-              {copied ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
-              {copied ? "Copiado!" : "Copiar código da sala"}
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {remoteEntries.map(([peerId]) => (
-              <div key={peerId} className="relative aspect-video">
-                <video
-                  ref={(el) => assignRemoteRef(peerId, el)}
-                  autoPlay
-                  playsInline
-                  className="w-full h-full object-cover rounded-2xl bg-slate-800"
-                />
-                <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm rounded-lg px-2.5 py-1">
-                  <span className="text-white text-[10px] font-semibold">{peerId.slice(0, 8)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
+        <h2 className="font-serif font-bold text-white text-lg mb-1">Chamada encerrada</h2>
+        {elapsed > 0 && (
+          <p className="text-slate-500 text-sm mb-4">
+            Duração: <span className="font-mono text-slate-400">{formatTime(elapsed)}</span>
+          </p>
         )}
-      </main>
-
-      {/* Vídeo local (picture-in-picture) */}
-      <div className="fixed bottom-24 right-6 z-30 w-44 aspect-video rounded-xl overflow-hidden border-2 border-white/20 shadow-2xl bg-slate-800">
-        <video
-          ref={localVideoRef}
-          autoPlay
-          playsInline
-          muted
-          className="w-full h-full object-cover"
-        />
-        {!camOn && (
-          <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
-            <VideoOff size={20} className="text-slate-500" />
-          </div>
-        )}
-        <div className="absolute bottom-1.5 left-2 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5">
-          <span className="text-white text-[9px] font-semibold">Você</span>
+        <div className="flex gap-3 mt-6">
+          <button
+            onClick={() => setCallState("lobby")}
+            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-sm transition-all"
+          >
+            Nova chamada
+          </button>
+          <button
+            onClick={() => router.back()}
+            className="flex-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 font-bold py-3 rounded-xl text-sm transition-all"
+          >
+            Voltar
+          </button>
         </div>
       </div>
-
-      {/* Barra de controles */}
-      <footer className="fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur border-t border-white/10 px-6 py-4 flex items-center justify-center gap-4 z-20">
-        {/* Mic toggle */}
-        <button
-          onClick={toggleMic}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
-            micOn
-              ? "bg-slate-800 border-white/10 text-white hover:bg-slate-700"
-              : "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
-          }`}
-          title={micOn ? "Mutar microfone" : "Ativar microfone"}
-        >
-          {micOn ? <Mic size={18} /> : <MicOff size={18} />}
-        </button>
-
-        {/* Cam toggle */}
-        <button
-          onClick={toggleCam}
-          className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
-            camOn
-              ? "bg-slate-800 border-white/10 text-white hover:bg-slate-700"
-              : "bg-red-500/20 border-red-500/40 text-red-400 hover:bg-red-500/30"
-          }`}
-          title={camOn ? "Desligar câmera" : "Ligar câmera"}
-        >
-          {camOn ? <Video size={18} /> : <VideoOff size={18} />}
-        </button>
-
-        {/* Encerrar */}
-        <button
-          onClick={handleLeave}
-          className="h-12 px-6 bg-red-500 hover:bg-red-600 text-white font-bold rounded-full flex items-center gap-2 transition-all shadow-lg shadow-red-500/25"
-          title="Encerrar chamada"
-        >
-          <PhoneOff size={18} />
-          <span className="text-sm hidden sm:inline">Encerrar</span>
-        </button>
-
-        {/* Participantes (mobile) */}
-        <div className="flex items-center gap-1.5 bg-slate-800 border border-white/10 rounded-full px-3 py-2 sm:hidden">
-          <Users size={14} className="text-slate-400" />
-          <span className="text-xs text-slate-300 font-semibold">{participants.length}</span>
-        </div>
-
-        {/* Label participantes (desktop) */}
-        <div className="hidden sm:flex items-center gap-1.5 ml-4">
-          <Users size={14} className="text-slate-500" />
-          <span className="text-xs text-slate-500">
-            {participants.length} {participants.length === 1 ? "participante" : "participantes"}
-          </span>
-        </div>
-      </footer>
     </div>
   )
 }

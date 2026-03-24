@@ -13,7 +13,7 @@ export async function PUT(
 
   const { id } = await params
   const body = await request.json()
-  const { nome, cnpj, email, telefone, ativa } = body
+  const { nome, cnpj, email, telefone, ativa, cor, logo, banner, tipoSistema, descricao } = body
 
   if (!nome || typeof nome !== "string" || nome.trim() === "") {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 })
@@ -40,6 +40,11 @@ export async function PUT(
       email: email?.trim() || null,
       telefone: telefone?.trim() || null,
       ativa: typeof ativa === "boolean" ? ativa : existing.ativa,
+      cor: cor?.trim() || null,
+      logo: logo?.trim() || null,
+      banner: banner?.trim() || null,
+      tipoSistema: tipoSistema?.trim() || null,
+      descricao: descricao?.trim() || null,
     },
   })
 

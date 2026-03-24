@@ -25,9 +25,14 @@ function toDateInputValue(value?: Date | string | null): string {
   if (!value) return ""
   const d = new Date(value)
   if (isNaN(d.getTime())) return ""
-  // YYYY-MM-DD
   return d.toISOString().slice(0, 10)
 }
+
+const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
+const inputClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+const selectClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
 export function AlunoFormModal({ mode, aluno, trigger }: Props) {
   const router = useRouter()
@@ -106,10 +111,6 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
     }
   }
 
-  const inputClass =
-    "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
-  const labelClass = "text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]"
-
   return (
     <>
       <div onClick={() => setOpen(true)}>{trigger}</div>
@@ -117,116 +118,119 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <h2 className="font-serif text-lg font-bold text-slate-900">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="font-serif text-base font-bold text-slate-900">
                 {mode === "create" ? "Novo Aluno" : "Editar Aluno"}
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              {/* Nome */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>
-                  Nome completo<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.nome}
-                  onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* E-mail */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>
-                  E-mail<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* CPF */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>CPF</label>
-                <input
-                  type="text"
-                  value={form.cpf}
-                  onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
-                  placeholder="000.000.000-00"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Telefone */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Telefone</label>
-                <input
-                  type="text"
-                  value={form.telefone}
-                  onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
-                  placeholder="(00) 00000-0000"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Data de nascimento */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Data de nascimento</label>
-                <input
-                  type="date"
-                  value={form.dataNasc}
-                  onChange={(e) => setForm((f) => ({ ...f, dataNasc: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Status — somente no modo edição */}
-              {mode === "edit" && (
-                <div className="flex flex-col gap-1.5">
-                  <label className={labelClass}>Status</label>
-                  <select
-                    value={form.ativo ? "true" : "false"}
-                    onChange={(e) => setForm((f) => ({ ...f, ativo: e.target.value === "true" }))}
+            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+              {/* Linha 1: Nome | Email */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Nome completo <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.nome}
+                    onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                     className={inputClass}
-                  >
-                    <option value="true">Ativo</option>
-                    <option value="false">Inativo</option>
-                  </select>
+                    placeholder="Maria da Silva"
+                  />
                 </div>
-              )}
+                <div>
+                  <label className={labelClass}>
+                    E-mail <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                    className={inputClass}
+                    placeholder="maria@email.com"
+                  />
+                </div>
+              </div>
+
+              {/* Linha 2: CPF | Telefone */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>CPF</label>
+                  <input
+                    type="text"
+                    value={form.cpf}
+                    onChange={(e) => setForm((f) => ({ ...f, cpf: e.target.value }))}
+                    placeholder="000.000.000-00"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Telefone</label>
+                  <input
+                    type="text"
+                    value={form.telefone}
+                    onChange={(e) => setForm((f) => ({ ...f, telefone: e.target.value }))}
+                    placeholder="(00) 00000-0000"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+
+              {/* Linha 3: Data Nasc | Status (só edit) */}
+              <div className={mode === "edit" ? "grid grid-cols-2 gap-3" : ""}>
+                <div>
+                  <label className={labelClass}>Data de Nascimento</label>
+                  <input
+                    type="date"
+                    value={form.dataNasc}
+                    onChange={(e) => setForm((f) => ({ ...f, dataNasc: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                {mode === "edit" && (
+                  <div>
+                    <label className={labelClass}>Status</label>
+                    <select
+                      value={form.ativo ? "true" : "false"}
+                      onChange={(e) => setForm((f) => ({ ...f, ativo: e.target.value === "true" }))}
+                      className={selectClass}
+                    >
+                      <option value="true">Ativo</option>
+                      <option value="false">Inativo</option>
+                    </select>
+                  </div>
+                )}
+              </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600 font-medium">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-medium">
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm transition-all"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                   {mode === "create" ? "Criar Aluno" : "Salvar"}
                 </button>
               </div>
