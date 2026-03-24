@@ -1,6 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
 
@@ -45,9 +46,20 @@ export default function LoginPage() {
     }
 
     setLoading(true)
-    // Simulação de autenticação — substitua por sua API
-    await new Promise(r => setTimeout(r, 1400))
+
+    const result = await signIn("credentials", {
+      email: form.email,
+      password: form.password,
+      redirect: false,
+    })
+
     setLoading(false)
+
+    if (result?.error) {
+      setError("E-mail ou senha incorretos. Tente novamente.")
+      return
+    }
+
     router.push("/dashboard")
   }
 

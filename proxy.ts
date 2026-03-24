@@ -1,24 +1,39 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { getToken } from "next-auth/jwt"
 
-// Mapa de rotas: ?pg=X  ou  ?m=X  →  /X
 const ROUTE_MAP: Record<string, string> = {
   login:     "/login",
   logout:    "/",
   dashboard: "/dashboard",
   home:      "/",
   inicio:    "/",
+  contato:   "/#contato",
 }
 
-export function proxy(request: NextRequest) {
-  const { searchParams } = request.nextUrl
+export async function proxy(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl
 
-  const param = searchParams.get("pg") ?? searchParams.get("m")
+  // ── Guarda de autenticação para /dashboard/* ──────────────
+  if (pathname.startsWith("/dashboard")) {
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
 
-  if (param) {
-    const destination = ROUTE_MAP[param.toLowerCase()]
-    if (destination) {
-      return NextResponse.redirect(new URL(destination, request.url))
+    if (!token) {
+      return NextResponse.redirect(new URL("/login", request.url))
+    }
+  }
+
+  // ── Roteamento por query param (somente na raiz) ──────────
+  if (pathname === "/") {
+    const param = searchParams.get("pg") ?? searchParams.get("m")
+    if (param) {
+      const destination = ROUTE_MAP[param.toLowerCase()]
+      if (destination) {
+        return NextResponse.redirect(new URL(destination, request.url))
+      }
     }
   }
 
@@ -26,6 +41,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Aplica o middleware somente na raiz para não interferir em /login, /dashboard etc.
-  matcher: "/",
+  matcher: ["/dashboard/:path*", "/"],
 }

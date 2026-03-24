@@ -8,7 +8,14 @@
       "Bash(sed -i 's/focus:ring-3/focus:ring-2/g' components/sections/Contact.tsx)",
       "Bash(sed -i 's/bg-white\\\\/96/bg-white\\\\/95/g' components/sections/Navbar.tsx)",
       "Bash(cd:*)",
-      "Bash(xargs wc:*)"
+      "Bash(xargs wc:*)",
+      "Bash(find /c/Users/i3Soluções/Documents/scripts/stacksystem -not -path */node_modules/* -not -path */.next/* -not -path */.git/* -type d)",
+      "Bash(npx prisma:*)",
+      "Bash(DATABASE_URL=\"postgresql://user:pass@localhost:5432/db\" npx prisma generate)",
+      "Bash(echo DATABASE_URL=\"\"postgresql://user:pass@localhost:5432/stacksystem\"\")",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill //F //IM node.exe)",
+      "Bash(node -e \":*)"
     ]
   }
 }
