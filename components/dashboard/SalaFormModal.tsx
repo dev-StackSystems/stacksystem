@@ -7,6 +7,10 @@ interface Props {
   trigger: React.ReactNode
 }
 
+const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
+const inputClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all placeholder:text-slate-400"
+
 export function SalaFormModal({ trigger }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
@@ -74,74 +78,72 @@ export function SalaFormModal({ trigger }: Props) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
-                  <Video size={18} className="text-orange-500" />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+                  <Video size={15} className="text-orange-500" />
                 </div>
-                <h2 className="font-serif text-lg font-bold text-slate-900">Nova Sala</h2>
+                <h2 className="font-serif text-base font-bold text-slate-900">Nova Sala</h2>
               </div>
               <button
                 onClick={() => setOpen(false)}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              {/* Nome */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-                  Nome da Sala<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={form.nome}
-                  onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
-                  placeholder="Ex: Aula de Matemática"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all placeholder:text-slate-400"
-                />
-              </div>
-
-              {/* Max Participantes */}
-              <div className="flex flex-col gap-1.5">
-                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
-                  Máx. Participantes
-                </label>
-                <input
-                  type="number"
-                  min={2}
-                  max={100}
-                  value={form.maxParticipantes}
-                  onChange={(e) => setForm((f) => ({ ...f, maxParticipantes: e.target.value }))}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
-                />
+            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+              {/* Nome | Máx. participantes */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Nome da Sala <span className="text-red-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.nome}
+                    onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
+                    placeholder="Ex: Matemática"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Máx. Participantes</label>
+                  <input
+                    type="number"
+                    min={2}
+                    max={100}
+                    value={form.maxParticipantes}
+                    onChange={(e) => setForm((f) => ({ ...f, maxParticipantes: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600 font-medium">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-medium">
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm transition-all"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {loading ? <Loader2 size={16} className="animate-spin" /> : null}
+                  {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                   Criar Sala
                 </button>
               </div>

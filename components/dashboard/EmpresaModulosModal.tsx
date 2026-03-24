@@ -6,10 +6,11 @@ import { EmpresaModulosManager } from "./EmpresaModulosManager"
 interface Props {
   empresaId: string
   empresaNome: string
+  tipoSistema?: string | null
   trigger: React.ReactNode
 }
 
-export function EmpresaModulosModal({ empresaId, empresaNome, trigger }: Props) {
+export function EmpresaModulosModal({ empresaId, empresaNome, tipoSistema, trigger }: Props) {
   const [open, setOpen] = useState(false)
   const [modulosAtivos, setModulosAtivos] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
@@ -44,7 +45,7 @@ export function EmpresaModulosModal({ empresaId, empresaNome, trigger }: Props) 
           {/* Modal */}
           <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
             {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100">
+            <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
               <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
                 <Puzzle size={16} className="text-orange-500" />
               </div>
@@ -61,7 +62,7 @@ export function EmpresaModulosModal({ empresaId, empresaNome, trigger }: Props) 
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5">
+            <div className="flex-1 overflow-y-auto px-5 py-4">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 size={22} className="animate-spin text-orange-400" />
@@ -70,12 +71,13 @@ export function EmpresaModulosModal({ empresaId, empresaNome, trigger }: Props) 
                 <EmpresaModulosManager
                   empresaId={empresaId}
                   modulosAtivos={modulosAtivos}
+                  tipoSistema={tipoSistema}
                 />
               )}
             </div>
 
             {/* Footer */}
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
+            <div className="px-5 py-3 border-t border-slate-100 bg-slate-50/50 rounded-b-2xl">
               <p className="text-xs text-slate-400">
                 Alterações são salvas automaticamente ao toglar cada módulo.
               </p>

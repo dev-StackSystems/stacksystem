@@ -13,6 +13,7 @@ interface Aluno {
   dataNasc?: Date | string | null
   ativo: boolean
   createdAt: Date | string
+  _count?: { matriculas?: number }
 }
 
 interface Props {
@@ -27,6 +28,13 @@ function formatCpf(cpf?: string | null): string {
     return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
   }
   return cpf
+}
+
+function getInitials(nome: string): string {
+  const words = nome.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "?"
+  if (words.length === 1) return words[0].charAt(0).toUpperCase()
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase()
 }
 
 export function AlunoTable({ alunos, isAdmin }: Props) {
@@ -76,6 +84,7 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Aluno</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">CPF</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Telefone</th>
+              <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Matrículas</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
               <th className="text-right px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Ações</th>
             </tr>
@@ -83,14 +92,15 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
           <tbody className="divide-y divide-slate-50">
             {alunos.map((aluno) => {
               const isLoading = loadingId === aluno.id
+              const matriculasCount = aluno._count?.matriculas ?? null
 
               return (
                 <tr key={aluno.id} className="hover:bg-slate-50/50 transition-colors">
                   {/* Nome / Email */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {aluno.nome.charAt(0).toUpperCase()}
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0 select-none">
+                        {getInitials(aluno.nome)}
                       </div>
                       <div>
                         <div className="font-semibold text-slate-800">{aluno.nome}</div>
@@ -107,6 +117,21 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
                   {/* Telefone */}
                   <td className="px-6 py-4 hidden lg:table-cell">
                     <span className="text-slate-500">{aluno.telefone ?? "—"}</span>
+                  </td>
+
+                  {/* Matrículas */}
+                  <td className="px-6 py-4 hidden lg:table-cell">
+                    {matriculasCount !== null ? (
+                      <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                        matriculasCount > 0
+                          ? "bg-blue-50 text-blue-600 border border-blue-200"
+                          : "bg-slate-100 text-slate-400 border border-slate-200"
+                      }`}>
+                        {matriculasCount} ativa{matriculasCount !== 1 ? "s" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
 
                   {/* Status */}
@@ -127,7 +152,7 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
                         <Loader2 size={16} className="animate-spin text-slate-400" />
                       ) : (
                         <>
-                          {/* Editar — qualquer autenticado */}
+                          {/* Editar */}
                           <AlunoFormModal
                             mode="edit"
                             aluno={aluno}

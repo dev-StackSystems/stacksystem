@@ -7,12 +7,21 @@ import { CursoFormModal, type CursoData } from "./CursoFormModal"
 interface EmpresaOption {
   id: string
   nome: string
+  tipoSistema?: string | null
+  cor?: string | null
 }
 
 interface Props {
   cursos: CursoData[]
   empresas: EmpresaOption[]
   isAdmin: boolean
+}
+
+function getInitials(nome: string): string {
+  const words = nome.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "?"
+  if (words.length === 1) return words[0].charAt(0).toUpperCase()
+  return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase()
 }
 
 export function CursoTable({ cursos, empresas, isAdmin }: Props) {
@@ -62,6 +71,9 @@ export function CursoTable({ cursos, empresas, isAdmin }: Props) {
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">
                 Curso
               </th>
+              <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">
+                Empresa
+              </th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                 Descrição
               </th>
@@ -79,22 +91,37 @@ export function CursoTable({ cursos, empresas, isAdmin }: Props) {
           <tbody className="divide-y divide-slate-50">
             {cursos.map((curso) => {
               const isLoading = loadingId === curso.id
+              const empresaInfo = empresas.find((e) => e.id === curso.empresaId)
+              const empCor = empresaInfo?.cor ?? "#94a3b8"
 
               return (
                 <tr key={curso.id} className="hover:bg-slate-50/50 transition-colors">
-                  {/* Curso + empresa */}
+                  {/* Curso */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {curso.nome.charAt(0).toUpperCase()}
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center text-white text-xs font-bold shrink-0 select-none">
+                        {getInitials(curso.nome)}
                       </div>
-                      <div>
-                        <div className="font-semibold text-slate-800">{curso.nome}</div>
-                        {curso.empresa?.nome && (
-                          <div className="text-xs text-slate-400">{curso.empresa.nome}</div>
-                        )}
-                      </div>
+                      <div className="font-semibold text-slate-800">{curso.nome}</div>
                     </div>
+                  </td>
+
+                  {/* Empresa com badge colorido */}
+                  <td className="px-6 py-4 hidden md:table-cell">
+                    {curso.empresa?.nome ? (
+                      <span
+                        className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full"
+                        style={{
+                          backgroundColor: `${empCor}18`,
+                          color: empCor,
+                          border: `1px solid ${empCor}35`,
+                        }}
+                      >
+                        {curso.empresa.nome}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400">—</span>
+                    )}
                   </td>
 
                   {/* Descrição */}
@@ -135,7 +162,7 @@ export function CursoTable({ cursos, empresas, isAdmin }: Props) {
                         <Loader2 size={16} className="animate-spin text-slate-400" />
                       ) : (
                         <>
-                          {/* Editar — A e T */}
+                          {/* Editar */}
                           <CursoFormModal
                             mode="edit"
                             curso={curso}

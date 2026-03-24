@@ -43,9 +43,11 @@ function toDateInputValue(value?: Date | string | null): string {
   return d.toISOString().slice(0, 10)
 }
 
+const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
 const inputClass =
-  "w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
-const labelClass = "text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]"
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+const selectClass =
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
 export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }: Props) {
   const router = useRouter()
@@ -130,130 +132,131 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-slate-100">
-              <h2 className="font-serif text-lg font-bold text-slate-900">
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+              <h2 className="font-serif text-base font-bold text-slate-900">
                 {mode === "create" ? "Nova Matrícula" : "Editar Matrícula"}
               </h2>
               <button
                 onClick={() => setOpen(false)}
-                className="text-slate-400 hover:text-slate-700 transition-colors p-1"
+                className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
-                <X size={18} />
+                <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
-              {/* Aluno */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>
-                  Aluno<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <select
-                  value={form.alunoId}
-                  onChange={(e) => setForm((f) => ({ ...f, alunoId: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="">Selecione um aluno...</option>
-                  {alunos.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.nome}
-                    </option>
-                  ))}
-                </select>
+            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+              {/* Linha 1: Aluno | Curso */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Aluno <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.alunoId}
+                    onChange={(e) => setForm((f) => ({ ...f, alunoId: e.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="">Selecione...</option>
+                    {alunos.map((a) => (
+                      <option key={a.id} value={a.id}>
+                        {a.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Curso <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.empCursoId}
+                    onChange={(e) => setForm((f) => ({ ...f, empCursoId: e.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="">Selecione...</option>
+                    {cursos.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome} — {c.empresa.nome}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
-              {/* Curso */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>
-                  Curso<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <select
-                  value={form.empCursoId}
-                  onChange={(e) => setForm((f) => ({ ...f, empCursoId: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="">Selecione um curso...</option>
-                  {cursos.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome} — {c.empresa.nome}
-                    </option>
-                  ))}
-                </select>
+              {/* Linha 2: Status | Valor */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>
+                    Status <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.status}
+                    onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="ativa">Ativa</option>
+                    <option value="concluida">Concluída</option>
+                    <option value="cancelada">Cancelada</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={labelClass}>Valor (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.valor}
+                    onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
+                    placeholder="0,00"
+                    className={inputClass}
+                  />
+                </div>
               </div>
 
-              {/* Status */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>
-                  Status<span className="text-red-400 ml-0.5">*</span>
-                </label>
-                <select
-                  value={form.status}
-                  onChange={(e) => setForm((f) => ({ ...f, status: e.target.value }))}
-                  className={inputClass}
-                >
-                  <option value="ativa">Ativa</option>
-                  <option value="concluida">Concluída</option>
-                  <option value="cancelada">Cancelada</option>
-                </select>
-              </div>
-
-              {/* Valor */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Valor (R$)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={form.valor}
-                  onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
-                  placeholder="0,00"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Data Início */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Data de Início</label>
-                <input
-                  type="date"
-                  value={form.dataInicio}
-                  onChange={(e) => setForm((f) => ({ ...f, dataInicio: e.target.value }))}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Data Fim */}
-              <div className="flex flex-col gap-1.5">
-                <label className={labelClass}>Data de Encerramento <span className="text-slate-400 font-normal">(opcional)</span></label>
-                <input
-                  type="date"
-                  value={form.dataFim}
-                  onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
-                  className={inputClass}
-                />
+              {/* Linha 3: Data Início | Data Fim */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Data de Início</label>
+                  <input
+                    type="date"
+                    value={form.dataInicio}
+                    onChange={(e) => setForm((f) => ({ ...f, dataInicio: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Data de Encerramento</label>
+                  <input
+                    type="date"
+                    value={form.dataFim}
+                    onChange={(e) => setForm((f) => ({ ...f, dataFim: e.target.value }))}
+                    className={inputClass}
+                  />
+                </div>
               </div>
 
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600 font-medium">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-medium">
                   {error}
                 </div>
               )}
 
-              <div className="flex gap-3 mt-2">
+              <div className="flex gap-3 pt-1">
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-3 rounded-xl text-sm transition-all"
+                  className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-3 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
-                  {loading && <Loader2 size={16} className="animate-spin" />}
+                  {loading && <Loader2 size={14} className="animate-spin" />}
                   {mode === "create" ? "Criar Matrícula" : "Salvar"}
                 </button>
               </div>

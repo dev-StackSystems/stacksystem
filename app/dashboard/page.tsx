@@ -7,6 +7,7 @@ import {
   DollarSign, Award, Users, TrendingUp,
   CheckCircle2, Clock, XCircle,
 } from "lucide-react"
+import { TIPOS_SISTEMA } from "@/lib/sistemas"
 
 const ROLE_LABELS: Record<string, string> = {
   A: "Administrador",
@@ -26,11 +27,70 @@ const STATUS_BAIXA: Record<string, { label: string; cls: string; icon: typeof Ch
   cancelado: { label: "Cancelado", cls: "text-red-500",     icon: XCircle },
 }
 
+// ────────────────────────────────────────────────────────
+// Anúncio JSON shape
+// ────────────────────────────────────────────────────────
+interface Anuncio {
+  titulo: string
+  texto: string
+  cor?: string
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
+  const role = session?.user.role ?? ""
+  const empresaId = session?.user.empresaId ?? null
+  const isAdmin = role === UserRole.A
 
-  // ── KPIs em paralelo ──────────────────────────────────────
+  // ── Dados da empresa (quando o usuário tem empresa vinculada) ──
+  let empresa: {
+    nome: string
+    cor: string | null
+    logo: string | null
+    banner: string | null
+    tipoSistema: string | null
+    descricao: string | null
+    anuncios: string | null
+  } | null = null
+
+  if (empresaId) {
+    empresa = await db.empresa.findUnique({
+      where: { id: empresaId },
+      select: {
+        nome: true,
+        cor: true,
+        logo: true,
+        banner: true,
+        tipoSistema: true,
+        descricao: true,
+        anuncios: true,
+      },
+    })
+  }
+
+  const tipoInfo = empresa?.tipoSistema
+    ? TIPOS_SISTEMA.find((t) => t.key === empresa!.tipoSistema)
+    : null
+
+  let anunciosList: Anuncio[] = []
+  if (empresa?.anuncios) {
+    try {
+      anunciosList = JSON.parse(empresa.anuncios) as Anuncio[]
+    } catch {
+      anunciosList = []
+    }
+  }
+
+  // ── KPIs em paralelo (filtrados por empresa se necessário) ──
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+
+  // Admin global: sem filtro. Outros: filtrar pelos cursos da empresa
+  const empresaFilter = !isAdmin && empresaId
+    ? { empCurso: { empresaId } }
+    : undefined
+  const cursoFilter = !isAdmin && empresaId
+    ? { empresaId }
+    : undefined
 
   const [
     totalAlunos,
@@ -47,19 +107,24 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     db.aluno.count(),
     db.aluno.count({ where: { ativo: true } }),
-    db.matricula.count(),
-    db.matricula.count({ where: { status: "ativa" } }),
-    db.empCurso.count({ where: { ativo: true } }),
+    db.matricula.count({ where: empresaFilter }),
+    db.matricula.count({ where: { ...empresaFilter, status: "ativa" } }),
+    db.empCurso.count({ where: { ...cursoFilter, ativo: true } }),
     db.aula.count({ where: { ativa: true } }),
-    db.certificado.count(),
+    db.certificado.count({ where: cursoFilter ? { empCurso: cursoFilter } : undefined }),
     db.baixa.aggregate({
       _sum: { valor: true },
-      where: { status: "pago", dataPag: { gte: inicioMes } },
+      where: {
+        status: "pago",
+        dataPag: { gte: inicioMes },
+        ...(empresaFilter ? { matricula: empresaFilter } : {}),
+      },
     }),
-    db.user.count({ where: { active: true } }),
+    db.user.count({ where: { active: true, ...(empresaId && !isAdmin ? { empresaId } : {}) } }),
     db.matricula.findMany({
       take: 6,
       orderBy: { createdAt: "desc" },
+      where: empresaFilter,
       select: {
         id: true, status: true, valor: true, createdAt: true,
         aluno:    { select: { nome: true, email: true } },
@@ -69,6 +134,7 @@ export default async function DashboardPage() {
     db.baixa.findMany({
       take: 6,
       orderBy: { createdAt: "desc" },
+      where: empresaFilter ? { matricula: empresaFilter } : undefined,
       select: {
         id: true, descricao: true, valor: true, tipo: true, status: true, dataPag: true, createdAt: true,
         matricula: { select: { aluno: { select: { nome: true } } } },
@@ -77,6 +143,7 @@ export default async function DashboardPage() {
   ])
 
   const receitaValor = Number(receitaMes._sum.valor ?? 0)
+  const corEmpresa = empresa?.cor ?? "#f97316"
 
   const kpisRow1 = [
     {
@@ -144,16 +211,152 @@ export default async function DashboardPage() {
 
   return (
     <div>
-      {/* Saudação */}
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl font-bold text-slate-900">
-          Olá, {session?.user.name?.split(" ")[0]} 👋
-        </h1>
-        <p className="text-sm text-slate-400 mt-1">
-          {ROLE_LABELS[session?.user.role ?? ""] ?? ""} ·{" "}
-          {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
-        </p>
-      </div>
+      {/* ── Banner / Header da empresa ── */}
+      {empresa ? (
+        <div className="mb-8 rounded-2xl overflow-hidden shadow-sm border border-slate-100">
+          {/* Banner */}
+          {empresa.banner ? (
+            <div className="relative h-36 md:h-44">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={empresa.banner}
+                alt={`Banner ${empresa.nome}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 px-6 pb-5 flex items-end gap-4">
+                {empresa.logo && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={empresa.logo}
+                    alt={empresa.nome}
+                    className="w-14 h-14 rounded-xl border-2 border-white/80 object-cover shrink-0 shadow-lg"
+                  />
+                )}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h1 className="font-serif text-xl font-bold text-white drop-shadow">
+                      {empresa.nome}
+                    </h1>
+                    {tipoInfo && (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-sm">
+                        {tipoInfo.emoji} {tipoInfo.label}
+                      </span>
+                    )}
+                  </div>
+                  {empresa.descricao && (
+                    <p className="text-xs text-white/80 mt-0.5 truncate">{empresa.descricao}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* Sem banner: degradê com a cor da empresa */
+            <div
+              className="px-6 py-6 flex items-center gap-4"
+              style={{
+                background: `linear-gradient(135deg, ${corEmpresa}22, ${corEmpresa}44)`,
+                borderBottom: `3px solid ${corEmpresa}`,
+              }}
+            >
+              {empresa.logo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={empresa.logo}
+                  alt={empresa.nome}
+                  className="w-14 h-14 rounded-xl border border-white shadow-sm object-cover shrink-0"
+                />
+              ) : (
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center text-white text-xl font-bold shrink-0 shadow-sm"
+                  style={{ background: corEmpresa }}
+                >
+                  {empresa.nome.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h1 className="font-serif text-xl font-bold text-slate-900">
+                    {empresa.nome}
+                  </h1>
+                  {tipoInfo && (
+                    <span
+                      className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
+                      style={{
+                        background: `${corEmpresa}18`,
+                        color: corEmpresa,
+                        borderColor: `${corEmpresa}44`,
+                      }}
+                    >
+                      {tipoInfo.emoji} {tipoInfo.label}
+                    </span>
+                  )}
+                </div>
+                {empresa.descricao && (
+                  <p className="text-sm text-slate-500 mt-0.5 truncate">{empresa.descricao}</p>
+                )}
+              </div>
+
+              {/* Saudação inline (sem banner) */}
+              <div className="ml-auto text-right hidden sm:block">
+                <p className="text-sm font-semibold text-slate-700">
+                  Olá, {session?.user.name?.split(" ")[0]}
+                </p>
+                <p className="text-xs text-slate-400">
+                  {ROLE_LABELS[role] ?? ""} ·{" "}
+                  {new Date().toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" })}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Saudação abaixo do banner (quando tem banner) */}
+          {empresa.banner && (
+            <div className="px-6 py-3 bg-white flex items-center justify-between">
+              <p className="text-sm text-slate-500">
+                Olá, <span className="font-semibold text-slate-800">{session?.user.name?.split(" ")[0]}</span>
+                {" "} — {ROLE_LABELS[role] ?? ""}
+              </p>
+              <p className="text-xs text-slate-400">
+                {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Admin global sem empresa — saudação padrão */
+        <div className="mb-8">
+          <h1 className="font-serif text-2xl font-bold text-slate-900">
+            Olá, {session?.user.name?.split(" ")[0]} 👋
+          </h1>
+          <p className="text-sm text-slate-400 mt-1">
+            {ROLE_LABELS[role] ?? ""} ·{" "}
+            {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+          </p>
+        </div>
+      )}
+
+      {/* ── Anúncios / Avisos da empresa ── */}
+      {anunciosList.length > 0 && (
+        <div className="flex flex-col gap-2 mb-6">
+          {anunciosList.map((a, i) => (
+            <div
+              key={i}
+              className="rounded-xl px-4 py-3 border text-sm"
+              style={{
+                background: a.cor ? `${a.cor}12` : "#fff7ed",
+                borderColor: a.cor ? `${a.cor}44` : "#fed7aa",
+                color: a.cor ?? "#c2410c",
+              }}
+            >
+              {a.titulo && (
+                <span className="font-bold mr-2">{a.titulo}:</span>
+              )}
+              {a.texto}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* KPIs — linha 1 */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-4">
@@ -189,7 +392,10 @@ export default async function DashboardPage() {
                 const s = STATUS_MATRICULA[m.status] ?? STATUS_MATRICULA.ativa
                 return (
                   <div key={m.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-slate-50/60 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                      style={{ background: `linear-gradient(135deg, ${corEmpresa}bb, ${corEmpresa})` }}
+                    >
                       {m.aluno.nome.charAt(0)}
                     </div>
                     <div className="flex-1 min-w-0">

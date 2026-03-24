@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Building2, Puzzle } from "lucide-react"
 import { EmpresaFormModal, type EmpresaData } from "./EmpresaFormModal"
 import { EmpresaModulosModal } from "./EmpresaModulosModal"
+import { TIPOS_SISTEMA } from "@/lib/sistemas"
 
 interface EmpresaRow extends EmpresaData {
   _count?: { cursos: number }
@@ -29,6 +30,11 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
         email: empresa.email,
         telefone: empresa.telefone,
         ativa: !empresa.ativa,
+        cor: empresa.cor,
+        logo: empresa.logo,
+        banner: empresa.banner,
+        tipoSistema: empresa.tipoSistema,
+        descricao: empresa.descricao,
       }),
     })
     setLoadingId(null)
@@ -65,7 +71,7 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                 CNPJ
               </th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
-                Telefone
+                Tipo
               </th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                 Cursos
@@ -81,15 +87,32 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
           <tbody className="divide-y divide-slate-50">
             {empresas.map((empresa) => {
               const isLoading = loadingId === empresa.id
+              const tipoInfo = TIPOS_SISTEMA.find((t) => t.key === empresa.tipoSistema)
 
               return (
                 <tr key={empresa.id} className="hover:bg-slate-50/50 transition-colors">
                   {/* Empresa */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                        {empresa.nome.charAt(0).toUpperCase()}
-                      </div>
+                      {empresa.logo ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={empresa.logo}
+                          alt={empresa.nome}
+                          className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-100"
+                        />
+                      ) : (
+                        <div
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                          style={{
+                            background: empresa.cor
+                              ? `linear-gradient(135deg, ${empresa.cor}cc, ${empresa.cor})`
+                              : "linear-gradient(135deg, #fb923c, #ea580c)",
+                          }}
+                        >
+                          {empresa.nome.charAt(0).toUpperCase()}
+                        </div>
+                      )}
                       <div>
                         <div className="font-semibold text-slate-800">{empresa.nome}</div>
                         {empresa.email && (
@@ -106,9 +129,15 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                     </span>
                   </td>
 
-                  {/* Telefone */}
+                  {/* Tipo de sistema */}
                   <td className="px-6 py-4 hidden lg:table-cell">
-                    <span className="text-slate-500">{empresa.telefone ?? "—"}</span>
+                    {tipoInfo ? (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                        {tipoInfo.emoji} {tipoInfo.label}
+                      </span>
+                    ) : (
+                      <span className="text-slate-300 text-xs">—</span>
+                    )}
                   </td>
 
                   {/* Cursos */}
@@ -157,6 +186,7 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                             <EmpresaModulosModal
                               empresaId={empresa.id}
                               empresaNome={empresa.nome}
+                              tipoSistema={empresa.tipoSistema}
                               trigger={
                                 <button
                                   className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
