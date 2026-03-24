@@ -19,6 +19,8 @@ export async function GET() {
       phone: true,
       active: true,
       createdAt: true,
+      empresaId: true,
+      empresa: { select: { nome: true } },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -32,7 +34,7 @@ export async function POST(request: NextRequest) {
   if (authResult instanceof NextResponse) return authResult
 
   const body = await request.json()
-  const { name, email, password, role, department, phone } = body
+  const { name, email, password, role, department, phone, empresaId } = body
 
   if (!name || !email || !password || !role) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
@@ -46,8 +48,16 @@ export async function POST(request: NextRequest) {
   const hashedPassword = await bcrypt.hash(password, 12)
 
   const user = await db.user.create({
-    data: { name, email, password: hashedPassword, role, department, phone },
-    select: { id: true, name: true, email: true, role: true, department: true, active: true, createdAt: true },
+    data: {
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      department,
+      phone,
+      ...(empresaId ? { empresaId } : {}),
+    },
+    select: { id: true, name: true, email: true, role: true, department: true, active: true, createdAt: true, empresaId: true, empresa: { select: { nome: true } } },
   })
 
   return NextResponse.json(user, { status: 201 })

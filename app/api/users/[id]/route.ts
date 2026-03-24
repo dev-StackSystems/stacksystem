@@ -27,9 +27,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const { id } = await params
   const body = await request.json()
-  const { name, email, role, department, phone, active, password } = body
+  const { name, email, role, department, phone, active, password, empresaId } = body
 
-  const updateData: Record<string, unknown> = { name, email, role, department, phone, active }
+  const updateData: Record<string, unknown> = {
+    name,
+    email,
+    role,
+    department,
+    phone,
+    active,
+    empresaId: empresaId || null,
+  }
 
   if (password) {
     updateData.password = await bcrypt.hash(password, 12)
@@ -38,7 +46,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const user = await db.user.update({
     where: { id },
     data: updateData,
-    select: { id: true, name: true, email: true, role: true, department: true, active: true },
+    select: { id: true, name: true, email: true, role: true, department: true, active: true, empresaId: true, empresa: { select: { nome: true } } },
   })
 
   return NextResponse.json(user)

@@ -25,12 +25,15 @@ model User {
   phone      String?
   avatar     String?
   active     Boolean   @default(true)
+  empresaId  String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
+  empresa       Empresa?        @relation(fields: [empresaId], references: [id])
   accounts      Account[]
   sessions      Session[]
   segurancaLogs SegurancaUser[]
+  salasCreadas  Sala[]
 
   @@map("users")
 }
@@ -86,9 +89,42 @@ model Empresa {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  cursos EmpCurso[]
+  cursos   EmpCurso[]
+  usuarios User[]
+  modulos  EmpresaModulo[]
+  salas    Sala[]
 
   @@map("empresas")
+}
+
+// ─── Módulos por empresa ───────────────────────────────
+model EmpresaModulo {
+  id        String  @id @default(cuid())
+  empresaId String
+  modulo    String  // alunos, cursos, matriculas, baixas, certificados, salas, aulas
+  ativo     Boolean @default(true)
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, modulo])
+  @@map("empresa_modulos")
+}
+
+// ─── Salas WebRTC ──────────────────────────────────────
+model Sala {
+  id              String   @id @default(cuid())
+  nome            String
+  codigo          String   @unique @default(cuid())
+  empresaId       String?
+  criadoPorId     String
+  maxParticipantes Int     @default(10)
+  ativa           Boolean  @default(true)
+  createdAt       DateTime @default(now())
+
+  empresa    Empresa? @relation(fields: [empresaId], references: [id])
+  criadoPor  User     @relation(fields: [criadoPorId], references: [id])
+
+  @@map("salas")
 }
 
 // ─── Cursos por empresa ────────────────────────────────

@@ -4,96 +4,104 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, Play, DollarSign,
-  Award, Building2, ShieldCheck,
+  Award, Building2, ShieldCheck, Video,
 } from "lucide-react"
 import { SidebarNavLink } from "./SidebarNavLink"
 
-type NavItem = { icon: typeof LayoutDashboard; label: string; href: string }
+type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }
 
-const GROUPS_BY_ROLE: Record<string, NavGroup[]> = {
-  A: [
-    {
-      label: null,
-      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
-    },
-    {
-      label: "Acadêmico",
-      items: [
-        { icon: GraduationCap, label: "Alunos",      href: "/dashboard/alunos" },
-        { icon: BookOpen,      label: "Matrículas",  href: "/dashboard/matriculas" },
-        { icon: Layers,        label: "Cursos",      href: "/dashboard/cursos" },
-      ],
-    },
-    {
-      label: "Conteúdo",
-      items: [
-        { icon: Play,     label: "Aulas",    href: "/dashboard/aulas" },
-      ],
-    },
-    {
-      label: "Financeiro",
-      items: [
-        { icon: DollarSign, label: "Baixas",       href: "/dashboard/baixas" },
-        { icon: Award,      label: "Certificados", href: "/dashboard/certificados" },
-      ],
-    },
-    {
-      label: "Sistema",
-      items: [
-        { icon: Building2,  label: "Empresas",       href: "/dashboard/empresas" },
-        { icon: Users,      label: "Usuários",        href: "/dashboard/usuarios" },
-        { icon: ShieldCheck,label: "Segurança",       href: "/dashboard/seguranca" },
-        { icon: Settings,   label: "Configurações",   href: "/dashboard/configuracoes" },
-      ],
-    },
-  ],
-  T: [
-    {
-      label: null,
-      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
-    },
-    {
-      label: "Acadêmico",
-      items: [
-        { icon: GraduationCap, label: "Alunos",     href: "/dashboard/alunos" },
-        { icon: BookOpen,      label: "Matrículas", href: "/dashboard/matriculas" },
-        { icon: Layers,        label: "Cursos",     href: "/dashboard/cursos" },
-      ],
-    },
-    {
-      label: "Conteúdo",
-      items: [
-        { icon: Play, label: "Aulas", href: "/dashboard/aulas" },
-      ],
-    },
-    {
-      label: "Sistema",
-      items: [
-        { icon: Users, label: "Usuários", href: "/dashboard/usuarios" },
-      ],
-    },
-  ],
-  F: [
-    {
-      label: null,
-      items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
-    },
-    {
-      label: "Conteúdo",
-      items: [
-        { icon: Layers, label: "Cursos", href: "/dashboard/cursos" },
-        { icon: Play,   label: "Aulas",  href: "/dashboard/aulas" },
-      ],
-    },
-  ],
+// Grupos completos do Admin — fonte única de verdade
+const ADMIN_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
+  },
+  {
+    label: "Acadêmico",
+    items: [
+      { icon: GraduationCap, label: "Alunos",     href: "/dashboard/alunos",     moduleKey: "alunos" },
+      { icon: BookOpen,      label: "Matrículas", href: "/dashboard/matriculas", moduleKey: "matriculas" },
+      { icon: Layers,        label: "Cursos",     href: "/dashboard/cursos",     moduleKey: "cursos" },
+    ],
+  },
+  {
+    label: "Conteúdo",
+    items: [
+      { icon: Play,  label: "Aulas",        href: "/dashboard/aulas",  moduleKey: "aulas" },
+      { icon: Video, label: "Salas de Aula", href: "/dashboard/salas",  moduleKey: "salas" },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { icon: DollarSign, label: "Financeiro",   href: "/dashboard/baixas",        moduleKey: "baixas" },
+      { icon: Award,      label: "Certificados", href: "/dashboard/certificados",  moduleKey: "certificados" },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { icon: Building2,   label: "Empresas",     href: "/dashboard/empresas" },
+      { icon: Users,       label: "Usuários",      href: "/dashboard/usuarios" },
+      { icon: ShieldCheck, label: "Segurança",     href: "/dashboard/seguranca" },
+      { icon: Settings,    label: "Configurações", href: "/dashboard/configuracoes" },
+    ],
+  },
+]
+
+/**
+ * Filtra os grupos para roles T e F com base nos módulos habilitados da empresa.
+ * - Dashboard: sempre visível
+ * - Usuários: sempre visível para T
+ * - Demais itens: visíveis apenas se moduleKey está em `modules`
+ */
+function buildFilteredGroups(role: string, modules: string[]): NavGroup[] {
+  const result: NavGroup[] = []
+
+  for (const group of ADMIN_GROUPS) {
+    // Grupo Sistema: para T só Usuários; para F nenhum item de sistema
+    if (group.label === "Sistema") {
+      if (role === "T") {
+        result.push({
+          label: "Sistema",
+          items: [{ icon: Users, label: "Usuários", href: "/dashboard/usuarios" }],
+        })
+      }
+      continue
+    }
+
+    // Grupo sem label (Dashboard) — sempre visível
+    if (group.label === null) {
+      result.push(group)
+      continue
+    }
+
+    // Demais grupos: filtrar por moduleKey
+    const filteredItems = group.items.filter(
+      (item) => !item.moduleKey || modules.includes(item.moduleKey)
+    )
+
+    if (filteredItems.length > 0) {
+      result.push({ label: group.label, items: filteredItems })
+    }
+  }
+
+  return result
 }
 
-interface Props { role: string }
+interface Props {
+  role: string
+  modules: string[]
+}
 
-export function Sidebar({ role }: Props) {
+export function Sidebar({ role, modules }: Props) {
   const [open, setOpen] = useState(false)
-  const groups = GROUPS_BY_ROLE[role] ?? GROUPS_BY_ROLE.F
+
+  const groups =
+    role === "A"
+      ? ADMIN_GROUPS
+      : buildFilteredGroups(role, modules)
 
   return (
     <>
@@ -136,7 +144,7 @@ export function Sidebar({ role }: Props) {
                 </p>
               )}
               <div className="flex flex-col gap-0.5">
-                {group.items.map(item => (
+                {group.items.map((item) => (
                   <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
                 ))}
               </div>

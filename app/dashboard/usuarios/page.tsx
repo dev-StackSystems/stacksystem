@@ -17,19 +17,28 @@ export default async function UsuariosPage() {
 
   const isAdmin = session.user.role === UserRole.A
 
-  const users = await db.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      department: true,
-      phone: true,
-      active: true,
-      createdAt: true,
-    },
-    orderBy: { createdAt: "desc" },
-  })
+  const [users, empresas] = await Promise.all([
+    db.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+        phone: true,
+        active: true,
+        createdAt: true,
+        empresaId: true,
+        empresa: { select: { nome: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    db.empresa.findMany({
+      where: { ativa: true },
+      select: { id: true, nome: true },
+      orderBy: { nome: "asc" },
+    }),
+  ])
 
   return (
     <div>
@@ -41,6 +50,7 @@ export default async function UsuariosPage() {
         {isAdmin && (
           <UserFormModal
             mode="create"
+            empresas={empresas}
             trigger={
               <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
                 <UserPlus size={16} />
@@ -51,7 +61,7 @@ export default async function UsuariosPage() {
         )}
       </div>
 
-      <UserTable users={users} isAdmin={isAdmin} />
+      <UserTable users={users} isAdmin={isAdmin} empresas={empresas} />
     </div>
   )
 }

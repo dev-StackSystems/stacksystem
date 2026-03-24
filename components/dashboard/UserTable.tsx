@@ -13,11 +13,19 @@ interface User {
   phone?: string | null
   active: boolean
   createdAt: Date | string
+  empresaId?: string | null
+  empresa?: { nome: string } | null
+}
+
+interface Empresa {
+  id: string
+  nome: string
 }
 
 interface Props {
   users: User[]
   isAdmin: boolean
+  empresas?: Empresa[]
 }
 
 const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
@@ -26,7 +34,7 @@ const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   F: { label: "Corpo Docente", className: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
 }
 
-export function UserTable({ users, isAdmin }: Props) {
+export function UserTable({ users, isAdmin, empresas = [] }: Props) {
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
@@ -66,6 +74,7 @@ export function UserTable({ users, isAdmin }: Props) {
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Usuário</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Perfil</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Departamento</th>
+              <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Empresa</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
               {isAdmin && (
                 <th className="text-right px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Ações</th>
@@ -98,6 +107,9 @@ export function UserTable({ users, isAdmin }: Props) {
                   <td className="px-6 py-4 hidden lg:table-cell">
                     <span className="text-slate-500">{user.department ?? "—"}</span>
                   </td>
+                  <td className="px-6 py-4 hidden xl:table-cell">
+                    <span className="text-slate-500">{user.empresa?.nome ?? "—"}</span>
+                  </td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                       user.active
@@ -118,6 +130,7 @@ export function UserTable({ users, isAdmin }: Props) {
                             <UserFormModal
                               mode="edit"
                               user={user}
+                              empresas={empresas}
                               trigger={
                                 <button
                                   className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"

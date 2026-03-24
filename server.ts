@@ -35,16 +35,28 @@ app.prepare().then(() => {
       console.log(`[WebRTC] ${socket.id} entrou na sala ${roomId}`)
     })
 
-    socket.on("offer", ({ roomId, offer }: { roomId: string; offer: RTCSessionDescriptionInit }) => {
-      socket.to(roomId).emit("offer", { offer, from: socket.id })
+    socket.on("offer", ({ roomId, offer, to }: { roomId: string; offer: RTCSessionDescriptionInit; to?: string }) => {
+      if (to) {
+        io.to(to).emit("offer", { offer, from: socket.id })
+      } else {
+        socket.to(roomId).emit("offer", { offer, from: socket.id })
+      }
     })
 
-    socket.on("answer", ({ roomId, answer }: { roomId: string; answer: RTCSessionDescriptionInit }) => {
-      socket.to(roomId).emit("answer", { answer, from: socket.id })
+    socket.on("answer", ({ roomId, answer, to }: { roomId: string; answer: RTCSessionDescriptionInit; to?: string }) => {
+      if (to) {
+        io.to(to).emit("answer", { answer, from: socket.id })
+      } else {
+        socket.to(roomId).emit("answer", { answer, from: socket.id })
+      }
     })
 
-    socket.on("ice-candidate", ({ roomId, candidate }: { roomId: string; candidate: RTCIceCandidateInit }) => {
-      socket.to(roomId).emit("ice-candidate", { candidate, from: socket.id })
+    socket.on("ice-candidate", ({ roomId, candidate, to }: { roomId: string; candidate: RTCIceCandidateInit; to?: string }) => {
+      if (to) {
+        io.to(to).emit("ice-candidate", { candidate, from: socket.id })
+      } else {
+        socket.to(roomId).emit("ice-candidate", { candidate, from: socket.id })
+      }
     })
 
     socket.on("leave-room", (roomId: string) => {

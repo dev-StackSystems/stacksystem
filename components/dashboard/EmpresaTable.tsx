@@ -1,8 +1,9 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Building2 } from "lucide-react"
+import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Building2, Puzzle } from "lucide-react"
 import { EmpresaFormModal, type EmpresaData } from "./EmpresaFormModal"
+import { EmpresaModulosModal } from "./EmpresaModulosModal"
 
 interface EmpresaRow extends EmpresaData {
   _count?: { cursos: number }
@@ -150,6 +151,22 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                               </button>
                             }
                           />
+
+                          {/* Gerenciar Módulos — apenas admin */}
+                          {isAdmin && (
+                            <EmpresaModulosModal
+                              empresaId={empresa.id}
+                              empresaNome={empresa.nome}
+                              trigger={
+                                <button
+                                  className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                                  title="Gerenciar Módulos"
+                                >
+                                  <Puzzle size={15} />
+                                </button>
+                              }
+                            />
+                          )}
 
                           {/* Toggle ativo — apenas admin */}
                           {isAdmin && (

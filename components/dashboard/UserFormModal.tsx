@@ -12,12 +12,19 @@ interface UserData {
   role: string
   department?: string | null
   phone?: string | null
+  empresaId?: string | null
+}
+
+interface Empresa {
+  id: string
+  nome: string
 }
 
 interface Props {
   mode: Mode
   user?: UserData
   trigger: React.ReactNode
+  empresas?: Empresa[]
 }
 
 const ROLES = [
@@ -26,7 +33,7 @@ const ROLES = [
   { value: "F", label: "Corpo Docente" },
 ]
 
-export function UserFormModal({ mode, user, trigger }: Props) {
+export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -39,6 +46,7 @@ export function UserFormModal({ mode, user, trigger }: Props) {
     role: "F",
     department: "",
     phone: "",
+    empresaId: "",
   })
 
   useEffect(() => {
@@ -50,9 +58,10 @@ export function UserFormModal({ mode, user, trigger }: Props) {
         role: user.role,
         department: user.department ?? "",
         phone: user.phone ?? "",
+        empresaId: user.empresaId ?? "",
       })
     } else {
-      setForm({ name: "", email: "", password: "", role: "F", department: "", phone: "" })
+      setForm({ name: "", email: "", password: "", role: "F", department: "", phone: "", empresaId: "" })
     }
     setError("")
   }, [open, user, mode])
@@ -76,12 +85,13 @@ export function UserFormModal({ mode, user, trigger }: Props) {
       const url = mode === "create" ? "/api/users" : `/api/users/${user!.id}`
       const method = mode === "create" ? "POST" : "PUT"
 
-      const body: Record<string, string> = {
+      const body: Record<string, string | null> = {
         name: form.name,
         email: form.email,
         role: form.role,
         department: form.department,
         phone: form.phone,
+        empresaId: form.empresaId || null,
       }
       if (form.password) body.password = form.password
 
@@ -164,6 +174,23 @@ export function UserFormModal({ mode, user, trigger }: Props) {
 
               {field("Departamento", "department")}
               {field("Telefone", "phone")}
+
+              {/* Empresa */}
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.1em]">
+                  Empresa
+                </label>
+                <select
+                  value={form.empresaId}
+                  onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                >
+                  <option value="">— Nenhuma empresa —</option>
+                  {empresas.map((emp) => (
+                    <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                  ))}
+                </select>
+              </div>
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-xs text-red-600 font-medium">
