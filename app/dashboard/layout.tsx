@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { Sidebar } from "@/components/dashboard/Sidebar"
-import { TopBar } from "@/components/dashboard/TopBar"
-import { SessionWrapper } from "@/components/dashboard/SessionWrapper"
+import { authOptions } from "@/backend/auth/nextauth-config"
+import { db } from "@/backend/database/prisma-client"
+import { Sidebar } from "@/frontend/layout/dashboard-sidebar"
+import { TopBar } from "@/frontend/layout/dashboard-topbar"
+import { SessionWrapper } from "@/frontend/layout/dashboard-session-wrapper"
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions)

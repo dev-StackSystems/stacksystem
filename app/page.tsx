@@ -1,13 +1,13 @@
-import Navbar from "@/components/sections/Navbar"
-import Hero from "@/components/sections/Hero"
-import Marquee from "@/components/sections/Marquee"
-import Services from "@/components/sections/Services"
-import Migration from "@/components/sections/Migration"
-import About from "@/components/sections/About"
-import Results from "@/components/sections/Results"
-import Contact from "@/components/sections/Contact"
-import Footer from "@/components/sections/Footer"
-import Mascot from "@/components/Mascot"
+import Navbar from "@/frontend/landing/landing-navbar"
+import Hero from "@/frontend/landing/landing-hero"
+import Marquee from "@/frontend/landing/landing-marquee"
+import Services from "@/frontend/landing/landing-services"
+import Migration from "@/frontend/landing/landing-migration"
+import About from "@/frontend/landing/landing-about"
+import Results from "@/frontend/landing/landing-results"
+import Contact from "@/frontend/landing/landing-contact"
+import Footer from "@/frontend/landing/landing-footer"
+import Mascot from "@/frontend/mascot"
 
 export default function Home() {
   return (

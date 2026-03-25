@@ -1,10 +1,10 @@
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { redirect } from "next/navigation"
 import { UserRole } from "@prisma/client"
-import { EmpresaTable } from "@/components/dashboard/EmpresaTable"
-import { EmpresaFormModal } from "@/components/dashboard/EmpresaFormModal"
+import { EmpresaTable } from "@/frontend/tables/empresa-data-table"
+import { EmpresaFormModal } from "@/frontend/modals/empresa-form-modal"
 import { Plus } from "lucide-react"
 
 export default async function EmpresasPage() {

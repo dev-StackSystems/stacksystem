@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Layers } from "lucide-react"
-import { CursoFormModal, type CursoData } from "./CursoFormModal"
+import { CursoFormModal, type CursoData } from "@/frontend/modals/curso-form-modal"
 
 interface EmpresaOption {
   id: string

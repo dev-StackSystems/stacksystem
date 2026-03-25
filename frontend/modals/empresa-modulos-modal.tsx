@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
 import { X, Loader2, Puzzle } from "lucide-react"
-import { EmpresaModulosManager } from "./EmpresaModulosManager"
+import { EmpresaModulosManager } from "./empresa-modulos-manager"
 
 interface Props {
   empresaId: string

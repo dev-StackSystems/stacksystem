@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth-helpers"
-import { db } from "@/lib/db"
+import { getCurrentUser } from "@/backend/auth/session-helpers"
+import { db } from "@/backend/database/prisma-client"
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 

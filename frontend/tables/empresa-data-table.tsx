@@ -2,9 +2,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Building2, Puzzle } from "lucide-react"
-import { EmpresaFormModal, type EmpresaData } from "./EmpresaFormModal"
-import { EmpresaModulosModal } from "./EmpresaModulosModal"
-import { TIPOS_SISTEMA } from "@/lib/sistemas"
+import { EmpresaFormModal, type EmpresaData } from "@/frontend/modals/empresa-form-modal"
+import { EmpresaModulosModal } from "@/frontend/modals/empresa-modulos-modal"
+import { TIPOS_SISTEMA } from "@/shared/constants/sistema-types"
 
 interface EmpresaRow extends EmpresaData {
   _count?: { cursos: number }

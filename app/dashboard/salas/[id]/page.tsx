@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect, notFound } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { db } from "@/lib/db"
-import { VideoRoom } from "@/components/dashboard/VideoRoom"
+import { authOptions } from "@/backend/auth/nextauth-config"
+import { db } from "@/backend/database/prisma-client"
+import { VideoRoom } from "@/frontend/video/webrtc-video-room"
 
 export const dynamic = "force-dynamic"
 

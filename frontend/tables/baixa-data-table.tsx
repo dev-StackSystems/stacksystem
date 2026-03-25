@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Pencil, Trash2, Loader2 } from "lucide-react"
-import { BaixaFormModal, BaixaData, MatriculaSimples } from "./BaixaFormModal"
+import { BaixaFormModal, BaixaData, MatriculaSimples } from "@/frontend/modals/baixa-form-modal"
 
 interface Props {
   baixas: BaixaData[]

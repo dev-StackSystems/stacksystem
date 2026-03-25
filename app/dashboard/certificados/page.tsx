@@ -1,6 +1,6 @@
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { redirect } from "next/navigation"
 import { Award } from "lucide-react"
 

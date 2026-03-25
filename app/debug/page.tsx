@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
 type CheckResult = { ok: boolean; label: string; value?: string; error?: string }

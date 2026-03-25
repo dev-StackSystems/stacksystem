@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Pencil, Trash2, Loader2 } from "lucide-react"
-import { MatriculaFormModal, MatriculaData } from "./MatriculaFormModal"
+import { MatriculaFormModal, MatriculaData } from "@/frontend/modals/matricula-form-modal"
 
 interface CursoData {
   id: string

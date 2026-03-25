@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { AlunoFormModal } from "./AlunoFormModal"
+import { AlunoFormModal } from "@/frontend/modals/aluno-form-modal"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2 } from "lucide-react"
 
 interface Aluno {

@@ -23,7 +23,13 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//c/Users/i3Soluções/Documents/scripts/stacksystem/**)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(cmd /c \"dir C:\\\\Users\\\\i3Soluções\\\\Downloads\\\\*.php /s /b 2>nul\")",
+      "Bash(powershell -Command \"Get-ChildItem 'C:\\\\Users\\\\i3Soluções\\\\Downloads' -Recurse -Filter '*.php' | Select-Object FullName\")",
+      "Bash(git push:*)",
+      "Bash(grep -rl \"components/dashboard\\\\|components/sections\\\\|lib/auth\" /c/Users/i3Soluções/Documents/scripts/stacksystem --include=*.ts --include=*.tsx)",
+      "Bash(grep -rl @/lib/auth /c/Users/i3Soluções/Documents/scripts/stacksystem --include=*.ts --include=*.tsx)",
+      "Bash(grep -rl \"@/components/dashboard\\\\|@/components/sections\" /c/Users/i3Soluções/Documents/scripts/stacksystem --include=*.ts --include=*.tsx)"
     ]
   }
 }

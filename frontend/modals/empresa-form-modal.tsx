@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { X, Loader2 } from "lucide-react"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/lib/sistemas"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/shared/constants/sistema-types"
 
 type Mode = "create" | "edit"
 

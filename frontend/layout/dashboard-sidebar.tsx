@@ -6,7 +6,7 @@ import {
   GraduationCap, BookOpen, Layers, Play, DollarSign,
   Award, Building2, ShieldCheck, Video,
 } from "lucide-react"
-import { SidebarNavLink } from "./SidebarNavLink"
+import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
 
 type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }

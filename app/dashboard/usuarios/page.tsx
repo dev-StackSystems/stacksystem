@@ -1,10 +1,10 @@
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { redirect } from "next/navigation"
 import { UserRole } from "@prisma/client"
-import { UserTable } from "@/components/dashboard/UserTable"
-import { UserFormModal } from "@/components/dashboard/UserFormModal"
+import { UserTable } from "@/frontend/tables/user-data-table"
+import { UserFormModal } from "@/frontend/modals/user-form-modal"
 import { UserPlus } from "lucide-react"
 
 export default async function UsuariosPage() {

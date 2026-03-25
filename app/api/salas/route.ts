@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
-import { db } from "@/lib/db"
+import { authOptions } from "@/backend/auth/nextauth-config"
+import { db } from "@/backend/database/prisma-client"
 
 function genCode(): string {
   return Math.random().toString(36).substring(2, 8).toUpperCase()

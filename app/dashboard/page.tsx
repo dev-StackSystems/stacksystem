@@ -1,13 +1,13 @@
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { UserRole } from "@prisma/client"
 import {
   GraduationCap, BookOpen, Layers, Play,
   DollarSign, Award, Users, TrendingUp,
   CheckCircle2, Clock, XCircle,
 } from "lucide-react"
-import { TIPOS_SISTEMA } from "@/lib/sistemas"
+import { TIPOS_SISTEMA } from "@/shared/constants/sistema-types"
 
 const ROLE_LABELS: Record<string, string> = {
   A: "Administrador",

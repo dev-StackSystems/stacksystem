@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/auth-helpers"
+import { getCurrentUser } from "@/backend/auth/session-helpers"
 
 // In-memory para Fase 1 — substituir por tabela DB na Fase 2
 const roomStore = new Map<string, { id: string; name: string; createdBy: string; createdAt: string }>()

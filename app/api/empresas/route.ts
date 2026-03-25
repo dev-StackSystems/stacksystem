@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { getCurrentUser, requireRole } from "@/lib/auth-helpers"
+import { db } from "@/backend/database/prisma-client"
+import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/lib/sistemas"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/shared/constants/sistema-types"
 
 // GET /api/empresas — qualquer usuário autenticado pode listar
 export async function GET() {

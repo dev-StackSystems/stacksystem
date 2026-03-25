@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { authOptions } from "@/lib/auth"
-import { db } from "@/lib/db"
+import { authOptions } from "@/backend/auth/nextauth-config"
+import { db } from "@/backend/database/prisma-client"
 import { Video, Plus } from "lucide-react"
-import { SalaCard } from "@/components/dashboard/SalaCard"
-import { SalaFormModal } from "@/components/dashboard/SalaFormModal"
+import { SalaCard } from "@/frontend/tables/sala-card"
+import { SalaFormModal } from "@/frontend/modals/sala-form-modal"
 
 export const dynamic = "force-dynamic"
 

@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { UserFormModal } from "./UserFormModal"
+import { UserFormModal } from "@/frontend/modals/user-form-modal"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2 } from "lucide-react"
 
 interface User {

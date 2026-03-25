@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { getCurrentUser, requireRole } from "@/lib/auth-helpers"
+import { db } from "@/backend/database/prisma-client"
+import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
 
 // GET /api/matriculas — qualquer role autenticado pode listar

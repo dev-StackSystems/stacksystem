@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, RefreshCw } from "lucide-react"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/lib/sistemas"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/shared/constants/sistema-types"
 
 interface Props {
   empresaId: string

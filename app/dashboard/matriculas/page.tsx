@@ -1,10 +1,10 @@
-import { db } from "@/lib/db"
+import { db } from "@/backend/database/prisma-client"
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { redirect } from "next/navigation"
 import { UserRole } from "@prisma/client"
-import { MatriculaTable } from "@/components/dashboard/MatriculaTable"
-import { MatriculaFormModal } from "@/components/dashboard/MatriculaFormModal"
+import { MatriculaTable } from "@/frontend/tables/matricula-data-table"
+import { MatriculaFormModal } from "@/frontend/modals/matricula-form-modal"
 import { BookOpen } from "lucide-react"
 
 export default async function MatriculasPage() {

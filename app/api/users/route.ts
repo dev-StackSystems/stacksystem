@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { requireRole } from "@/lib/auth-helpers"
+import { db } from "@/backend/database/prisma-client"
+import { requireRole } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
 import bcrypt from "bcryptjs"
 

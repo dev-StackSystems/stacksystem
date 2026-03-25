@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/lib/db"
-import { getCurrentUser } from "@/lib/auth-helpers"
+import { db } from "@/backend/database/prisma-client"
+import { getCurrentUser } from "@/backend/auth/session-helpers"
 
 // GET /api/alunos — qualquer role autenticado pode listar
 export async function GET() {
