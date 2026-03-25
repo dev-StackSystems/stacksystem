@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/backend/database/prisma-client"
-import { requireRole } from "@/backend/auth/session-helpers"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
 import { UserRole } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
@@ -13,11 +14,25 @@ const USER_SELECT = {
   grupo:   { select: { nome: true } },
 }
 
+function getRequester(session: Awaited<ReturnType<typeof getServerSession<typeof authOptions>>>) {
+  if (!session?.user) return null
+  return session.user
+}
+
 export async function GET() {
-  const authResult = await requireRole([UserRole.A, UserRole.T])
-  if (authResult instanceof NextResponse) return authResult
+  const session = await getServerSession(authOptions)
+  const requester = getRequester(session)
+  if (!requester) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+
+  const isSystemAdmin = requester.role === UserRole.A
+  const canAccess = isSystemAdmin || requester.grupoIsAdmin || requester.role === UserRole.T
+  if (!canAccess) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+
+  // T e grupoIsAdmin só veem usuários da própria empresa
+  const where = isSystemAdmin ? {} : { empresaId: requester.empresaId ?? "" }
 
   const users = await db.user.findMany({
+    where,
     select: USER_SELECT,
     orderBy: { createdAt: "desc" },
   })
@@ -26,8 +41,16 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const authResult = await requireRole([UserRole.A])
-  if (authResult instanceof NextResponse) return authResult
+  const session = await getServerSession(authOptions)
+  const requester = getRequester(session)
+  if (!requester) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+
+  const isSystemAdmin = requester.role === UserRole.A
+  const isEmpresaAdmin = requester.grupoIsAdmin && !!requester.empresaId
+
+  if (!isSystemAdmin && !isEmpresaAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+  }
 
   const body = await request.json()
   const { name, email, password, role, department, phone, empresaId, setorId, grupoId } = body
@@ -36,11 +59,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
   }
 
-  if (role !== UserRole.A && !empresaId) {
-    return NextResponse.json(
-      { error: "Empresa é obrigatória para este perfil de usuário." },
-      { status: 400 }
-    )
+  // Não-admin do sistema só pode criar usuários na própria empresa
+  const resolvedEmpresaId = isSystemAdmin ? empresaId : requester.empresaId
+
+  if (role !== UserRole.A && !resolvedEmpresaId) {
+    return NextResponse.json({ error: "Empresa é obrigatória para este perfil de usuário." }, { status: 400 })
+  }
+
+  // Não-admin não pode criar UserRole.A
+  if (!isSystemAdmin && role === UserRole.A) {
+    return NextResponse.json({ error: "Sem permissão para criar administradores do sistema." }, { status: 403 })
   }
 
   const existing = await db.user.findUnique({ where: { email } })
@@ -53,9 +81,9 @@ export async function POST(request: NextRequest) {
   const user = await db.user.create({
     data: {
       name, email, password: hashedPassword, role, department, phone,
-      ...(empresaId ? { empresaId } : {}),
-      ...(setorId   ? { setorId }   : {}),
-      ...(grupoId   ? { grupoId }   : {}),
+      ...(resolvedEmpresaId ? { empresaId: resolvedEmpresaId } : {}),
+      ...(setorId ? { setorId } : {}),
+      ...(grupoId ? { grupoId } : {}),
     },
     select: USER_SELECT,
   })

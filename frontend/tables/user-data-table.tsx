@@ -31,6 +31,8 @@ interface Empresa {
 interface Props {
   users: User[]
   isAdmin: boolean
+  canManage?: boolean
+  isSystemAdmin?: boolean
   empresas?: Empresa[]
   setores?: { id: string; nome: string; empresaId: string }[]
   grupos?: { id: string; nome: string; empresaId: string }[]
@@ -42,7 +44,8 @@ const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   F: { label: "Corpo Docente", className: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
 }
 
-export function UserTable({ users, isAdmin, empresas = [], setores = [], grupos = [] }: Props) {
+export function UserTable({ users, isAdmin, canManage, isSystemAdmin = false, empresas = [], setores = [], grupos = [] }: Props) {
+  const canEdit = canManage ?? isAdmin
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
@@ -84,7 +87,7 @@ export function UserTable({ users, isAdmin, empresas = [], setores = [], grupos 
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden lg:table-cell">Departamento</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider hidden xl:table-cell">Empresa</th>
               <th className="text-left px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Status</th>
-              {isAdmin && (
+              {canEdit && (
                 <th className="text-right px-6 py-3.5 text-xs font-bold text-slate-400 uppercase tracking-wider">Ações</th>
               )}
             </tr>
@@ -137,7 +140,7 @@ export function UserTable({ users, isAdmin, empresas = [], setores = [], grupos 
                       {user.active ? "Ativo" : "Inativo"}
                     </span>
                   </td>
-                  {isAdmin && (
+                  {canEdit && (
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-end gap-2">
                         {isLoading ? (
@@ -151,6 +154,7 @@ export function UserTable({ users, isAdmin, empresas = [], setores = [], grupos 
                               empresas={empresas}
                               setores={setores}
                               grupos={grupos}
+                              isSystemAdmin={isSystemAdmin}
                               trigger={
                                 <button
                                   className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"

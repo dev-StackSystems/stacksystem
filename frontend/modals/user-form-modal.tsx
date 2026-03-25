@@ -31,13 +31,8 @@ interface Props {
   empresas?: Empresa[]
   setores?: { id: string; nome: string; empresaId: string }[]
   grupos?: { id: string; nome: string; empresaId: string }[]
+  isSystemAdmin?: boolean
 }
-
-const ROLES = [
-  { value: "A", label: "Administrador" },
-  { value: "T", label: "Técnico" },
-  { value: "F", label: "Corpo Docente" },
-]
 
 const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
 const inputClass =
@@ -45,7 +40,18 @@ const inputClass =
 const selectClass =
   "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
-export function UserFormModal({ mode, user, trigger, empresas = [], setores = [], grupos = [] }: Props) {
+const ROLES_ADMIN = [
+  { value: "A", label: "Administrador do Sistema" },
+  { value: "T", label: "Técnico" },
+  { value: "F", label: "Corpo Docente" },
+]
+
+const ROLES_EMPRESA = [
+  { value: "T", label: "Técnico" },
+  { value: "F", label: "Corpo Docente" },
+]
+
+export function UserFormModal({ mode, user, trigger, empresas = [], setores = [], grupos = [], isSystemAdmin = false }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -213,8 +219,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                 />
               </div>
 
-              {/* Linha 3: Role | Empresa */}
-              <div className="grid grid-cols-2 gap-3">
+              {/* Linha 3: Role | Empresa (empresa só editável para admin do sistema) */}
+              <div className={`grid gap-3 ${isSystemAdmin ? "grid-cols-2" : "grid-cols-1"}`}>
                 <div>
                   <label className={labelClass}>
                     Perfil <span className="text-red-400">*</span>
@@ -224,11 +230,12 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                     onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
                     className={selectClass}
                   >
-                    {ROLES.map((r) => (
+                    {(isSystemAdmin ? ROLES_ADMIN : ROLES_EMPRESA).map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
                   </select>
                 </div>
+                {isSystemAdmin && (
                 <div>
                   <label className={labelClass}>
                     Empresa {empresaRequired && <span className="text-red-400">*</span>}
@@ -263,6 +270,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                     </span>
                   )}
                 </div>
+                )}
               </div>
 
               {/* Linha 4: Departamento | Telefone */}
