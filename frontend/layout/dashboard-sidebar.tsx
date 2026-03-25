@@ -11,7 +11,7 @@ import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
 type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }
 
-// Módulos acadêmicos — usados como template para filtragem
+// Template com todos os módulos acadêmicos — usado para filtragem
 const MODULE_GROUPS: NavGroup[] = [
   {
     label: null,
@@ -41,7 +41,7 @@ const MODULE_GROUPS: NavGroup[] = [
   },
 ]
 
-// Nav exclusiva do admin do sistema (UserRole.A) — sem módulos da escola
+// Nav exclusiva do admin do sistema (UserRole.A)
 const SYSTEM_ADMIN_GROUPS: NavGroup[] = [
   {
     label: null,
@@ -63,14 +63,12 @@ function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: strin
 
   for (const group of MODULE_GROUPS) {
     if (group.label === null) { result.push(group); continue }
-
     const filteredItems = group.items.filter(
       (item) => !item.moduleKey || modules.includes(item.moduleKey)
     )
     if (filteredItems.length > 0) result.push({ label: group.label, items: filteredItems })
   }
 
-  // Seção Sistema baseada em permissão
   if (grupoIsAdmin) {
     result.push({
       label: "Sistema",
@@ -91,11 +89,24 @@ function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: strin
   return result
 }
 
-interface Props { role: string; grupoIsAdmin: boolean; modules: string[] }
+interface Brand {
+  cor: string | null
+  logo: string | null
+  nome: string
+}
 
-export function Sidebar({ role, grupoIsAdmin, modules }: Props) {
+interface Props {
+  role: string
+  grupoIsAdmin: boolean
+  modules: string[]
+  brand?: Brand | null
+}
+
+export function Sidebar({ role, grupoIsAdmin, modules, brand }: Props) {
   const [open, setOpen] = useState(false)
   const groups = role === "A" ? SYSTEM_ADMIN_GROUPS : buildFilteredGroups(role, grupoIsAdmin, modules)
+  const brandColor = brand?.cor || "#f97316"
+  const isDefaultBrand = !brand
 
   return (
     <>
@@ -115,14 +126,35 @@ export function Sidebar({ role, grupoIsAdmin, modules }: Props) {
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
+        {/* Header com logo/ícone da empresa */}
         <div className="px-6 py-5 border-b border-white/[0.06] flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-sm font-serif shadow shadow-orange-500/25">
-            S
-          </div>
-          <span className="font-serif text-[15px] font-bold text-white">
-            Stack<span className="text-orange-400">Systems</span>
+          {brand?.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={brand.logo}
+              alt={brand.nome}
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+            />
+          ) : (
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-sm font-serif shadow"
+              style={
+                isDefaultBrand
+                  ? { background: "linear-gradient(135deg, #fb923c, #ea580c)" }
+                  : { background: `linear-gradient(135deg, ${brandColor}cc, ${brandColor})` }
+              }
+            >
+              {brand ? brand.nome.charAt(0).toUpperCase() : "S"}
+            </div>
+          )}
+          <span className="font-serif text-[15px] font-bold text-white truncate">
+            {brand ? (
+              brand.nome
+            ) : (
+              <>Stack<span style={{ color: brandColor }}>Systems</span></>
+            )}
           </span>
-          <button className="ml-auto lg:hidden text-white/40 hover:text-white" onClick={() => setOpen(false)}>
+          <button className="ml-auto lg:hidden text-white/40 hover:text-white shrink-0" onClick={() => setOpen(false)}>
             <X size={18} />
           </button>
         </div>
@@ -137,7 +169,13 @@ export function Sidebar({ role, grupoIsAdmin, modules }: Props) {
               )}
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
-                  <SidebarNavLink key={item.href} href={item.href} label={item.label} icon={item.icon} />
+                  <SidebarNavLink
+                    key={item.href}
+                    href={item.href}
+                    label={item.label}
+                    icon={item.icon}
+                    brandColor={brandColor}
+                  />
                 ))}
               </div>
             </div>
