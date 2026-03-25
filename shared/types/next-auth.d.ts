@@ -8,15 +8,21 @@ declare module "next-auth" {
       name: string
       email: string
       role: string
-      empresaId: string | null
+      empresaId:    string | null
+      grupoId:      string | null
+      setorId:      string | null
+      grupoIsAdmin: boolean
     }
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
-    id: string
-    role: string
-    empresaId: string | null
+    id:           string
+    role:         string
+    empresaId:    string | null
+    grupoId:      string | null
+    setorId:      string | null
+    grupoIsAdmin: boolean
   }
 }

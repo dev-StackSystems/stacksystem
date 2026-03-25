@@ -14,18 +14,26 @@ interface User {
   active: boolean
   createdAt: Date | string
   empresaId?: string | null
+  setorId?: string | null
+  grupoId?: string | null
   empresa?: { nome: string } | null
+  setor?: { nome: string } | null
+  grupo?: { nome: string } | null
 }
 
 interface Empresa {
   id: string
   nome: string
+  tipoSistema?: string | null
+  cor?: string | null
 }
 
 interface Props {
   users: User[]
   isAdmin: boolean
   empresas?: Empresa[]
+  setores?: { id: string; nome: string; empresaId: string }[]
+  grupos?: { id: string; nome: string; empresaId: string }[]
 }
 
 const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
@@ -34,7 +42,7 @@ const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
   F: { label: "Corpo Docente", className: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
 }
 
-export function UserTable({ users, isAdmin, empresas = [] }: Props) {
+export function UserTable({ users, isAdmin, empresas = [], setores = [], grupos = [] }: Props) {
   const router = useRouter()
   const [loadingId, setLoadingId] = useState<string | null>(null)
 
@@ -108,7 +116,17 @@ export function UserTable({ users, isAdmin, empresas = [] }: Props) {
                     <span className="text-slate-500">{user.department ?? "—"}</span>
                   </td>
                   <td className="px-6 py-4 hidden xl:table-cell">
-                    <span className="text-slate-500">{user.empresa?.nome ?? "—"}</span>
+                    <div className="text-slate-500">{user.empresa?.nome ?? "—"}</div>
+                    {(user.setor || user.grupo) && (
+                      <div className="flex gap-1 mt-1 flex-wrap">
+                        {user.setor && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500">{user.setor.nome}</span>
+                        )}
+                        {user.grupo && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-50 text-orange-500">{user.grupo.nome}</span>
+                        )}
+                      </div>
+                    )}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
@@ -131,6 +149,8 @@ export function UserTable({ users, isAdmin, empresas = [] }: Props) {
                               mode="edit"
                               user={user}
                               empresas={empresas}
+                              setores={setores}
+                              grupos={grupos}
                               trigger={
                                 <button
                                   className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-all"

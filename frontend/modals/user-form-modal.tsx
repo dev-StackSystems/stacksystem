@@ -13,6 +13,8 @@ interface UserData {
   department?: string | null
   phone?: string | null
   empresaId?: string | null
+  setorId?: string | null
+  grupoId?: string | null
 }
 
 interface Empresa {
@@ -27,6 +29,8 @@ interface Props {
   user?: UserData
   trigger: React.ReactNode
   empresas?: Empresa[]
+  setores?: { id: string; nome: string; empresaId: string }[]
+  grupos?: { id: string; nome: string; empresaId: string }[]
 }
 
 const ROLES = [
@@ -41,7 +45,7 @@ const inputClass =
 const selectClass =
   "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
-export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
+export function UserFormModal({ mode, user, trigger, empresas = [], setores = [], grupos = [] }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -55,6 +59,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
     department: "",
     phone: "",
     empresaId: "",
+    setorId: "",
+    grupoId: "",
   })
 
   useEffect(() => {
@@ -67,9 +73,11 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
         department: user.department ?? "",
         phone: user.phone ?? "",
         empresaId: user.empresaId ?? "",
+        setorId: user.setorId ?? "",
+        grupoId: user.grupoId ?? "",
       })
     } else {
-      setForm({ name: "", email: "", password: "", role: "F", department: "", phone: "", empresaId: "" })
+      setForm({ name: "", email: "", password: "", role: "F", department: "", phone: "", empresaId: "", setorId: "", grupoId: "" })
     }
     setError("")
   }, [open, user, mode])
@@ -105,6 +113,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
         department: form.department,
         phone: form.phone,
         empresaId: form.empresaId || null,
+        setorId: form.setorId || null,
+        grupoId: form.grupoId || null,
       }
       if (form.password) body.password = form.password
 
@@ -131,6 +141,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
   }
 
   const empresaSelecionada = empresas.find((e) => e.id === form.empresaId)
+  const setoresFiltrados = setores.filter(s => s.empresaId === form.empresaId)
+  const gruposFiltrados = grupos.filter(g => g.empresaId === form.empresaId)
   const empresaRequired = form.role !== "A"
 
   return (
@@ -276,6 +288,38 @@ export function UserFormModal({ mode, user, trigger, empresas = [] }: Props) {
                   />
                 </div>
               </div>
+
+              {/* Linha 5: Setor | Grupo */}
+              {form.empresaId && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelClass}>Setor</label>
+                    <select
+                      value={form.setorId}
+                      onChange={(e) => setForm((f) => ({ ...f, setorId: e.target.value }))}
+                      className={selectClass}
+                    >
+                      <option value="">— Nenhum —</option>
+                      {setoresFiltrados.map(s => (
+                        <option key={s.id} value={s.id}>{s.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className={labelClass}>Grupo</label>
+                    <select
+                      value={form.grupoId}
+                      onChange={(e) => setForm((f) => ({ ...f, grupoId: e.target.value }))}
+                      className={selectClass}
+                    >
+                      <option value="">— Nenhum —</option>
+                      {gruposFiltrados.map(g => (
+                        <option key={g.id} value={g.id}>{g.nome}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-xs text-red-600 font-medium">

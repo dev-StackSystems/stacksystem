@@ -4,14 +4,13 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, Play, DollarSign,
-  Award, Building2, ShieldCheck, Video,
+  Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
 } from "lucide-react"
 import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
 
 type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }
 
-// Grupos completos do Admin — fonte única de verdade
 const ADMIN_GROUPS: NavGroup[] = [
   {
     label: null,
@@ -28,21 +27,23 @@ const ADMIN_GROUPS: NavGroup[] = [
   {
     label: "Conteúdo",
     items: [
-      { icon: Play,  label: "Aulas",        href: "/dashboard/aulas",  moduleKey: "aulas" },
+      { icon: Play,  label: "Aulas",         href: "/dashboard/aulas",  moduleKey: "aulas" },
       { icon: Video, label: "Salas de Aula", href: "/dashboard/salas",  moduleKey: "salas" },
     ],
   },
   {
     label: "Financeiro",
     items: [
-      { icon: DollarSign, label: "Financeiro",   href: "/dashboard/baixas",        moduleKey: "baixas" },
-      { icon: Award,      label: "Certificados", href: "/dashboard/certificados",  moduleKey: "certificados" },
+      { icon: DollarSign, label: "Financeiro",   href: "/dashboard/baixas",       moduleKey: "baixas" },
+      { icon: Award,      label: "Certificados", href: "/dashboard/certificados", moduleKey: "certificados" },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { icon: Building2,   label: "Empresas",     href: "/dashboard/empresas" },
+      { icon: Building2,   label: "Empresas",      href: "/dashboard/empresas" },
+      { icon: Briefcase,   label: "Setores",       href: "/dashboard/setores" },
+      { icon: UsersRound,  label: "Grupos",        href: "/dashboard/grupos" },
       { icon: Users,       label: "Usuários",      href: "/dashboard/usuarios" },
       { icon: ShieldCheck, label: "Segurança",     href: "/dashboard/seguranca" },
       { icon: Settings,    label: "Configurações", href: "/dashboard/configuracoes" },
@@ -50,19 +51,21 @@ const ADMIN_GROUPS: NavGroup[] = [
   },
 ]
 
-/**
- * Filtra os grupos para roles T e F com base nos módulos habilitados da empresa.
- * - Dashboard: sempre visível
- * - Usuários: sempre visível para T
- * - Demais itens: visíveis apenas se moduleKey está em `modules`
- */
-function buildFilteredGroups(role: string, modules: string[]): NavGroup[] {
+function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: string[]): NavGroup[] {
   const result: NavGroup[] = []
 
   for (const group of ADMIN_GROUPS) {
-    // Grupo Sistema: para T só Usuários; para F nenhum item de sistema
     if (group.label === "Sistema") {
-      if (role === "T") {
+      if (grupoIsAdmin) {
+        result.push({
+          label: "Sistema",
+          items: [
+            { icon: Briefcase,  label: "Setores",  href: "/dashboard/setores" },
+            { icon: UsersRound, label: "Grupos",   href: "/dashboard/grupos" },
+            { icon: Users,      label: "Usuários", href: "/dashboard/usuarios" },
+          ],
+        })
+      } else if (role === "T") {
         result.push({
           label: "Sistema",
           items: [{ icon: Users, label: "Usuários", href: "/dashboard/usuarios" }],
@@ -71,37 +74,22 @@ function buildFilteredGroups(role: string, modules: string[]): NavGroup[] {
       continue
     }
 
-    // Grupo sem label (Dashboard) — sempre visível
-    if (group.label === null) {
-      result.push(group)
-      continue
-    }
+    if (group.label === null) { result.push(group); continue }
 
-    // Demais grupos: filtrar por moduleKey
     const filteredItems = group.items.filter(
       (item) => !item.moduleKey || modules.includes(item.moduleKey)
     )
-
-    if (filteredItems.length > 0) {
-      result.push({ label: group.label, items: filteredItems })
-    }
+    if (filteredItems.length > 0) result.push({ label: group.label, items: filteredItems })
   }
 
   return result
 }
 
-interface Props {
-  role: string
-  modules: string[]
-}
+interface Props { role: string; grupoIsAdmin: boolean; modules: string[] }
 
-export function Sidebar({ role, modules }: Props) {
+export function Sidebar({ role, grupoIsAdmin, modules }: Props) {
   const [open, setOpen] = useState(false)
-
-  const groups =
-    role === "A"
-      ? ADMIN_GROUPS
-      : buildFilteredGroups(role, modules)
+  const groups = role === "A" ? ADMIN_GROUPS : buildFilteredGroups(role, grupoIsAdmin, modules)
 
   return (
     <>
@@ -121,7 +109,6 @@ export function Sidebar({ role, modules }: Props) {
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Logo */}
         <div className="px-6 py-5 border-b border-white/[0.06] flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-sm font-serif shadow shadow-orange-500/25">
             S
@@ -134,7 +121,6 @@ export function Sidebar({ role, modules }: Props) {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
           {groups.map((group, gi) => (
             <div key={gi}>
@@ -152,7 +138,6 @@ export function Sidebar({ role, modules }: Props) {
           ))}
         </nav>
 
-        {/* Logout */}
         <div className="px-3 py-4 border-t border-white/[0.06]">
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}

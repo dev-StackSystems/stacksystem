@@ -26,10 +26,14 @@ model User {
   avatar     String?
   active     Boolean   @default(true)
   empresaId  String?
+  setorId    String?
+  grupoId    String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
   empresa       Empresa?        @relation(fields: [empresaId], references: [id])
+  setor         Setor?          @relation(fields: [setorId], references: [id])
+  grupo         Grupo?          @relation(fields: [grupoId], references: [id])
   accounts      Account[]
   sessions      Session[]
   segurancaLogs SegurancaUser[]
@@ -101,8 +105,67 @@ model Empresa {
   usuarios User[]
   modulos  EmpresaModulo[]
   salas    Sala[]
+  setores  Setor[]
+  grupos   Grupo[]
 
   @@map("empresas")
+}
+
+// ─── Setores (departamentos da empresa) ───────────────
+model Setor {
+  id        String   @id @default(cuid())
+  empresaId String
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresa  Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  modulos  SetorModulo[]
+  usuarios User[]
+
+  @@unique([empresaId, nome])
+  @@map("setores")
+}
+
+model SetorModulo {
+  setorId String
+  modulo  String
+
+  setor Setor @relation(fields: [setorId], references: [id], onDelete: Cascade)
+
+  @@id([setorId, modulo])
+  @@map("setor_modulos")
+}
+
+// ─── Grupos de usuários (criáveis por empresa) ────────
+model Grupo {
+  id        String   @id @default(cuid())
+  empresaId String
+  nome      String
+  descricao String?
+  isAdmin   Boolean  @default(false) // acesso completo aos módulos da empresa
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  empresa  Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  modulos  GrupoModulo[]
+  usuarios User[]
+
+  @@unique([empresaId, nome])
+  @@map("grupos")
+}
+
+model GrupoModulo {
+  grupoId String
+  modulo  String
+
+  grupo Grupo @relation(fields: [grupoId], references: [id], onDelete: Cascade)
+
+  @@id([grupoId, modulo])
+  @@map("grupo_modulos")
 }
 
 // ─── Módulos por empresa ───────────────────────────────

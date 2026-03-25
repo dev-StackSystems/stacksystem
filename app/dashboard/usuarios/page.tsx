@@ -17,7 +17,9 @@ export default async function UsuariosPage() {
 
   const isAdmin = session.user.role === UserRole.A
 
-  const [users, empresas] = await Promise.all([
+  const empresaWhere = isAdmin ? { ativa: true } : { id: session.user.empresaId ?? "", ativa: true }
+
+  const [users, empresas, setores, grupos] = await Promise.all([
     db.user.findMany({
       select: {
         id: true,
@@ -29,13 +31,27 @@ export default async function UsuariosPage() {
         active: true,
         createdAt: true,
         empresaId: true,
+        setorId: true,
+        grupoId: true,
         empresa: { select: { nome: true } },
+        setor: { select: { nome: true } },
+        grupo: { select: { nome: true } },
       },
       orderBy: { createdAt: "desc" },
     }),
     db.empresa.findMany({
-      where: { ativa: true },
+      where: empresaWhere,
       select: { id: true, nome: true, tipoSistema: true, cor: true },
+      orderBy: { nome: "asc" },
+    }),
+    db.setor.findMany({
+      where: { ativo: true, ...(isAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }) },
+      select: { id: true, nome: true, empresaId: true },
+      orderBy: { nome: "asc" },
+    }),
+    db.grupo.findMany({
+      where: { ativo: true, ...(isAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }) },
+      select: { id: true, nome: true, empresaId: true },
       orderBy: { nome: "asc" },
     }),
   ])
@@ -51,6 +67,8 @@ export default async function UsuariosPage() {
           <UserFormModal
             mode="create"
             empresas={empresas}
+            setores={setores}
+            grupos={grupos}
             trigger={
               <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
                 <UserPlus size={16} />
@@ -61,7 +79,7 @@ export default async function UsuariosPage() {
         )}
       </div>
 
-      <UserTable users={users} isAdmin={isAdmin} empresas={empresas} />
+      <UserTable users={users} isAdmin={isAdmin} empresas={empresas} setores={setores} grupos={grupos} />
     </div>
   )
 }
