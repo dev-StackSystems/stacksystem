@@ -89,6 +89,11 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
       return
     }
 
+    if (!form.tipoSistema) {
+      setError("Tipo de sistema é obrigatório.")
+      return
+    }
+
     setLoading(true)
 
     try {

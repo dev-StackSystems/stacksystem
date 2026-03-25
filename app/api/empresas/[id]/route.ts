@@ -56,7 +56,8 @@ export async function PUT(
       // Apenas admin do sistema pode mudar tipo e status
       ...(isSystemAdmin && {
         ativa: typeof ativa === "boolean" ? ativa : existing.ativa,
-        tipoSistema: tipoSistema?.trim() || null,
+        // Não permite remover tipoSistema — mantém o existente se não for fornecido
+        tipoSistema: tipoSistema?.trim() || existing.tipoSistema,
       }),
     },
   })

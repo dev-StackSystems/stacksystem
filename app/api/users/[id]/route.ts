@@ -34,6 +34,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const body = await request.json()
   const { name, email, role, department, phone, active, password, empresaId, setorId, grupoId } = body
 
+  if (role !== UserRole.A && !empresaId) {
+    return NextResponse.json(
+      { error: "Empresa é obrigatória para este perfil de usuário." },
+      { status: 400 }
+    )
+  }
+
   const updateData: Record<string, unknown> = {
     name, email, role, department, phone, active,
     empresaId: empresaId || null,

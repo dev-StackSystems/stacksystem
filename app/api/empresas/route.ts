@@ -33,6 +33,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 })
   }
 
+  if (!tipoSistema || tipoSistema.trim() === "") {
+    return NextResponse.json({ error: "Tipo de sistema é obrigatório" }, { status: 400 })
+  }
+
   // Verificar CNPJ duplicado se fornecido
   if (cnpj && cnpj.trim() !== "") {
     const existing = await db.empresa.findUnique({ where: { cnpj: cnpj.trim() } })
