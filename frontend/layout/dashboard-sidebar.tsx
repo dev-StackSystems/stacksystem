@@ -11,7 +11,8 @@ import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
 type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }
 
-const ADMIN_GROUPS: NavGroup[] = [
+// Módulos acadêmicos — usados como template para filtragem
+const MODULE_GROUPS: NavGroup[] = [
   {
     label: null,
     items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
@@ -38,12 +39,18 @@ const ADMIN_GROUPS: NavGroup[] = [
       { icon: Award,      label: "Certificados", href: "/dashboard/certificados", moduleKey: "certificados" },
     ],
   },
+]
+
+// Nav exclusiva do admin do sistema (UserRole.A) — sem módulos da escola
+const SYSTEM_ADMIN_GROUPS: NavGroup[] = [
+  {
+    label: null,
+    items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
+  },
   {
     label: "Sistema",
     items: [
       { icon: Building2,   label: "Empresas",      href: "/dashboard/empresas" },
-      { icon: Briefcase,   label: "Setores",       href: "/dashboard/setores" },
-      { icon: UsersRound,  label: "Grupos",        href: "/dashboard/grupos" },
       { icon: Users,       label: "Usuários",      href: "/dashboard/usuarios" },
       { icon: ShieldCheck, label: "Segurança",     href: "/dashboard/seguranca" },
       { icon: Settings,    label: "Configurações", href: "/dashboard/configuracoes" },
@@ -54,32 +61,31 @@ const ADMIN_GROUPS: NavGroup[] = [
 function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: string[]): NavGroup[] {
   const result: NavGroup[] = []
 
-  for (const group of ADMIN_GROUPS) {
-    if (group.label === "Sistema") {
-      if (grupoIsAdmin) {
-        result.push({
-          label: "Sistema",
-          items: [
-            { icon: Briefcase,  label: "Setores",  href: "/dashboard/setores" },
-            { icon: UsersRound, label: "Grupos",   href: "/dashboard/grupos" },
-            { icon: Users,      label: "Usuários", href: "/dashboard/usuarios" },
-          ],
-        })
-      } else if (role === "T") {
-        result.push({
-          label: "Sistema",
-          items: [{ icon: Users, label: "Usuários", href: "/dashboard/usuarios" }],
-        })
-      }
-      continue
-    }
-
+  for (const group of MODULE_GROUPS) {
     if (group.label === null) { result.push(group); continue }
 
     const filteredItems = group.items.filter(
       (item) => !item.moduleKey || modules.includes(item.moduleKey)
     )
     if (filteredItems.length > 0) result.push({ label: group.label, items: filteredItems })
+  }
+
+  // Seção Sistema baseada em permissão
+  if (grupoIsAdmin) {
+    result.push({
+      label: "Sistema",
+      items: [
+        { icon: Briefcase,  label: "Setores",       href: "/dashboard/setores" },
+        { icon: UsersRound, label: "Grupos",        href: "/dashboard/grupos" },
+        { icon: Users,      label: "Usuários",      href: "/dashboard/usuarios" },
+        { icon: Settings,   label: "Configurações", href: "/dashboard/configuracoes" },
+      ],
+    })
+  } else if (role === "T") {
+    result.push({
+      label: "Sistema",
+      items: [{ icon: Users, label: "Usuários", href: "/dashboard/usuarios" }],
+    })
   }
 
   return result
@@ -89,7 +95,7 @@ interface Props { role: string; grupoIsAdmin: boolean; modules: string[] }
 
 export function Sidebar({ role, grupoIsAdmin, modules }: Props) {
   const [open, setOpen] = useState(false)
-  const groups = role === "A" ? ADMIN_GROUPS : buildFilteredGroups(role, grupoIsAdmin, modules)
+  const groups = role === "A" ? SYSTEM_ADMIN_GROUPS : buildFilteredGroups(role, grupoIsAdmin, modules)
 
   return (
     <>

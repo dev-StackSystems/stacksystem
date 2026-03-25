@@ -12,10 +12,10 @@ export default async function EmpresasPage() {
 
   if (!session) redirect("/login")
 
-  // F (Corpo Docente) não tem acesso
-  if (session.user.role === UserRole.F) redirect("/dashboard")
+  // Apenas admin do sistema pode gerenciar empresas contratantes
+  if (session.user.role !== UserRole.A) redirect("/dashboard")
 
-  const isAdmin = session.user.role === UserRole.A
+  const isAdmin = true
 
   const empresas = await db.empresa.findMany({
     orderBy: { nome: "asc" },

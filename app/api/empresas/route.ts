@@ -21,9 +21,9 @@ export async function GET() {
   return NextResponse.json(empresas)
 }
 
-// POST /api/empresas — apenas ADMIN e TECH
+// POST /api/empresas — apenas admin do sistema
 export async function POST(request: NextRequest) {
-  const authResult = await requireRole([UserRole.A, UserRole.T])
+  const authResult = await requireRole([UserRole.A])
   if (authResult instanceof NextResponse) return authResult
 
   const body = await request.json()
