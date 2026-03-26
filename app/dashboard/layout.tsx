@@ -36,7 +36,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     session.user.empresaId
       ? db.empresa.findUnique({
           where: { id: session.user.empresaId },
-          select: { cor: true, logo: true, nome: true, tipoSistema: true },
+          select: { cor: true, logo: true, nome: true, nomeSistema: true, tipoSistema: true },
         })
       : null,
   ])

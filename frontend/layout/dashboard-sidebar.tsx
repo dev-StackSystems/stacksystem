@@ -93,6 +93,7 @@ interface Brand {
   cor: string | null
   logo: string | null
   nome: string
+  nomeSistema?: string | null
 }
 
 interface Props {
@@ -149,7 +150,7 @@ export function Sidebar({ role, grupoIsAdmin, modules, brand }: Props) {
           )}
           <span className="font-serif text-[15px] font-bold text-white truncate">
             {brand ? (
-              brand.nome
+              brand.nomeSistema || brand.nome
             ) : (
               <>Stack<span style={{ color: brandColor }}>Systems</span></>
             )}

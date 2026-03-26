@@ -23,8 +23,12 @@ export default async function ConfiguracoesPage() {
     const empresa = await db.empresa.findUnique({
       where: { id: session.user.empresaId },
       select: {
-        id: true, nome: true, cnpj: true, email: true, telefone: true,
-        cor: true, logo: true, banner: true, descricao: true, tipoSistema: true,
+        id: true, nome: true, sigla: true, cnpj: true,
+        email: true, telefone: true, fax: true, site: true,
+        endereco: true, bairro: true, cep: true, municipio: true, uf: true,
+        latitude: true, longitude: true,
+        cor: true, cor2: true, logo: true, brasao: true, banner: true,
+        nomeSistema: true, mascara: true, descricao: true, tipoSistema: true,
       },
     })
 

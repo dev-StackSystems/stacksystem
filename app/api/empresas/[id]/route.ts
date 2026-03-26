@@ -24,7 +24,13 @@ export async function PUT(
   }
 
   const body = await request.json()
-  const { nome, cnpj, email, telefone, ativa, cor, logo, banner, tipoSistema, descricao } = body
+  const {
+    nome, sigla, cnpj,
+    email, telefone, fax, site,
+    endereco, bairro, cep, municipio, uf, latitude, longitude,
+    cor, cor2, logo, brasao, banner,
+    nomeSistema, tipoSistema, mascara, descricao, ativa,
+  } = body
 
   if (!nome || typeof nome !== "string" || nome.trim() === "") {
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 })
@@ -46,17 +52,30 @@ export async function PUT(
     where: { id },
     data: {
       nome: nome.trim(),
+      sigla: sigla?.trim() || null,
       cnpj: cnpj?.trim() || null,
       email: email?.trim() || null,
       telefone: telefone?.trim() || null,
+      fax: fax?.trim() || null,
+      site: site?.trim() || null,
+      endereco: endereco?.trim() || null,
+      bairro: bairro?.trim() || null,
+      cep: cep?.trim() || null,
+      municipio: municipio?.trim() || null,
+      uf: uf?.trim() || null,
+      latitude: latitude?.trim() || null,
+      longitude: longitude?.trim() || null,
       cor: cor?.trim() || null,
+      cor2: cor2?.trim() || null,
       logo: logo?.trim() || null,
+      brasao: brasao?.trim() || null,
       banner: banner?.trim() || null,
+      nomeSistema: nomeSistema?.trim() || null,
+      mascara: mascara?.trim() || null,
       descricao: descricao?.trim() || null,
       // Apenas admin do sistema pode mudar tipo e status
       ...(isSystemAdmin && {
         ativa: typeof ativa === "boolean" ? ativa : existing.ativa,
-        // Não permite remover tipoSistema — mantém o existente se não for fornecido
         tipoSistema: tipoSistema?.trim() || existing.tipoSistema,
       }),
     },

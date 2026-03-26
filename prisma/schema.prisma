@@ -85,19 +85,36 @@ model VerificationToken {
 // ─── Empresas ─────────────────────────────────────────
 model Empresa {
   id          String   @id @default(cuid())
+  // Identificação (como i3: pref_nome, pref_sigla, pref_cnpj)
   nome        String
+  sigla       String?  // Ex: PMSM, SEMEDUC
   cnpj        String?  @unique
+  // Contato (como i3: pref_email, pref_telefone, pref_fax, pref_site)
   email       String?
   telefone    String?
-  ativa       Boolean  @default(true)
-  // Identidade visual
-  cor         String?  // hex: #f97316
-  logo        String?  // URL da logo
-  banner      String?  // URL do banner
-  // Configuração do sistema
+  fax         String?
+  site        String?
+  // Endereço (como i3: pref_endereco, pref_bairro, pref_cep, pref_municipio, cod_uf)
+  endereco    String?
+  bairro      String?
+  cep         String?
+  municipio   String?
+  uf          String?
+  latitude    String?
+  longitude   String?
+  // Identidade visual (como i3: cor_topo, cor_portal, company_logo, pref_icone, pref_capa)
+  cor         String?  // Cor primária hex
+  cor2        String?  // Cor secundária hex
+  logo        String?  // URL da logomarca
+  brasao      String?  // URL do brasão/ícone oficial
+  banner      String?  // URL do banner/capa
+  // Configuração (como i3: nome_sistema, tipoSistema, pref_mascara)
+  nomeSistema String?  // Nome da plataforma: "Portal SEMEDUC"
   tipoSistema String?  // escola | treinamento | consultoria | clinica | personalizado
+  mascara     String?  // Máscara de numeração ex: ###/AAAA
   descricao   String?
   anuncios    String?  // JSON: [{titulo, texto, cor}]
+  ativa       Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
