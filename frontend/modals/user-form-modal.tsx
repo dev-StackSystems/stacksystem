@@ -254,7 +254,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                       onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
                       className={selectClass}
                     >
-                      {!empresaRequired && <option value="">— Nenhuma —</option>}
+                      <option value="">— Selecionar empresa —</option>
                       {empresas.map((emp) => (
                         <option key={emp.id} value={emp.id}>{emp.nome}</option>
                       ))}
