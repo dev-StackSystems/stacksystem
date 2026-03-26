@@ -9,14 +9,25 @@ type Params = { params: Promise<{ id: string }> }
 export async function PUT(request: NextRequest, { params }: Params) {
   const auth = await requireRole([UserRole.A, UserRole.T])
   if (auth instanceof NextResponse) return auth
+  const user = auth.user
 
   const { id } = await params
   const body = await request.json()
   const { matriculaId, descricao, valor, tipo, status, dataPag, dataVenc } = body
 
-  const existing = await db.baixa.findUnique({ where: { id } })
+  const existing = await db.baixa.findUnique({
+    where: { id },
+    include: { matricula: { include: { empCurso: { select: { empresaId: true } } } } },
+  })
   if (!existing) {
     return NextResponse.json({ error: "Baixa não encontrada." }, { status: 404 })
+  }
+
+  // Validação de escopo via matrícula → curso → empresa
+  if (!user.isSuperAdmin && existing.matricula) {
+    if (existing.matricula.empCurso.empresaId !== user.empresaId) {
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+    }
   }
 
   const baixa = await db.baixa.update({
@@ -47,12 +58,22 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const auth = await requireRole([UserRole.A])
   if (auth instanceof NextResponse) return auth
+  const user = auth.user
 
   const { id } = await params
 
-  const existing = await db.baixa.findUnique({ where: { id } })
+  const existing = await db.baixa.findUnique({
+    where: { id },
+    include: { matricula: { include: { empCurso: { select: { empresaId: true } } } } },
+  })
   if (!existing) {
     return NextResponse.json({ error: "Baixa não encontrada." }, { status: 404 })
+  }
+
+  if (!user.isSuperAdmin && existing.matricula) {
+    if (existing.matricula.empCurso.empresaId !== user.empresaId) {
+      return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+    }
   }
 
   await db.baixa.delete({ where: { id } })

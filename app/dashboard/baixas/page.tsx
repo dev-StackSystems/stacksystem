@@ -15,14 +15,21 @@ export default async function BaixasPage() {
   if (!session) redirect("/login")
   if (session.user.role === UserRole.F) redirect("/dashboard")
 
-  const isAdmin = session.user.role === UserRole.A
-  const canEdit = session.user.role === UserRole.A || session.user.role === UserRole.T
+  const { isSuperAdmin } = session.user
+  const empresaId = session.user.empresaId ?? undefined
+  const isAdmin = isSuperAdmin
+  const canEdit = isSuperAdmin || session.user.role === UserRole.A || session.user.role === UserRole.T
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
 
+  // Filtro de empresa para baixas (via matrícula → curso → empresa)
+  const empresaScope = isSuperAdmin ? {} : { matricula: { empCurso: { empresaId } } }
+  const matriculaScope = isSuperAdmin ? { status: "ativa" } : { status: "ativa", empCurso: { empresaId } }
+
   const [baixas, matriculas, kpis] = await Promise.all([
     db.baixa.findMany({
+      where: empresaScope,
       orderBy: { createdAt: "desc" },
       include: {
         matricula: {
@@ -34,7 +41,7 @@ export default async function BaixasPage() {
       },
     }),
     db.matricula.findMany({
-      where: { status: "ativa" },
+      where: matriculaScope,
       select: {
         id: true,
         aluno: { select: { nome: true } },
@@ -43,10 +50,10 @@ export default async function BaixasPage() {
       orderBy: { createdAt: "desc" },
     }),
     Promise.all([
-      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pago" } }),
-      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pendente" } }),
-      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pago", dataPag: { gte: inicioMes } } }),
-      db.baixa.count({ where: { status: "pendente", dataVenc: { lt: hoje } } }),
+      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pago", ...empresaScope } }),
+      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pendente", ...empresaScope } }),
+      db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pago", dataPag: { gte: inicioMes }, ...empresaScope } }),
+      db.baixa.count({ where: { status: "pendente", dataVenc: { lt: hoje }, ...empresaScope } }),
     ]),
   ])
 

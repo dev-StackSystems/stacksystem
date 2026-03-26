@@ -9,14 +9,22 @@ type Params = { params: Promise<{ id: string }> }
 export async function PUT(request: NextRequest, { params }: Params) {
   const auth = await requireRole([UserRole.A, UserRole.T])
   if (auth instanceof NextResponse) return auth
+  const user = auth.user
 
   const { id } = await params
   const body = await request.json()
   const { status, valor, dataInicio, dataFim } = body
 
-  const existing = await db.matricula.findUnique({ where: { id } })
+  const existing = await db.matricula.findUnique({
+    where: { id },
+    include: { empCurso: { select: { empresaId: true } } },
+  })
   if (!existing) {
     return NextResponse.json({ error: "Matrícula não encontrada." }, { status: 404 })
+  }
+
+  if (!user.isSuperAdmin && existing.empCurso.empresaId !== user.empresaId) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   const matricula = await db.matricula.update({
@@ -45,12 +53,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
 export async function DELETE(_request: NextRequest, { params }: Params) {
   const auth = await requireRole([UserRole.A])
   if (auth instanceof NextResponse) return auth
+  const user = auth.user
 
   const { id } = await params
 
-  const existing = await db.matricula.findUnique({ where: { id } })
+  const existing = await db.matricula.findUnique({
+    where: { id },
+    include: { empCurso: { select: { empresaId: true } } },
+  })
   if (!existing) {
     return NextResponse.json({ error: "Matrícula não encontrada." }, { status: 404 })
+  }
+
+  if (!user.isSuperAdmin && existing.empCurso.empresaId !== user.empresaId) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   await db.matricula.update({

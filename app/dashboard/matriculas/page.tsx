@@ -14,11 +14,18 @@ export default async function MatriculasPage() {
   // Apenas Admin e Técnico acessam; Corpo Docente é redirecionado
   if (session.user.role === UserRole.F) redirect("/dashboard")
 
-  const isAdmin = session.user.role === UserRole.A
-  const canEdit = session.user.role === UserRole.A || session.user.role === UserRole.T
+  const { isSuperAdmin } = session.user
+  const empresaId = session.user.empresaId ?? undefined
+  const isAdmin = isSuperAdmin
+  const canEdit = isSuperAdmin || session.user.role === UserRole.A || session.user.role === UserRole.T
+
+  const empresaFilter = isSuperAdmin ? {} : { empCurso: { empresaId } }
+  const alunoFilter   = isSuperAdmin ? { ativo: true } : { ativo: true, empresaId }
+  const cursoFilter   = isSuperAdmin ? { ativo: true } : { ativo: true, empresaId }
 
   const [matriculas, alunos, cursos] = await Promise.all([
     db.matricula.findMany({
+      where: empresaFilter,
       orderBy: { createdAt: "desc" },
       include: {
         aluno: { select: { nome: true, email: true } },
@@ -31,12 +38,12 @@ export default async function MatriculasPage() {
       },
     }),
     db.aluno.findMany({
-      where: { ativo: true },
+      where: alunoFilter,
       select: { id: true, nome: true },
       orderBy: { nome: "asc" },
     }),
     db.empCurso.findMany({
-      where: { ativo: true },
+      where: cursoFilter,
       select: {
         id: true,
         nome: true,

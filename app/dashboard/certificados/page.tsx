@@ -9,7 +9,12 @@ export default async function CertificadosPage() {
 
   if (!session) redirect("/login")
 
+  const { isSuperAdmin } = session.user
+  const empresaId = session.user.empresaId ?? undefined
+  const where = isSuperAdmin ? {} : { empCurso: { empresaId } }
+
   const certificados = await db.certificado.findMany({
+    where,
     include: {
       aluno: { select: { nome: true, email: true } },
       empCurso: { select: { nome: true, empresa: { select: { nome: true } } } },

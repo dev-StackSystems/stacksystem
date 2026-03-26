@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/backend/database/prisma-client"
-import { requireRole } from "@/backend/auth/session-helpers"
+import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
 
 // PUT /api/cursos/[id] — ADMIN e TECH
@@ -10,6 +10,7 @@ export async function PUT(
 ) {
   const authResult = await requireRole([UserRole.A, UserRole.T])
   if (authResult instanceof NextResponse) return authResult
+  const user = authResult.user
 
   const { id } = await params
   const body = await request.json()
@@ -22,6 +23,11 @@ export async function PUT(
   const existing = await db.empCurso.findUnique({ where: { id } })
   if (!existing) {
     return NextResponse.json({ error: "Curso não encontrado" }, { status: 404 })
+  }
+
+  // Validação de escopo: empresa admin só edita cursos da própria empresa
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   if (empresaId && empresaId !== existing.empresaId) {
@@ -55,12 +61,17 @@ export async function DELETE(
 ) {
   const authResult = await requireRole([UserRole.A])
   if (authResult instanceof NextResponse) return authResult
+  const user = authResult.user
 
   const { id } = await params
 
   const existing = await db.empCurso.findUnique({ where: { id } })
   if (!existing) {
     return NextResponse.json({ error: "Curso não encontrado" }, { status: 404 })
+  }
+
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   const curso = await db.empCurso.update({

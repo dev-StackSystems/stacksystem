@@ -15,20 +15,21 @@ export default async function CursosPage() {
   // F (Corpo Docente) não tem acesso à gestão de cursos
   if (session.user.role === UserRole.F) redirect("/dashboard")
 
-  const isAdmin = session.user.role === UserRole.A
+  const { isSuperAdmin } = session.user
+  const empresaId = session.user.empresaId ?? undefined
+  const isAdmin = isSuperAdmin
 
   const [cursos, empresas] = await Promise.all([
     db.empCurso.findMany({
+      where: isSuperAdmin ? {} : { empresaId },
       orderBy: { createdAt: "desc" },
       include: {
         empresa: { select: { nome: true } },
       },
     }),
-    db.empresa.findMany({
-      where: { ativa: true },
-      orderBy: { nome: "asc" },
-      select: { id: true, nome: true },
-    }),
+    isSuperAdmin
+      ? db.empresa.findMany({ where: { ativa: true }, orderBy: { nome: "asc" }, select: { id: true, nome: true } })
+      : [],
   ])
 
   return (
