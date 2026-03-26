@@ -19,6 +19,8 @@ interface Props {
   mode: Mode
   aluno?: AlunoData
   trigger: React.ReactNode
+  empresas?: { id: string; nome: string }[]
+  isSystemAdmin?: boolean
 }
 
 function toDateInputValue(value?: Date | string | null): string {
@@ -34,7 +36,7 @@ const inputClass =
 const selectClass =
   "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
-export function AlunoFormModal({ mode, aluno, trigger }: Props) {
+export function AlunoFormModal({ mode, aluno, trigger, empresas = [], isSystemAdmin = false }: Props) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -47,6 +49,7 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
     telefone: "",
     dataNasc: "",
     ativo: true,
+    empresaId: "",
   })
 
   useEffect(() => {
@@ -58,9 +61,10 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
         telefone: aluno.telefone ?? "",
         dataNasc: toDateInputValue(aluno.dataNasc),
         ativo: aluno.ativo,
+        empresaId: "",
       })
     } else {
-      setForm({ nome: "", email: "", cpf: "", telefone: "", dataNasc: "", ativo: true })
+      setForm({ nome: "", email: "", cpf: "", telefone: "", dataNasc: "", ativo: true, empresaId: "" })
     }
     setError("")
   }, [open, aluno, mode])
@@ -71,6 +75,11 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
 
     if (!form.nome || !form.email) {
       setError("Nome e e-mail são obrigatórios.")
+      return
+    }
+
+    if (isSystemAdmin && !form.empresaId) {
+      setError("Selecione a empresa do aluno.")
       return
     }
 
@@ -87,6 +96,7 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
         telefone: form.telefone || null,
         dataNasc: form.dataNasc ? new Date(form.dataNasc).toISOString() : null,
         ativo: form.ativo,
+        ...(isSystemAdmin && form.empresaId ? { empresaId: form.empresaId } : {}),
       }
 
       const res = await fetch(url, {
@@ -133,6 +143,25 @@ export function AlunoFormModal({ mode, aluno, trigger }: Props) {
             </div>
 
             <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+              {/* Empresa (apenas superAdmin) */}
+              {isSystemAdmin && mode === "create" && (
+                <div>
+                  <label className={labelClass}>
+                    Empresa <span className="text-red-400">*</span>
+                  </label>
+                  <select
+                    value={form.empresaId}
+                    onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
+                    className={selectClass}
+                  >
+                    <option value="">— Selecionar empresa —</option>
+                    {empresas.map((emp) => (
+                      <option key={emp.id} value={emp.id}>{emp.nome}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               {/* Linha 1: Nome | Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div>

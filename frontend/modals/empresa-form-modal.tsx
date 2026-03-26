@@ -302,10 +302,17 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                   </div>
                   <div className="col-span-2">
                     <label className={labelClass}>Tipo de Sistema <span className="text-red-400">*</span></label>
-                    <select value={form.tipoSistema} onChange={e => f("tipoSistema", e.target.value)} className={inputClass}>
-                      <option value="">-- Selecionar --</option>
+                    <select
+                      value={form.tipoSistema}
+                      onChange={e => f("tipoSistema", e.target.value)}
+                      className={`${inputClass} ${!form.tipoSistema ? "border-amber-300 bg-amber-50/50" : ""}`}
+                    >
+                      <option value="">-- Selecionar (obrigatório) --</option>
                       {TIPOS_SISTEMA.map(t => <option key={t.key} value={t.key}>{t.emoji} {t.label}</option>)}
                     </select>
+                    {!form.tipoSistema && (
+                      <p className="text-[10px] text-amber-600 mt-1">Selecione o tipo antes de salvar.</p>
+                    )}
                   </div>
                   {tipoAtual && (
                     <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-3">

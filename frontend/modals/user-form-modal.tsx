@@ -100,9 +100,10 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
       setError("Senha é obrigatória para novo usuário.")
       return
     }
-    // empresaId obrigatório para não-Admin
-    if (form.role !== "A" && !form.empresaId) {
-      setError("Empresa é obrigatória para este perfil de usuário.")
+    // empresaId obrigatório somente quando o superAdmin pode escolher a empresa
+    // (non-superAdmin usa a empresa da própria sessão — validado pela API)
+    if (isSystemAdmin && form.role !== "A" && !form.empresaId) {
+      setError("Selecione a empresa para este usuário.")
       return
     }
 
@@ -172,7 +173,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-3">
+            <form onSubmit={handleSubmit} autoComplete="off" className="px-5 py-4 flex flex-col gap-3">
               {/* Linha 1: Nome | Email */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -181,6 +182,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                   </label>
                   <input
                     type="text"
+                    autoComplete="off"
                     value={form.name}
                     onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
                     className={inputClass}
@@ -193,6 +195,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                   </label>
                   <input
                     type="email"
+                    autoComplete="off"
                     value={form.email}
                     onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                     className={inputClass}
@@ -212,6 +215,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                 </label>
                 <input
                   type="password"
+                  autoComplete="new-password"
                   value={form.password}
                   onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                   className={inputClass}
