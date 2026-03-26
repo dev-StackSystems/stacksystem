@@ -13,7 +13,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Senha", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("MISSING_FIELDS")
         }
@@ -34,6 +34,16 @@ export const authOptions: NextAuthOptions = {
 
         const passwordMatch = await bcrypt.compare(credentials.password, user.password)
         if (!passwordMatch) throw new Error("WRONG_PASSWORD")
+
+        // Registrar login no log de auditoria
+        const ip =
+          (req?.headers?.["x-forwarded-for"] as string | undefined)?.split(",")[0]?.trim() ??
+          (req as unknown as { socket?: { remoteAddress?: string } })?.socket?.remoteAddress ??
+          null
+
+        db.segurancaUser.create({
+          data: { userId: user.id, acao: "login", detalhes: "Acesso autenticado", ip },
+        }).catch(err => console.error("[Auth] Falha ao registrar log de login:", err))
 
         return {
           id:           user.id,

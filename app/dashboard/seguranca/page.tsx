@@ -45,9 +45,18 @@ export default async function SegurancaPage() {
 
   if (!session) redirect("/login")
 
-  if (session.user.role === UserRole.F) redirect("/dashboard")
+  // Apenas admin de empresa (role A) ou super admin — Técnico e Docente não têm acesso
+  const { isSuperAdmin } = session.user
+  const isEmpresaAdmin = session.user.role === UserRole.A
+  if (!isSuperAdmin && !isEmpresaAdmin) redirect("/dashboard")
+
+  // Super admin vê todos os logs; admin de empresa vê apenas os da sua empresa
+  const where = isSuperAdmin
+    ? {}
+    : { user: { empresaId: session.user.empresaId ?? "" } }
 
   const logs = await db.segurancaUser.findMany({
+    where,
     include: { user: { select: { name: true, email: true, role: true } } },
     orderBy: { createdAt: "desc" },
     take: 200,

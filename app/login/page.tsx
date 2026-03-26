@@ -206,7 +206,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col gap-5">
 
             {/* E-mail */}
             <div className="flex flex-col gap-1.5">
@@ -216,7 +216,7 @@ export default function LoginPage() {
               <input
                 type="email"
                 required
-                autoComplete="email"
+                autoComplete="off"
                 placeholder="seu@email.com"
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })}
@@ -233,7 +233,7 @@ export default function LoginPage() {
                 <input
                   type={showPass ? "text" : "password"}
                   required
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   placeholder="••••••••"
                   value={form.password}
                   onChange={e => setForm({ ...form, password: e.target.value })}
