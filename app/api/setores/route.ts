@@ -6,7 +6,7 @@ export async function GET() {
   const user = await getCurrentUser()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const where = user.role === "A" ? {} : { empresaId: user.empresaId ?? undefined }
+  const where = user.isSuperAdmin ? {} : { empresaId: user.empresaId ?? undefined }
 
   const setores = await db.setor.findMany({
     where,
@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   if (!nome?.trim()) return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 })
 
-  const empId = user.role === "A" ? empresaId : user.empresaId
+  const empId = user.isSuperAdmin ? empresaId : user.empresaId
   if (!empId) return NextResponse.json({ error: "Empresa não encontrada" }, { status: 400 })
 
   const setor = await db.setor.create({

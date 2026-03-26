@@ -30,6 +30,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const existing = await db.grupo.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 })
 
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+
   await db.$transaction([
     db.grupoModulo.deleteMany({ where: { grupoId: id } }),
     db.grupo.update({
@@ -64,6 +67,11 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
+  const existing = await db.grupo.findUnique({ where: { id } })
+  if (!existing) return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 })
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+
   await db.grupo.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }

@@ -10,13 +10,13 @@ export default async function ConfiguracoesPage() {
   const session = await getServerSession(authOptions)
   if (!session) redirect("/login")
 
-  const isSystemAdmin = session.user.role === "A"
-  const isEmpresaAdmin = session.user.grupoIsAdmin
+  const isSystemAdmin = session.user.isSuperAdmin
+  const isEmpresaAdmin = session.user.role === "A" || session.user.grupoIsAdmin
 
-  // Apenas admin do sistema ou admin da empresa
+  // Apenas superAdmin, admin de empresa (role A) ou grupoIsAdmin
   if (!isSystemAdmin && !isEmpresaAdmin) redirect("/dashboard")
 
-  // Admin da empresa: busca dados da própria empresa e mostra form de edição
+  // Admin de empresa (role A sem isSuperAdmin, ou grupoIsAdmin): mostra form de configuração da própria empresa
   if (isEmpresaAdmin && !isSystemAdmin) {
     if (!session.user.empresaId) redirect("/dashboard")
 

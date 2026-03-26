@@ -10,12 +10,13 @@ export default async function SetoresPage() {
   const session = await getServerSession(authOptions)
   if (!session) redirect("/login")
 
-  const isAdmin = session.user.role === "A"
-  const canManage = isAdmin || session.user.grupoIsAdmin
+  const { isSuperAdmin } = session.user
+  const isEmpresaAdmin = session.user.role === "A" || session.user.grupoIsAdmin
+  const canManage = isSuperAdmin || isEmpresaAdmin
 
   if (!canManage && session.user.role === "F") redirect("/dashboard")
 
-  const where = isAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }
+  const where = isSuperAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }
 
   const [setores, empresas] = await Promise.all([
     db.setor.findMany({
@@ -27,7 +28,7 @@ export default async function SetoresPage() {
         _count: { select: { usuarios: true } },
       },
     }),
-    isAdmin
+    isSuperAdmin
       ? db.empresa.findMany({ where: { ativa: true }, select: { id: true, nome: true }, orderBy: { nome: "asc" } })
       : [],
   ])
@@ -47,7 +48,7 @@ export default async function SetoresPage() {
         {canManage && (
           <SetorFormModal
             empresas={empresas}
-            isAdmin={isAdmin}
+            isAdmin={isSuperAdmin}
             empresaId={session.user.empresaId}
             trigger={
               <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
@@ -59,7 +60,7 @@ export default async function SetoresPage() {
         )}
       </div>
 
-      <SetorTable setores={setores} canManage={canManage} isAdmin={isAdmin} empresas={empresas} />
+      <SetorTable setores={setores} canManage={canManage} isAdmin={isSuperAdmin} empresas={empresas} />
     </div>
   )
 }

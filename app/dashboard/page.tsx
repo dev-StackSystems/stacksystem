@@ -50,7 +50,8 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions)
   const role = session?.user.role ?? ""
   const empresaId = session?.user.empresaId ?? null
-  const isAdmin = role === UserRole.A
+  const isSuperAdmin = session?.user.isSuperAdmin ?? false
+  const isAdmin = isSuperAdmin // alias para compatibilidade com JSX abaixo
 
   // ── Dados da empresa ──
   let empresa: {
@@ -109,8 +110,9 @@ export default async function DashboardPage() {
 
   // ── KPIs (filtrados por empresa) ──
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const empresaFilter = !isAdmin && empresaId ? { empCurso: { empresaId } } : undefined
-  const cursoFilter = !isAdmin && empresaId ? { empresaId } : undefined
+  const empresaFilter = !isSuperAdmin && empresaId ? { empCurso: { empresaId } } : undefined
+  const cursoFilter = !isSuperAdmin && empresaId ? { empresaId } : undefined
+  const alunoFilter = !isSuperAdmin && empresaId ? { empresaId } : undefined
 
   const [
     totalAlunos,
@@ -124,8 +126,8 @@ export default async function DashboardPage() {
     recentMatriculas,
     recentBaixas,
   ] = await Promise.all([
-    db.aluno.count(),
-    db.aluno.count({ where: { ativo: true } }),
+    db.aluno.count({ where: alunoFilter }),
+    db.aluno.count({ where: { ativo: true, ...alunoFilter } }),
     db.matricula.count({ where: empresaFilter }),
     db.matricula.count({ where: { ...empresaFilter, status: "ativa" } }),
     db.empCurso.count({ where: { ...cursoFilter, ativo: true } }),

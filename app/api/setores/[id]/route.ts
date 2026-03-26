@@ -30,6 +30,10 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const existing = await db.setor.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: "Setor não encontrado" }, { status: 404 })
 
+  // Validação de escopo: empresa admin só pode editar setores da própria empresa
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+
   // Upsert modulos: apaga os atuais e recria
   await db.$transaction([
     db.setorModulo.deleteMany({ where: { setorId: id } }),
@@ -64,6 +68,11 @@ export async function DELETE(_: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
+  const existing = await db.setor.findUnique({ where: { id } })
+  if (!existing) return NextResponse.json({ error: "Setor não encontrado" }, { status: 404 })
+  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+
   await db.setor.delete({ where: { id } })
   return NextResponse.json({ ok: true })
 }
