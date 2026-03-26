@@ -12,10 +12,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await getServerSession(authOptions)
   if (!session) redirect("/login")
 
-  const isSystemAdmin = session.user.role === "A"
+  const { isSuperAdmin } = session.user
 
-  // Usuário não-admin sem empresa vinculada: sem acesso
-  if (!isSystemAdmin && !session.user.empresaId) {
+  // Super admin não precisa de empresa vinculada — acesso irrestrito
+  if (!isSuperAdmin && !session.user.empresaId) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-10 max-w-md text-center">
@@ -24,7 +24,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           </div>
           <h1 className="font-serif text-xl font-bold text-slate-900 mb-2">Conta sem empresa vinculada</h1>
           <p className="text-sm text-slate-500 leading-relaxed">
-            Sua conta não está vinculada a nenhuma empresa. Entre em contato com o administrador do sistema para configurar o acesso.
+            Sua conta não está vinculada a nenhuma empresa. Entre em contato com o administrador para configurar o acesso.
           </p>
         </div>
       </div>
@@ -41,8 +41,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
       : null,
   ])
 
-  // Empresa existe mas não tem tipo de sistema configurado: bloqueia acesso de usuários não-admin
-  if (!isSystemAdmin && empresa && !empresa.tipoSistema) {
+  // Empresa sem tipo configurado: bloqueia acesso de usuários não-super-admin
+  if (!isSuperAdmin && empresa && !empresa.tipoSistema) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-10 max-w-md text-center">
@@ -63,6 +63,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       <div className="min-h-screen flex bg-slate-50 font-sans">
         <Sidebar
           role={session.user.role}
+          isSuperAdmin={isSuperAdmin}
           grupoIsAdmin={session.user.grupoIsAdmin}
           modules={modulosAtivos}
           brand={empresa ?? null}

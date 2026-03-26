@@ -20,16 +20,20 @@ export async function GET(_: NextRequest, { params }: Params) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isSystemAdmin = session.user.role === UserRole.A
-  const canAccess = isSystemAdmin || session.user.grupoIsAdmin || session.user.role === UserRole.T
+  const { isSuperAdmin } = session.user
+  const canAccess =
+    isSuperAdmin ||
+    session.user.role === UserRole.A ||
+    session.user.grupoIsAdmin ||
+    session.user.role === UserRole.T
   if (!canAccess) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
   const user = await db.user.findUnique({ where: { id }, select: USER_SELECT })
   if (!user) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
 
-  // T e grupoIsAdmin só acessam usuários da própria empresa
-  if (!isSystemAdmin && user.empresaId !== session.user.empresaId) {
+  // Não-super-admin só acessa usuários da própria empresa
+  if (!isSuperAdmin && user.empresaId !== session.user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -40,17 +44,17 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isSystemAdmin = session.user.role === UserRole.A
-  const isEmpresaAdmin = session.user.grupoIsAdmin && !!session.user.empresaId
+  const { isSuperAdmin } = session.user
+  const isEmpresaAdmin = session.user.role === UserRole.A || session.user.grupoIsAdmin
 
-  if (!isSystemAdmin && !isEmpresaAdmin) {
+  if (!isSuperAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   const { id } = await params
 
-  // Verifica que o usuário alvo existe e pertence à empresa do requester (se não for admin do sistema)
-  if (!isSystemAdmin) {
+  // Verifica que o usuário alvo existe e pertence à empresa do requester
+  if (!isSuperAdmin) {
     const target = await db.user.findUnique({ where: { id }, select: { empresaId: true } })
     if (!target) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
     if (target.empresaId !== session.user.empresaId) {
@@ -61,23 +65,20 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const body = await request.json()
   const { name, email, role, department, phone, active, password, empresaId, setorId, grupoId } = body
 
-  // Não-admin do sistema não pode mudar a empresa do usuário
-  const resolvedEmpresaId = isSystemAdmin ? empresaId : session.user.empresaId
+  // Não-empresa-admin não pode mudar a empresa do usuário
+  const resolvedEmpresaId = isSuperAdmin ? empresaId : session.user.empresaId
 
-  if (role !== UserRole.A && !resolvedEmpresaId) {
-    return NextResponse.json({ error: "Empresa é obrigatória para este perfil de usuário." }, { status: 400 })
-  }
-
-  // Não-admin não pode promover a UserRole.A
-  if (!isSystemAdmin && role === UserRole.A) {
-    return NextResponse.json({ error: "Sem permissão para promover administradores do sistema." }, { status: 403 })
+  if (!resolvedEmpresaId) {
+    return NextResponse.json({ error: "Empresa é obrigatória." }, { status: 400 })
   }
 
   const updateData: Record<string, unknown> = {
-    name, email, role, department, phone, active,
-    empresaId: resolvedEmpresaId || null,
-    setorId:   setorId   || null,
-    grupoId:   grupoId   || null,
+    name, email,
+    role: role as UserRole,
+    department, phone, active,
+    empresaId: resolvedEmpresaId,
+    setorId: setorId || null,
+    grupoId: grupoId || null,
   }
 
   if (password) updateData.password = await bcrypt.hash(password, 12)
@@ -90,17 +91,16 @@ export async function DELETE(_: NextRequest, { params }: Params) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isSystemAdmin = session.user.role === UserRole.A
-  const isEmpresaAdmin = session.user.grupoIsAdmin && !!session.user.empresaId
+  const { isSuperAdmin } = session.user
+  const isEmpresaAdmin = session.user.role === UserRole.A || session.user.grupoIsAdmin
 
-  if (!isSystemAdmin && !isEmpresaAdmin) {
+  if (!isSuperAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   const { id } = await params
 
-  // grupoIsAdmin só pode desativar usuários da própria empresa
-  if (!isSystemAdmin) {
+  if (!isSuperAdmin) {
     const target = await db.user.findUnique({ where: { id }, select: { empresaId: true } })
     if (!target) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 })
     if (target.empresaId !== session.user.empresaId) {

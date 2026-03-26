@@ -40,6 +40,7 @@ export const authOptions: NextAuthOptions = {
           name:         user.name,
           email:        user.email,
           role:         user.role as string,
+          isSuperAdmin: user.isSuperAdmin,
           empresaId:    user.empresaId ?? null,
           grupoId:      user.grupoId ?? null,
           setorId:      user.setorId ?? null,
@@ -52,11 +53,13 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         const u = user as unknown as {
-          id: string; role: string; empresaId: string | null
-          grupoId: string | null; setorId: string | null; grupoIsAdmin: boolean
+          id: string; role: string; isSuperAdmin: boolean
+          empresaId: string | null; grupoId: string | null
+          setorId: string | null; grupoIsAdmin: boolean
         }
         token.id           = u.id
         token.role         = u.role
+        token.isSuperAdmin = u.isSuperAdmin ?? false
         token.empresaId    = u.empresaId ?? null
         token.grupoId      = u.grupoId ?? null
         token.setorId      = u.setorId ?? null
@@ -68,6 +71,7 @@ export const authOptions: NextAuthOptions = {
       if (token && session.user) {
         session.user.id           = token.id
         session.user.role         = token.role
+        session.user.isSuperAdmin = token.isSuperAdmin ?? false
         session.user.empresaId    = token.empresaId ?? null
         session.user.grupoId      = token.grupoId ?? null
         session.user.setorId      = token.setorId ?? null

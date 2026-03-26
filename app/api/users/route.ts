@@ -24,12 +24,17 @@ export async function GET() {
   const requester = getRequester(session)
   if (!requester) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isSystemAdmin = requester.role === UserRole.A
-  const canAccess = isSystemAdmin || requester.grupoIsAdmin || requester.role === UserRole.T
+  const { isSuperAdmin } = requester
+  // Pode listar usuários: super admin, admin de empresa (role A), admin de grupo, técnico
+  const canAccess =
+    isSuperAdmin ||
+    requester.role === UserRole.A ||
+    requester.grupoIsAdmin ||
+    requester.role === UserRole.T
   if (!canAccess) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
-  // T e grupoIsAdmin só veem usuários da própria empresa
-  const where = isSystemAdmin ? {} : { empresaId: requester.empresaId ?? "" }
+  // Super admin vê todos; demais veem apenas da própria empresa
+  const where = isSuperAdmin ? {} : { empresaId: requester.empresaId ?? "" }
 
   const users = await db.user.findMany({
     where,
@@ -45,10 +50,10 @@ export async function POST(request: NextRequest) {
   const requester = getRequester(session)
   if (!requester) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isSystemAdmin = requester.role === UserRole.A
-  const isEmpresaAdmin = requester.grupoIsAdmin && !!requester.empresaId
-
-  if (!isSystemAdmin && !isEmpresaAdmin) {
+  const { isSuperAdmin } = requester
+  // Pode criar usuários: super admin, admin de empresa, admin de grupo
+  const isEmpresaAdmin = requester.role === UserRole.A || requester.grupoIsAdmin
+  if (!isSuperAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -59,16 +64,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Campos obrigatórios faltando" }, { status: 400 })
   }
 
-  // Não-admin do sistema só pode criar usuários na própria empresa
-  const resolvedEmpresaId = isSystemAdmin ? empresaId : requester.empresaId
+  // Não-super-admin só pode criar usuários na própria empresa
+  const resolvedEmpresaId = isSuperAdmin ? empresaId : requester.empresaId
 
-  if (role !== UserRole.A && !resolvedEmpresaId) {
-    return NextResponse.json({ error: "Empresa é obrigatória para este perfil de usuário." }, { status: 400 })
+  if (!resolvedEmpresaId) {
+    return NextResponse.json({ error: "Empresa é obrigatória." }, { status: 400 })
   }
 
-  // Não-admin não pode criar UserRole.A
-  if (!isSystemAdmin && role === UserRole.A) {
-    return NextResponse.json({ error: "Sem permissão para criar administradores do sistema." }, { status: 403 })
+  // Não-super-admin não pode criar isSuperAdmin
+  if (!isSuperAdmin && (role === "SUPER" || body.isSuperAdmin)) {
+    return NextResponse.json({ error: "Sem permissão para criar super administradores." }, { status: 403 })
   }
 
   const existing = await db.user.findUnique({ where: { email } })
@@ -80,8 +85,10 @@ export async function POST(request: NextRequest) {
 
   const user = await db.user.create({
     data: {
-      name, email, password: hashedPassword, role, department, phone,
-      ...(resolvedEmpresaId ? { empresaId: resolvedEmpresaId } : {}),
+      name, email, password: hashedPassword,
+      role: role as UserRole,
+      department, phone,
+      empresaId: resolvedEmpresaId,
       ...(setorId ? { setorId } : {}),
       ...(grupoId ? { grupoId } : {}),
     },

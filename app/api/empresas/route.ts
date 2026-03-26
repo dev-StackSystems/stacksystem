@@ -1,30 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { requireSuperAdmin } from "@/backend/auth/session-helpers"
 import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/shared/constants/sistema-types"
 
-// GET /api/empresas — qualquer usuário autenticado pode listar
+// GET /api/empresas — apenas super admin (desenvolvedor/i3)
 export async function GET() {
-  const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  }
+  const auth = await requireSuperAdmin()
+  if (auth instanceof NextResponse) return auth
 
   const empresas = await db.empresa.findMany({
     orderBy: { nome: "asc" },
     include: {
-      _count: { select: { cursos: true } },
+      _count: { select: { cursos: true, usuarios: true } },
     },
   })
 
   return NextResponse.json(empresas)
 }
 
-// POST /api/empresas — apenas admin do sistema
+// POST /api/empresas — apenas super admin
 export async function POST(request: NextRequest) {
-  const authResult = await requireRole([UserRole.A])
-  if (authResult instanceof NextResponse) return authResult
+  const auth = await requireSuperAdmin()
+  if (auth instanceof NextResponse) return auth
 
   const body = await request.json()
   const {
@@ -43,7 +40,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Tipo de sistema é obrigatório" }, { status: 400 })
   }
 
-  // Verificar CNPJ duplicado se fornecido
   if (cnpj && cnpj.trim() !== "") {
     const existing = await db.empresa.findUnique({ where: { cnpj: cnpj.trim() } })
     if (existing) {
@@ -79,7 +75,7 @@ export async function POST(request: NextRequest) {
     },
   })
 
-  // Criar módulos automaticamente baseados no tipo de sistema
+  // Cria módulos automaticamente baseados no tipo de sistema
   if (tipoSistema && tipoSistema !== "personalizado") {
     const tipo = TIPOS_SISTEMA.find((t) => t.key === tipoSistema)
     if (tipo) {

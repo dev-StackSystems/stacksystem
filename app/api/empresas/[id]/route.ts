@@ -1,25 +1,25 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/backend/database/prisma-client"
-import { requireRole } from "@/backend/auth/session-helpers"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/backend/auth/nextauth-config"
+import { getCurrentUser } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
 
 // PUT /api/empresas/[id]
-// — UserRole.A: edita tudo
-// — grupoIsAdmin da empresa: edita dados básicos e identidade visual (sem tipoSistema, sem ativa)
+// — isSuperAdmin: edita tudo
+// — UserRole.A da empresa / grupoIsAdmin: edita dados e identidade visual (sem tipoSistema/ativa)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getServerSession(authOptions)
-  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { id } = await params
-  const isSystemAdmin = session.user.role === UserRole.A
-  const isEmpresaAdmin = session.user.grupoIsAdmin && session.user.empresaId === id
 
-  if (!isSystemAdmin && !isEmpresaAdmin) {
+  const isSuperAdmin = user.isSuperAdmin
+  const isEmpresaAdmin =
+    (user.role === UserRole.A || user.grupoIsAdmin) && user.empresaId === id
+
+  if (!isSuperAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -73,8 +73,8 @@ export async function PUT(
       nomeSistema: nomeSistema?.trim() || null,
       mascara: mascara?.trim() || null,
       descricao: descricao?.trim() || null,
-      // Apenas admin do sistema pode mudar tipo e status
-      ...(isSystemAdmin && {
+      // Apenas super admin pode mudar tipo de sistema e status de ativação
+      ...(isSuperAdmin && {
         ativa: typeof ativa === "boolean" ? ativa : existing.ativa,
         tipoSistema: tipoSistema?.trim() || existing.tipoSistema,
       }),
@@ -84,13 +84,14 @@ export async function PUT(
   return NextResponse.json(empresa)
 }
 
-// DELETE /api/empresas/[id] — soft delete, apenas admin do sistema
+// DELETE /api/empresas/[id] — soft delete, apenas super admin
 export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole([UserRole.A])
-  if (authResult instanceof NextResponse) return authResult
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  if (!user.isSuperAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
 
@@ -99,10 +100,6 @@ export async function DELETE(
     return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 })
   }
 
-  const empresa = await db.empresa.update({
-    where: { id },
-    data: { ativa: false },
-  })
-
+  const empresa = await db.empresa.update({ where: { id }, data: { ativa: false } })
   return NextResponse.json(empresa)
 }

@@ -1,48 +1,47 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
+import { getCurrentUser } from "@/backend/auth/session-helpers"
 import { UserRole } from "@prisma/client"
 
 type Params = { params: Promise<{ id: string }> }
 
-// GET /api/alunos/[id] — qualquer role autenticado
+const ALUNO_SELECT = {
+  id: true, nome: true, email: true, cpf: true,
+  telefone: true, dataNasc: true, ativo: true, createdAt: true,
+  _count: { select: { matriculas: true } },
+}
+
+async function getAlunoScoped(id: string, user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>) {
+  const aluno = await db.aluno.findUnique({ where: { id }, select: { ...ALUNO_SELECT, empresaId: true } })
+  if (!aluno) return null
+  // Super admin acessa qualquer um; demais apenas da própria empresa
+  if (!user.isSuperAdmin && aluno.empresaId !== user.empresaId) return null
+  return aluno
+}
+
 export async function GET(_: NextRequest, { params }: Params) {
   const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  }
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { id } = await params
-
-  const aluno = await db.aluno.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      nome: true,
-      email: true,
-      cpf: true,
-      telefone: true,
-      dataNasc: true,
-      ativo: true,
-      createdAt: true,
-    },
-  })
-
-  if (!aluno) {
-    return NextResponse.json({ error: "Aluno não encontrado." }, { status: 404 })
-  }
+  const aluno = await getAlunoScoped(id, user)
+  if (!aluno) return NextResponse.json({ error: "Aluno não encontrado." }, { status: 404 })
 
   return NextResponse.json(aluno)
 }
 
-// PUT /api/alunos/[id] — qualquer role autenticado pode editar
 export async function PUT(request: NextRequest, { params }: Params) {
   const user = await getCurrentUser()
-  if (!user) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+
+  if (user.role === UserRole.F && !user.isSuperAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
   const { id } = await params
+  const aluno = await getAlunoScoped(id, user)
+  if (!aluno) return NextResponse.json({ error: "Aluno não encontrado." }, { status: 404 })
+
   const body = await request.json()
   const { nome, email, cpf, telefone, dataNasc, ativo } = body
 
@@ -50,60 +49,52 @@ export async function PUT(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Nome e e-mail são obrigatórios." }, { status: 400 })
   }
 
-  // Verifica e-mail duplicado (exceto o próprio)
+  // Email único por empresa (exceto o próprio)
   const existingEmail = await db.aluno.findFirst({
-    where: { email, NOT: { id } },
+    where: { empresaId: aluno.empresaId, email, NOT: { id } },
   })
   if (existingEmail) {
-    return NextResponse.json({ error: "E-mail já cadastrado para outro aluno." }, { status: 409 })
+    return NextResponse.json({ error: "E-mail já cadastrado para outro aluno nesta empresa." }, { status: 409 })
   }
 
-  // Verifica CPF duplicado (exceto o próprio)
   if (cpf) {
     const existingCpf = await db.aluno.findFirst({
-      where: { cpf, NOT: { id } },
+      where: { empresaId: aluno.empresaId, cpf, NOT: { id } },
     })
     if (existingCpf) {
-      return NextResponse.json({ error: "CPF já cadastrado para outro aluno." }, { status: 409 })
+      return NextResponse.json({ error: "CPF já cadastrado para outro aluno nesta empresa." }, { status: 409 })
     }
   }
 
-  const aluno = await db.aluno.update({
+  const updated = await db.aluno.update({
     where: { id },
     data: {
-      nome,
-      email,
+      nome, email,
       cpf: cpf || null,
       telefone: telefone || null,
       dataNasc: dataNasc ? new Date(dataNasc) : null,
       ativo: typeof ativo === "boolean" ? ativo : true,
     },
-    select: {
-      id: true,
-      nome: true,
-      email: true,
-      cpf: true,
-      telefone: true,
-      dataNasc: true,
-      ativo: true,
-      createdAt: true,
-    },
+    select: ALUNO_SELECT,
   })
 
-  return NextResponse.json(aluno)
+  return NextResponse.json(updated)
 }
 
-// DELETE /api/alunos/[id] — soft delete, apenas ADMIN
+// DELETE — soft delete, apenas admin de empresa ou super admin
 export async function DELETE(_: NextRequest, { params }: Params) {
-  const authResult = await requireRole([UserRole.A])
-  if (authResult instanceof NextResponse) return authResult
+  const user = await getCurrentUser()
+  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+
+  const isEmpresaAdmin = user.role === UserRole.A || user.grupoIsAdmin
+  if (!user.isSuperAdmin && !isEmpresaAdmin) {
+    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+  }
 
   const { id } = await params
+  const aluno = await getAlunoScoped(id, user)
+  if (!aluno) return NextResponse.json({ error: "Aluno não encontrado." }, { status: 404 })
 
-  await db.aluno.update({
-    where: { id },
-    data: { ativo: false },
-  })
-
+  await db.aluno.update({ where: { id }, data: { ativo: false } })
   return NextResponse.json({ success: true })
 }

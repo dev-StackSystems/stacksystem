@@ -6,43 +6,99 @@ const prisma = new PrismaClient()
 async function main() {
   console.log("🌱 Iniciando seed...")
 
-  // ── Usuários internos ────────────────────────────────────
   const adminPass = await bcrypt.hash("Admin@1234!", 12)
 
-  const admin = await prisma.user.upsert({
+  // ── Super Admin (desenvolvedor/i3) ─────────────────────────
+  // Não vinculado a nenhuma empresa — acesso irrestrito à plataforma
+  const superAdmin = await prisma.user.upsert({
     where: { email: "admin@stacksystems.com.br" },
-    update: {},
-    create: { name: "Administrador", email: "admin@stacksystems.com.br", password: adminPass, role: UserRole.A, department: "TI", active: true },
+    update: { isSuperAdmin: true },
+    create: {
+      name: "Administrador da Plataforma",
+      email: "admin@stacksystems.com.br",
+      password: adminPass,
+      role: UserRole.A,
+      isSuperAdmin: true,
+      active: true,
+    },
   })
 
-  await prisma.user.upsert({
-    where: { email: "tecnico@stacksystems.com.br" },
-    update: {},
-    create: { name: "Técnico Silva", email: "tecnico@stacksystems.com.br", password: adminPass, role: UserRole.T, department: "Suporte", active: true },
-  })
-
-  await prisma.user.upsert({
-    where: { email: "professor@stacksystems.com.br" },
-    update: {},
-    create: { name: "Prof. Ana Lima", email: "professor@stacksystems.com.br", password: adminPass, role: UserRole.F, department: "Exatas", active: true },
-  })
-
-  console.log("✓ Usuários internos")
+  console.log("✓ Super Admin")
 
   // ── Empresas ────────────────────────────────────────────
   const emp1 = await prisma.empresa.upsert({
     where: { cnpj: "12.345.678/0001-90" },
     update: {},
-    create: { nome: "Cursinho Ápice", cnpj: "12.345.678/0001-90", email: "contato@apice.com.br", telefone: "(11) 99999-0001", ativa: true },
+    create: {
+      nome: "Cursinho Ápice",
+      cnpj: "12.345.678/0001-90",
+      email: "contato@apice.com.br",
+      telefone: "(11) 99999-0001",
+      tipoSistema: "cursinho",
+      ativa: true,
+    },
   })
 
   const emp2 = await prisma.empresa.upsert({
     where: { cnpj: "98.765.432/0001-10" },
     update: {},
-    create: { nome: "Instituto Vanguarda", cnpj: "98.765.432/0001-10", email: "contato@vanguarda.com.br", telefone: "(11) 99999-0002", ativa: true },
+    create: {
+      nome: "Instituto Vanguarda",
+      cnpj: "98.765.432/0001-10",
+      email: "contato@vanguarda.com.br",
+      telefone: "(11) 99999-0002",
+      tipoSistema: "cursinho",
+      ativa: true,
+    },
   })
 
   console.log("✓ Empresas")
+
+  // ── Usuários da empresa 1 ────────────────────────────────
+  // Admin da empresa = UserRole.A com empresaId (gerencia apenas a própria empresa)
+  await prisma.user.upsert({
+    where: { email: "admin@apice.com.br" },
+    update: {},
+    create: {
+      name: "Admin Ápice",
+      email: "admin@apice.com.br",
+      password: adminPass,
+      role: UserRole.A,
+      isSuperAdmin: false,
+      empresaId: emp1.id,
+      active: true,
+    },
+  })
+
+  await prisma.user.upsert({
+    where: { email: "tecnico@apice.com.br" },
+    update: {},
+    create: {
+      name: "Técnico Silva",
+      email: "tecnico@apice.com.br",
+      password: adminPass,
+      role: UserRole.T,
+      isSuperAdmin: false,
+      empresaId: emp1.id,
+      active: true,
+    },
+  })
+
+  await prisma.user.upsert({
+    where: { email: "professor@apice.com.br" },
+    update: {},
+    create: {
+      name: "Prof. Ana Lima",
+      email: "professor@apice.com.br",
+      password: adminPass,
+      role: UserRole.F,
+      isSuperAdmin: false,
+      empresaId: emp1.id,
+      active: true,
+    },
+  })
+
+  console.log("✓ Usuários das empresas")
 
   // ── Cursos ──────────────────────────────────────────────
   const cursoEnem = await prisma.empCurso.create({
@@ -86,27 +142,46 @@ async function main() {
 
   console.log("✓ Módulos e Aulas")
 
-  // ── Alunos ──────────────────────────────────────────────
-  const alunosData = [
-    { nome: "Lucas Ferreira",    email: "lucas@email.com",    cpf: "111.111.111-01" },
-    { nome: "Mariana Costa",     email: "mariana@email.com",  cpf: "111.111.111-02" },
-    { nome: "Pedro Alves",       email: "pedro@email.com",    cpf: "111.111.111-03" },
-    { nome: "Gabriela Santos",   email: "gabriela@email.com", cpf: "111.111.111-04" },
-    { nome: "Rafael Souza",      email: "rafael@email.com",   cpf: "111.111.111-05" },
-    { nome: "Isabela Oliveira",  email: "isabela@email.com",  cpf: "111.111.111-06" },
-    { nome: "Thiago Pereira",    email: "thiago@email.com",   cpf: "111.111.111-07" },
-    { nome: "Camila Rodrigues",  email: "camila@email.com",   cpf: "111.111.111-08" },
-    { nome: "Felipe Lima",       email: "felipe@email.com",   cpf: "111.111.111-09" },
-    { nome: "Juliana Martins",   email: "juliana@email.com",  cpf: "111.111.111-10" },
-    { nome: "Bruno Carvalho",    email: "bruno@email.com",    cpf: "111.111.111-11" },
-    { nome: "Letícia Gomes",     email: "leticia@email.com",  cpf: "111.111.111-12" },
+  // ── Alunos (vinculados à empresa) ────────────────────────
+  const alunosEmp1Data = [
+    { nome: "Lucas Ferreira",   email: "lucas@email.com",    cpf: "111.111.111-01" },
+    { nome: "Mariana Costa",    email: "mariana@email.com",  cpf: "111.111.111-02" },
+    { nome: "Pedro Alves",      email: "pedro@email.com",    cpf: "111.111.111-03" },
+    { nome: "Gabriela Santos",  email: "gabriela@email.com", cpf: "111.111.111-04" },
+    { nome: "Rafael Souza",     email: "rafael@email.com",   cpf: "111.111.111-05" },
+    { nome: "Isabela Oliveira", email: "isabela@email.com",  cpf: "111.111.111-06" },
+    { nome: "Thiago Pereira",   email: "thiago@email.com",   cpf: "111.111.111-07" },
+    { nome: "Camila Rodrigues", email: "camila@email.com",   cpf: "111.111.111-08" },
+    { nome: "Felipe Lima",      email: "felipe@email.com",   cpf: "111.111.111-09" },
+    { nome: "Juliana Martins",  email: "juliana@email.com",  cpf: "111.111.111-10" },
   ]
 
-  const alunos = await Promise.all(
-    alunosData.map(a =>
-      prisma.aluno.upsert({ where: { email: a.email }, update: {}, create: { ...a, ativo: true } })
+  const alunosEmp2Data = [
+    { nome: "Bruno Carvalho",  email: "bruno@email.com",   cpf: "111.111.111-11" },
+    { nome: "Letícia Gomes",   email: "leticia@email.com", cpf: "111.111.111-12" },
+  ]
+
+  const alunosEmp1 = await Promise.all(
+    alunosEmp1Data.map(a =>
+      prisma.aluno.upsert({
+        where: { empresaId_email: { empresaId: emp1.id, email: a.email } },
+        update: {},
+        create: { ...a, empresaId: emp1.id, ativo: true },
+      })
     )
   )
+
+  const alunosEmp2 = await Promise.all(
+    alunosEmp2Data.map(a =>
+      prisma.aluno.upsert({
+        where: { empresaId_email: { empresaId: emp2.id, email: a.email } },
+        update: {},
+        create: { ...a, empresaId: emp2.id, ativo: true },
+      })
+    )
+  )
+
+  const alunos = [...alunosEmp1, ...alunosEmp2]
 
   console.log("✓ Alunos")
 
@@ -116,14 +191,14 @@ async function main() {
     { aluno: alunos[1],  curso: cursoEnem, status: "ativa",     valor: 1200 },
     { aluno: alunos[2],  curso: cursoMed,  status: "ativa",     valor: 1800 },
     { aluno: alunos[3],  curso: cursoMed,  status: "concluida", valor: 1800 },
-    { aluno: alunos[4],  curso: cursoEng,  status: "ativa",     valor: 950  },
+    { aluno: alunos[4],  curso: cursoEnem, status: "ativa",     valor: 950  },
     { aluno: alunos[5],  curso: cursoEnem, status: "ativa",     valor: 1200 },
     { aluno: alunos[6],  curso: cursoMed,  status: "cancelada", valor: 1800 },
-    { aluno: alunos[7],  curso: cursoEng,  status: "ativa",     valor: 950  },
+    { aluno: alunos[7],  curso: cursoEnem, status: "ativa",     valor: 950  },
     { aluno: alunos[8],  curso: cursoEnem, status: "concluida", valor: 1200 },
     { aluno: alunos[9],  curso: cursoMed,  status: "ativa",     valor: 1800 },
     { aluno: alunos[10], curso: cursoEng,  status: "ativa",     valor: 950  },
-    { aluno: alunos[11], curso: cursoEnem, status: "ativa",     valor: 1200 },
+    { aluno: alunos[11], curso: cursoEng,  status: "ativa",     valor: 1200 },
   ]
 
   const matriculas = await Promise.all(
@@ -188,12 +263,13 @@ async function main() {
 
   // ── Log de segurança ────────────────────────────────────
   await prisma.segurancaUser.create({
-    data: { userId: admin.id, acao: "login", detalhes: "Primeiro acesso ao sistema", ip: "127.0.0.1" },
+    data: { userId: superAdmin.id, acao: "login", detalhes: "Primeiro acesso ao sistema", ip: "127.0.0.1" },
   })
 
   console.log("✓ Segurança")
   console.log("\n✅ Seed concluído com sucesso!")
-  console.log("   Login: admin@stacksystems.com.br / Admin@1234!")
+  console.log("   Super Admin: admin@stacksystems.com.br / Admin@1234!")
+  console.log("   Admin Ápice: admin@apice.com.br / Admin@1234!")
 }
 
 main()

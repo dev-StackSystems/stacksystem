@@ -3,7 +3,7 @@ import { useState } from "react"
 import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
-  GraduationCap, BookOpen, Layers, Play, DollarSign,
+  GraduationCap, BookOpen, Layers, DollarSign,
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
 } from "lucide-react"
 import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
@@ -11,7 +11,7 @@ import { SidebarNavLink } from "./dashboard-sidebar-nav-link"
 type NavItem = { icon: typeof LayoutDashboard; label: string; href: string; moduleKey?: string }
 type NavGroup = { label: string | null; items: NavItem[] }
 
-// Template com todos os módulos acadêmicos — usado para filtragem
+// Módulos disponíveis — filtrados pelos módulos ativos da empresa
 const MODULE_GROUPS: NavGroup[] = [
   {
     label: null,
@@ -40,14 +40,14 @@ const MODULE_GROUPS: NavGroup[] = [
   },
 ]
 
-// Nav exclusiva do admin do sistema (UserRole.A)
-const SYSTEM_ADMIN_GROUPS: NavGroup[] = [
+// Sidebar exclusiva do super admin (desenvolvedor/i3) — acesso cross-empresa
+const SUPER_ADMIN_GROUPS: NavGroup[] = [
   {
     label: null,
     items: [{ icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" }],
   },
   {
-    label: "Sistema",
+    label: "Plataforma",
     items: [
       { icon: Building2,   label: "Empresas",      href: "/dashboard/empresas" },
       { icon: Users,       label: "Usuários",      href: "/dashboard/usuarios" },
@@ -68,9 +68,10 @@ function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: strin
     if (filteredItems.length > 0) result.push({ label: group.label, items: filteredItems })
   }
 
-  if (grupoIsAdmin) {
+  // Admin da empresa (role A) ou admin do grupo: vê configurações da empresa
+  if (role === "A" || grupoIsAdmin) {
     result.push({
-      label: "Sistema",
+      label: "Empresa",
       items: [
         { icon: Briefcase,  label: "Setores",       href: "/dashboard/setores" },
         { icon: UsersRound, label: "Grupos",        href: "/dashboard/grupos" },
@@ -80,7 +81,7 @@ function buildFilteredGroups(role: string, grupoIsAdmin: boolean, modules: strin
     })
   } else if (role === "T") {
     result.push({
-      label: "Sistema",
+      label: "Empresa",
       items: [{ icon: Users, label: "Usuários", href: "/dashboard/usuarios" }],
     })
   }
@@ -96,15 +97,22 @@ interface Brand {
 }
 
 interface Props {
-  role: string
+  role:         string
+  isSuperAdmin: boolean
   grupoIsAdmin: boolean
-  modules: string[]
-  brand?: Brand | null
+  modules:      string[]
+  brand?:       Brand | null
 }
 
-export function Sidebar({ role, grupoIsAdmin, modules, brand }: Props) {
+export function Sidebar({ role, isSuperAdmin, grupoIsAdmin, modules, brand }: Props) {
   const [open, setOpen] = useState(false)
-  const groups = role === "A" ? SYSTEM_ADMIN_GROUPS : buildFilteredGroups(role, grupoIsAdmin, modules)
+
+  // Super admin vê a sidebar da plataforma (cross-empresa, sem branding de empresa)
+  // Demais usuários veem a sidebar filtrada pelos módulos da empresa
+  const groups = isSuperAdmin
+    ? SUPER_ADMIN_GROUPS
+    : buildFilteredGroups(role, grupoIsAdmin, modules)
+
   const brandColor = brand?.cor || "#f97316"
   const isDefaultBrand = !brand
 
@@ -148,7 +156,9 @@ export function Sidebar({ role, grupoIsAdmin, modules, brand }: Props) {
             </div>
           )}
           <span className="font-serif text-[15px] font-bold text-white truncate">
-            {brand ? (
+            {isSuperAdmin ? (
+              <>Stack<span style={{ color: "#f97316" }}>Systems</span></>
+            ) : brand ? (
               brand.nomeSistema || brand.nome
             ) : (
               <>Stack<span style={{ color: brandColor }}>Systems</span></>
@@ -174,7 +184,7 @@ export function Sidebar({ role, grupoIsAdmin, modules, brand }: Props) {
                     href={item.href}
                     label={item.label}
                     icon={item.icon}
-                    brandColor={brandColor}
+                    brandColor={isSuperAdmin ? "#f97316" : brandColor}
                   />
                 ))}
               </div>

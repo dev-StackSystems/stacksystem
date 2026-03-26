@@ -11,17 +11,18 @@ export default async function UsuariosPage() {
   const session = await getServerSession(authOptions)
   if (!session) redirect("/login")
 
-  // Corpo Docente não tem acesso
-  if (session.user.role === UserRole.F) redirect("/dashboard")
+  // Corpo Docente não tem acesso a gestão de usuários
+  if (session.user.role === UserRole.F && !session.user.isSuperAdmin) redirect("/dashboard")
 
-  const isSystemAdmin = session.user.role === UserRole.A
-  const isEmpresaAdmin = session.user.grupoIsAdmin
-  const canManage = isSystemAdmin || isEmpresaAdmin
+  const { isSuperAdmin } = session.user
+  // Admin de empresa = role A ou grupoIsAdmin (dentro da empresa)
+  const isEmpresaAdmin = session.user.role === UserRole.A || session.user.grupoIsAdmin
+  const canManage = isSuperAdmin || isEmpresaAdmin
 
-  // Escopo: admin do sistema vê todos; demais veem só a própria empresa
-  const userWhere = isSystemAdmin ? {} : { empresaId: session.user.empresaId ?? "" }
-  const empresaWhere = isSystemAdmin ? { ativa: true } : { id: session.user.empresaId ?? "", ativa: true }
-  const escopoWhere = isSystemAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }
+  // Escopo: super admin vê todos; demais veem só a própria empresa
+  const userWhere = isSuperAdmin ? {} : { empresaId: session.user.empresaId ?? "" }
+  const empresaWhere = isSuperAdmin ? { ativa: true } : { id: session.user.empresaId ?? "", ativa: true }
+  const escopoWhere = isSuperAdmin ? {} : { empresaId: session.user.empresaId ?? undefined }
 
   const [users, empresas, setores, grupos] = await Promise.all([
     db.user.findMany({
@@ -59,7 +60,7 @@ export default async function UsuariosPage() {
         <div>
           <h1 className="font-serif text-2xl font-bold text-slate-900">Usuários</h1>
           <p className="text-sm text-slate-400 mt-0.5">
-            {isSystemAdmin ? "Todos os usuários da plataforma" : "Usuários da sua empresa"}
+            {isSuperAdmin ? "Todos os usuários da plataforma" : "Usuários da sua empresa"}
           </p>
         </div>
         {canManage && (
@@ -68,7 +69,7 @@ export default async function UsuariosPage() {
             empresas={empresas}
             setores={setores}
             grupos={grupos}
-            isSystemAdmin={isSystemAdmin}
+            isSystemAdmin={isSuperAdmin}
             trigger={
               <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
                 <UserPlus size={16} />
@@ -81,12 +82,12 @@ export default async function UsuariosPage() {
 
       <UserTable
         users={users}
-        isAdmin={isSystemAdmin}
+        isAdmin={isSuperAdmin || isEmpresaAdmin}
         canManage={canManage}
         empresas={empresas}
         setores={setores}
         grupos={grupos}
-        isSystemAdmin={isSystemAdmin}
+        isSystemAdmin={isSuperAdmin}
       />
     </div>
   )

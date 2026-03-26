@@ -16,20 +16,21 @@ enum UserRole {
 
 // ─── Auth / Usuários internos ──────────────────────────
 model User {
-  id         String    @id @default(cuid())
-  name       String
-  email      String    @unique
-  password   String
-  role       UserRole  @default(F)
-  department String?
-  phone      String?
-  avatar     String?
-  active     Boolean   @default(true)
-  empresaId  String?
-  setorId    String?
-  grupoId    String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  name         String
+  email        String    @unique
+  password     String
+  role         UserRole  @default(F)
+  isSuperAdmin Boolean   @default(false) // Apenas o desenvolvedor/i3 — acesso irrestrito a todas as empresas
+  department   String?
+  phone        String?
+  avatar       String?
+  active       Boolean   @default(true)
+  empresaId    String?
+  setorId      String?
+  grupoId      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   empresa       Empresa?        @relation(fields: [empresaId], references: [id])
   setor         Setor?          @relation(fields: [setorId], references: [id])
@@ -120,6 +121,7 @@ model Empresa {
 
   cursos   EmpCurso[]
   usuarios User[]
+  alunos   Aluno[]
   modulos  EmpresaModulo[]
   salas    Sala[]
   setores  Setor[]
@@ -289,18 +291,23 @@ model Aula {
 // ─── Alunos ───────────────────────────────────────────
 model Aluno {
   id        String    @id @default(cuid())
+  empresaId String?   // Aluno pertence a uma empresa específica (como pref_contribuinte)
   nome      String
-  email     String    @unique
-  cpf       String?   @unique
+  email     String
+  cpf       String?
   telefone  String?
   dataNasc  DateTime?
   ativo     Boolean   @default(true)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  empresa      Empresa?      @relation(fields: [empresaId], references: [id])
   matriculas   Matricula[]
   certificados Certificado[]
 
+  // Unicidade por empresa — quando empresaId for NULL usa email global por compatibilidade
+  @@unique([empresaId, email])
+  @@unique([empresaId, cpf])
   @@map("alunos")
 }
 
