@@ -2,7 +2,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { UserFormModal } from "@/frontend/modals/user-form-modal"
-import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2 } from "lucide-react"
+import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Search } from "lucide-react"
+import { useToast } from "@/frontend/layout/toast-provider"
 
 interface User {
   id: string
@@ -47,37 +48,73 @@ const ROLE_CONFIG: Record<string, { label: string; className: string }> = {
 export function UserTable({ users, isAdmin, canManage, isSystemAdmin = false, empresas = [], setores = [], grupos = [] }: Props) {
   const canEdit = canManage ?? isAdmin
   const router = useRouter()
+  const { toast } = useToast()
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
 
   const toggleActive = async (user: User) => {
     setLoadingId(user.id)
-    await fetch(`/api/users/${user.id}`, {
+    const res = await fetch(`/api/users/${user.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...user, active: !user.active }),
     })
     setLoadingId(null)
-    router.refresh()
+    if (res.ok) {
+      toast(user.active ? "Usuário desativado." : "Usuário ativado.", "info")
+      router.refresh()
+    } else {
+      toast("Erro ao alterar status.", "error")
+    }
   }
 
   const deleteUser = async (id: string) => {
-    if (!confirm("Desativar este usuário?")) return
+    if (!confirm("Desativar este usuário permanentemente?")) return
     setLoadingId(id)
-    await fetch(`/api/users/${id}`, { method: "DELETE" })
+    const res = await fetch(`/api/users/${id}`, { method: "DELETE" })
     setLoadingId(null)
-    router.refresh()
+    if (res.ok) {
+      toast("Usuário desativado.")
+      router.refresh()
+    } else {
+      toast("Erro ao desativar usuário.", "error")
+    }
   }
 
-  if (users.length === 0) {
+  const filtered = users.filter(u => {
+    const term = search.toLowerCase()
     return (
-      <div className="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
-        <p className="text-slate-400 text-sm">Nenhum usuário cadastrado ainda.</p>
-      </div>
+      !term ||
+      u.name.toLowerCase().includes(term) ||
+      u.email.toLowerCase().includes(term) ||
+      (u.department ?? "").toLowerCase().includes(term) ||
+      (u.empresa?.nome ?? "").toLowerCase().includes(term)
     )
-  }
+  })
 
   return (
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+      {/* Busca */}
+      <div className="px-4 py-3 border-b border-slate-100">
+        <div className="relative max-w-xs">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, e-mail, empresa..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+          />
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="p-12 text-center">
+          <p className="text-slate-400 text-sm">
+            {search ? "Nenhum usuário encontrado para esta busca." : "Nenhum usuário cadastrado ainda."}
+          </p>
+        </div>
+      ) : (
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -93,7 +130,7 @@ export function UserTable({ users, isAdmin, canManage, isSystemAdmin = false, em
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
-            {users.map((user) => {
+            {filtered.map((user) => {
               const role = ROLE_CONFIG[user.role] ?? { label: user.role, className: "bg-slate-50 text-slate-500 border border-slate-200" }
               const isLoading = loadingId === user.id
 
@@ -195,8 +232,9 @@ export function UserTable({ users, isAdmin, canManage, isSystemAdmin = false, em
           </tbody>
         </table>
       </div>
+      )}
       <div className="px-6 py-3 border-t border-slate-100 bg-slate-50/50">
-        <p className="text-xs text-slate-400">{users.length} usuário{users.length !== 1 ? "s" : ""} encontrado{users.length !== 1 ? "s" : ""}</p>
+        <p className="text-xs text-slate-400">{filtered.length} de {users.length} usuário{users.length !== 1 ? "s" : ""}</p>
       </div>
     </div>
   )

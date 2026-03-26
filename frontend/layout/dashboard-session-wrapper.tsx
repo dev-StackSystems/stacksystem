@@ -1,6 +1,7 @@
 "use client"
 import { SessionProvider } from "next-auth/react"
 import type { Session } from "next-auth"
+import { ToastProvider } from "./toast-provider"
 
 export function SessionWrapper({
   children,
@@ -9,5 +10,9 @@ export function SessionWrapper({
   children: React.ReactNode
   session: Session | null
 }) {
-  return <SessionProvider session={session}>{children}</SessionProvider>
+  return (
+    <SessionProvider session={session}>
+      <ToastProvider>{children}</ToastProvider>
+    </SessionProvider>
+  )
 }

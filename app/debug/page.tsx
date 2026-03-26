@@ -1,5 +1,8 @@
 export const dynamic = "force-dynamic"
 
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/backend/auth/nextauth-config"
+import { redirect } from "next/navigation"
 import { db } from "@/backend/database/prisma-client"
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
@@ -73,6 +76,9 @@ async function runChecks(): Promise<CheckResult[]> {
 }
 
 export default async function DebugPage() {
+  const session = await getServerSession(authOptions)
+  if (!session || session.user.role !== "A") redirect("/dashboard")
+
   const checks = await runChecks()
   const allOk = checks.every(c => c.ok)
 

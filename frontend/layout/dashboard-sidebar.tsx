@@ -28,8 +28,7 @@ const MODULE_GROUPS: NavGroup[] = [
   {
     label: "Conteúdo",
     items: [
-      { icon: Play,  label: "Aulas",         href: "/dashboard/aulas",  moduleKey: "aulas" },
-      { icon: Video, label: "Salas de Aula", href: "/dashboard/salas",  moduleKey: "salas" },
+      { icon: Video, label: "Salas de Aula", href: "/dashboard/salas", moduleKey: "salas" },
     ],
   },
   {
