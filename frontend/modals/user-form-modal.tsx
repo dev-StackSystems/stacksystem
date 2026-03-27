@@ -61,7 +61,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
     name: "",
     email: "",
     password: "",
-    role: "F",
+    role: "",
     department: "",
     phone: "",
     empresaId: "",
@@ -83,7 +83,7 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
         grupoId: user.grupoId ?? "",
       })
     } else {
-      setForm({ name: "", email: "", password: "", role: "F", department: "", phone: "", empresaId: "", setorId: "", grupoId: "" })
+      setForm({ name: "", email: "", password: "", role: "", department: "", phone: "", empresaId: "", setorId: "", grupoId: "" })
     }
     setError("")
   }, [open, user, mode])
@@ -232,8 +232,9 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                   <select
                     value={form.role}
                     onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))}
-                    className={selectClass}
+                    className={`${selectClass} ${!form.role ? "border-amber-300 bg-amber-50/50" : ""}`}
                   >
+                    <option value="">— Selecionar perfil —</option>
                     {(isSystemAdmin ? ROLES_ADMIN : ROLES_EMPRESA).map((r) => (
                       <option key={r.value} value={r.value}>{r.label}</option>
                     ))}
@@ -251,8 +252,8 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                   ) : (
                     <select
                       value={form.empresaId}
-                      onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value }))}
-                      className={selectClass}
+                      onChange={(e) => setForm((f) => ({ ...f, empresaId: e.target.value, setorId: "", grupoId: "" }))}
+                      className={`${selectClass} ${empresaRequired && !form.empresaId ? "border-amber-300 bg-amber-50/50" : ""}`}
                     >
                       <option value="">— Selecionar empresa —</option>
                       {empresas.map((emp) => (
@@ -301,34 +302,39 @@ export function UserFormModal({ mode, user, trigger, empresas = [], setores = []
                 </div>
               </div>
 
-              {/* Linha 5: Setor | Grupo */}
+              {/* Linha 5: Setor | Grupo — opcionais, aparecem após selecionar empresa */}
               {form.empresaId && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelClass}>Setor</label>
-                    <select
-                      value={form.setorId}
-                      onChange={(e) => setForm((f) => ({ ...f, setorId: e.target.value }))}
-                      className={selectClass}
-                    >
-                      <option value="">— Nenhum —</option>
-                      {setoresFiltrados.map(s => (
-                        <option key={s.id} value={s.id}>{s.nome}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className={labelClass}>Grupo</label>
-                    <select
-                      value={form.grupoId}
-                      onChange={(e) => setForm((f) => ({ ...f, grupoId: e.target.value }))}
-                      className={selectClass}
-                    >
-                      <option value="">— Nenhum —</option>
-                      {gruposFiltrados.map(g => (
-                        <option key={g.id} value={g.id}>{g.nome}</option>
-                      ))}
-                    </select>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-2">
+                    Vínculo organizacional <span className="normal-case font-normal text-slate-300">(opcional)</span>
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className={labelClass}>Setor</label>
+                      <select
+                        value={form.setorId}
+                        onChange={(e) => setForm((f) => ({ ...f, setorId: e.target.value }))}
+                        className={selectClass}
+                      >
+                        <option value="">— Nenhum —</option>
+                        {setoresFiltrados.map(s => (
+                          <option key={s.id} value={s.id}>{s.nome}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Grupo</label>
+                      <select
+                        value={form.grupoId}
+                        onChange={(e) => setForm((f) => ({ ...f, grupoId: e.target.value }))}
+                        className={selectClass}
+                      >
+                        <option value="">— Nenhum —</option>
+                        {gruposFiltrados.map(g => (
+                          <option key={g.id} value={g.id}>{g.nome}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
                 </div>
               )}
