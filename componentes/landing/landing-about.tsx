@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "motion/react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/componentes/ui/badge"
 import { CheckCircle2 } from "lucide-react"
 
 const values = [

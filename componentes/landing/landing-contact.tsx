@@ -1,7 +1,7 @@
 "use client"
 import { useState } from "react"
 import { motion } from "motion/react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/componentes/ui/badge"
 import { Mail, User, MessageSquare, Send, CheckCircle, Building2 } from "lucide-react"
 
 const ease = [0.22, 1, 0.36, 1] as const

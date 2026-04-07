@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "motion/react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/componentes/ui/badge"
 
 const pains = [
   { icon: "🐌", text: "Sistema lento que trrava na hora errada" },

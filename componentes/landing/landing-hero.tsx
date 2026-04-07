@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "motion/react"
-import { Badge } from "@/components/ui/badge"
+import { Badge } from "@/componentes/ui/badge"
 
 const scrollTo = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
