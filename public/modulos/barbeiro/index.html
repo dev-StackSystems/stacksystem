@@ -237,6 +237,57 @@
   .modal-body { padding: 20px 24px; }
   .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
 
+  /* ── AGENDA NOVA ───────────────────────────── */
+  .ag-barber-card {
+    display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+    background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+    cursor: pointer; transition: all .15s; flex: 1; min-width: 200px;
+  }
+  .ag-barber-card:hover { border-color: rgba(201,168,76,.4); }
+  .ag-barber-card.active { border-color: var(--primary); background: rgba(201,168,76,.06); }
+  .ag-barber-avatar { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: 700; flex-shrink: 0; }
+  .ag-barber-info { flex: 1; }
+  .ag-barber-name { font-size: 14px; font-weight: 600; }
+  .ag-barber-spec { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .ag-barber-status { font-size: 11px; font-weight: 600; white-space: nowrap; }
+  .ag-barber-status.ok   { color: var(--success); }
+  .ag-barber-status.busy { color: var(--primary); }
+
+  .day-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 10px 6px; border-radius: 10px; cursor: pointer; border: 2px solid var(--border);
+    background: var(--card); transition: all .15s;
+  }
+  .day-btn:hover { border-color: rgba(201,168,76,.4); }
+  .day-btn.active { border-color: var(--primary); background: rgba(201,168,76,.1); }
+  .day-btn.today .day-num { background: var(--primary); color: #0d0d0f; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+  .day-label { font-size: 10px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+  .day-num { font-size: 17px; font-weight: 700; }
+  .day-dots { display: flex; gap: 3px; }
+  .day-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--primary); opacity: .7; }
+
+  .slot-card {
+    border-radius: 10px; padding: 12px 14px; cursor: pointer;
+    transition: all .15s; border: 1px solid transparent; position: relative;
+  }
+  .slot-card.avail {
+    background: rgba(74,222,128,.1); border-color: rgba(74,222,128,.3);
+  }
+  .slot-card.avail:hover { background: rgba(74,222,128,.2); border-color: var(--success); transform: translateY(-1px); }
+  .slot-card.booked { background: rgba(201,168,76,.1); border-color: rgba(201,168,76,.3); cursor: default; }
+  .slot-card.blocked { background: rgba(248,113,113,.08); border-color: rgba(248,113,113,.2); cursor: default; }
+  .slot-time { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+  .slot-avail-lbl { font-size: 11px; color: var(--success); font-weight: 600; }
+  .slot-client { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 1px; }
+  .slot-service { font-size: 11px; color: var(--muted); }
+  .slot-blocked-lbl { font-size: 11px; color: var(--danger); font-weight: 600; }
+  .slot-badge {
+    position: absolute; top: 8px; right: 8px; font-size: 9px; font-weight: 700;
+    padding: 2px 6px; border-radius: 8px; letter-spacing: .04em;
+  }
+  .slot-badge.avail  { background: rgba(74,222,128,.2);  color: var(--success); }
+  .slot-badge.booked { background: rgba(201,168,76,.2);  color: var(--primary); }
+
   /* ── SCROLLBAR ─────────────────────────────── */
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: transparent; }
@@ -441,91 +492,89 @@
 
     <!-- ══ AGENDA ══════════════════════════════ -->
     <div class="page" id="page-agenda">
-      <div class="flex items-center mb-4" style="margin-bottom:20px">
+      <div class="flex items-center" style="margin-bottom:24px">
         <div>
           <div class="section-title">Agenda</div>
-          <div class="section-sub" style="margin-bottom:0">Segunda-feira, 07 de Abril de 2025</div>
+          <div class="section-sub" style="margin-bottom:0">Selecione o barbeiro e o dia para ver os horários</div>
         </div>
-        <div class="ml-auto flex gap-2">
-          <button class="btn btn-ghost btn-sm">← Anterior</button>
-          <button class="btn btn-ghost btn-sm">Hoje</button>
-          <button class="btn btn-ghost btn-sm">Próximo →</button>
+        <div class="ml-auto">
           <button class="btn btn-primary btn-sm" onclick="openModal('modalAgendamento')">+ Novo Agendamento</button>
         </div>
       </div>
 
-      <div class="card">
-        <div class="card-body" style="padding:0;overflow-x:auto">
-          <div class="agenda-grid">
-            <!-- Headers -->
-            <div class="agenda-header" style="font-size:11px;color:var(--muted)">Hora</div>
-            <div class="agenda-header">Bruno Silva</div>
-            <div class="agenda-header">Marcos Oliveira</div>
-            <div class="agenda-header">Ricardo Alves</div>
-            <div class="agenda-header">Caio Santos</div>
-
-            <!-- 09:00 -->
-            <div class="agenda-time">09:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Pedro A. — Corte+Barba</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Ivan M. — Corte</div></div>
-            <div class="agenda-cell"></div>
-            <div class="agenda-cell"><div class="agenda-event ev-green">Fábio C. — Barba</div></div>
-
-            <div class="agenda-time">09:30</div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-            <div class="agenda-cell"></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">João P. — Corte+Barba</div></div>
-            <div class="agenda-cell" style="background:rgba(74,222,128,.04)"></div>
-
-            <div class="agenda-time">10:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Marco A. — Corte</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Leandro S. — Corte+Pigmento</div></div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-            <div class="agenda-cell"></div>
-
-            <div class="agenda-time">10:30</div>
-            <div class="agenda-cell"></div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-            <div class="agenda-cell"><div class="agenda-event ev-green">Rui B. — Barba</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Daniel F. — Corte</div></div>
-
-            <div class="agenda-time">11:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-green">Carlos H. — Barba</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Aldo M. — Corte</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Roberto K. — Corte+Barba</div></div>
-            <div class="agenda-cell"></div>
-
-            <div class="agenda-time">11:30</div>
-            <div class="agenda-cell" style="background:rgba(74,222,128,.04)"></div>
-            <div class="agenda-cell"></div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Victor N. — Corte+Barba</div></div>
-
-            <div class="agenda-time">12:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-red" style="font-size:11px;color:var(--danger)">⏸ Almoço</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-red" style="font-size:11px;color:var(--danger)">⏸ Almoço</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-red" style="font-size:11px;color:var(--danger)">⏸ Almoço</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-red" style="font-size:11px;color:var(--danger)">⏸ Almoço</div></div>
-
-            <div class="agenda-time">14:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Carlos M. — Corte+Barba</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Felipe C. — Corte</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-green">André L. — Barba</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Paulo R. — Corte+Pigmento</div></div>
-
-            <div class="agenda-time">14:30</div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-            <div class="agenda-cell" style="background:rgba(96,165,250,.04)"></div>
-            <div class="agenda-cell" style="background:rgba(74,222,128,.04)"></div>
-            <div class="agenda-cell" style="background:rgba(201,168,76,.04)"></div>
-
-            <div class="agenda-time">15:00</div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Sérgio W. — Corte</div></div>
-            <div class="agenda-cell"><div class="agenda-event ev-gold">Tiago R. — Corte+Barba</div></div>
-            <div class="agenda-cell"></div>
-            <div class="agenda-cell"><div class="agenda-event ev-blue">Henrique L. — Corte</div></div>
+      <!-- PASSO 1: Seleção de barbeiro -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">
+          1 — Escolha o barbeiro
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap" id="barber-selector">
+          <div class="ag-barber-card active" onclick="selectBarber(0)" data-id="0">
+            <div class="ag-barber-avatar" style="background:linear-gradient(135deg,#c9a84c,#8b6914)">B</div>
+            <div class="ag-barber-info">
+              <div class="ag-barber-name">Bruno Silva</div>
+              <div class="ag-barber-spec">Navalhado &amp; Degradê</div>
+            </div>
+            <div class="ag-barber-status ok">● Livre</div>
+          </div>
+          <div class="ag-barber-card" onclick="selectBarber(1)" data-id="1">
+            <div class="ag-barber-avatar" style="background:linear-gradient(135deg,#60a5fa,#2563eb)">M</div>
+            <div class="ag-barber-info">
+              <div class="ag-barber-name">Marcos Oliveira</div>
+              <div class="ag-barber-spec">Barba &amp; Navalha</div>
+            </div>
+            <div class="ag-barber-status busy">● Atendendo</div>
+          </div>
+          <div class="ag-barber-card" onclick="selectBarber(2)" data-id="2">
+            <div class="ag-barber-avatar" style="background:linear-gradient(135deg,#4ade80,#16a34a)">R</div>
+            <div class="ag-barber-info">
+              <div class="ag-barber-name">Ricardo Alves</div>
+              <div class="ag-barber-spec">Cortes Clássicos</div>
+            </div>
+            <div class="ag-barber-status ok">● Livre</div>
+          </div>
+          <div class="ag-barber-card" onclick="selectBarber(3)" data-id="3">
+            <div class="ag-barber-avatar" style="background:linear-gradient(135deg,#f97316,#c2410c)">C</div>
+            <div class="ag-barber-info">
+              <div class="ag-barber-name">Caio Santos</div>
+              <div class="ag-barber-spec">Pigmentação &amp; Cor</div>
+            </div>
+            <div class="ag-barber-status busy">● Atendendo</div>
           </div>
         </div>
+      </div>
+
+      <!-- PASSO 2: Seleção do dia -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">
+          2 — Escolha o dia
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="btn btn-ghost btn-sm" onclick="semanaAnterior()">←</button>
+          <div style="display:flex;gap:8px;flex:1" id="week-strip"></div>
+          <button class="btn btn-ghost btn-sm" onclick="proximaSemana()">→</button>
+        </div>
+      </div>
+
+      <!-- PASSO 3: Horários disponíveis -->
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px">
+          3 — Horários disponíveis
+          <span id="agenda-subtitulo" style="color:var(--primary);margin-left:8px;font-size:11px"></span>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(74,222,128,.25);border:1px solid rgba(74,222,128,.4)"></div> Disponível
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(201,168,76,.2);border:1px solid rgba(201,168,76,.4)"></div> Agendado
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)">
+            <div style="width:12px;height:12px;border-radius:3px;background:rgba(248,113,113,.15);border:1px solid rgba(248,113,113,.35)"></div> Bloqueado
+          </div>
+        </div>
+
+        <div id="slots-container" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:10px"></div>
       </div>
     </div>
 
@@ -1238,17 +1287,11 @@
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.getElementById('page-' + id).classList.add('active');
     document.getElementById('page-title').textContent = pageTitles[id] || id;
-    // mark nav item
-    document.querySelectorAll('.nav-item').forEach(n => {
-      if (n.textContent.trim().startsWith(pageTitles[id]?.split(' ')[0] || '___')) {
-        n.classList.add('active');
-      }
-    });
-    // simpler: match by onclick attr
     document.querySelectorAll('.nav-item').forEach(n => {
       const oc = n.getAttribute('onclick') || '';
       if (oc.includes("'" + id + "'")) n.classList.add('active');
     });
+    if (id === 'agenda') { renderWeekStrip(); renderSlots(); }
   }
 
   function openModal(id) {
@@ -1263,6 +1306,201 @@
     overlay.addEventListener('click', function(e) {
       if (e.target === this) this.classList.remove('open');
     });
+  });
+
+  // ── AGENDA ──────────────────────────────────────────────────────────────
+
+  const BARBEIROS = [
+    { id: 0, nome: 'Bruno Silva' },
+    { id: 1, nome: 'Marcos Oliveira' },
+    { id: 2, nome: 'Ricardo Alves' },
+    { id: 3, nome: 'Caio Santos' },
+  ];
+
+  // Agendamentos mock: barbeiro × dia (0=seg) × horário
+  // formato: { hora, cliente, servico }
+  const AGENDAMENTOS_MOCK = {
+    0: { // Bruno
+      0: [ // Segunda
+        { hora:'09:00', cliente:'Pedro Alves',    servico:'Corte + Barba'     },
+        { hora:'10:00', cliente:'Marco Antônio',  servico:'Corte Simples'     },
+        { hora:'11:00', cliente:'Carlos H.',      servico:'Barba Completa'    },
+        { hora:'14:00', cliente:'Carlos M.',      servico:'Corte + Barba'     },
+        { hora:'15:00', cliente:'Sérgio W.',      servico:'Corte Simples'     },
+        { hora:'16:30', cliente:'Felipe R.',      servico:'Corte + Pigmento'  },
+      ],
+      1: [ // Terça
+        { hora:'09:00', cliente:'João Pedro',     servico:'Corte Simples'     },
+        { hora:'10:30', cliente:'André Lima',     servico:'Corte + Barba'     },
+        { hora:'14:00', cliente:'Diego F.',       servico:'Barba Completa'    },
+        { hora:'16:00', cliente:'Mateus S.',      servico:'Corte Simples'     },
+      ],
+      2: [ // Quarta
+        { hora:'09:30', cliente:'Lucas P.',       servico:'Corte + Barba'     },
+        { hora:'11:00', cliente:'Rafael M.',      servico:'Corte Simples'     },
+        { hora:'14:30', cliente:'Thiago A.',      servico:'Corte + Pigmento'  },
+        { hora:'16:00', cliente:'Bruno K.',       servico:'Barba Completa'    },
+        { hora:'17:30', cliente:'Victor S.',      servico:'Corte Simples'     },
+      ],
+      3: [{ hora:'09:00', cliente:'Rui B.', servico:'Corte Simples' }, { hora:'11:00', cliente:'Aldo M.', servico:'Corte + Barba' }],
+      4: [{ hora:'10:00', cliente:'Paulo R.', servico:'Corte + Pigmento' }, { hora:'14:00', cliente:'Igor S.', servico:'Corte + Barba' }, { hora:'16:00', cliente:'Henrique L.', servico:'Corte Simples' }],
+    },
+    1: { // Marcos
+      0: [
+        { hora:'09:00', cliente:'Ivan Melo',      servico:'Corte Simples'     },
+        { hora:'10:00', cliente:'Leandro S.',     servico:'Corte + Pigmento'  },
+        { hora:'11:00', cliente:'Aldo Miranda',   servico:'Corte Simples'     },
+        { hora:'14:00', cliente:'Felipe Costa',   servico:'Corte Simples'     },
+        { hora:'15:00', cliente:'Tiago R.',       servico:'Corte + Barba'     },
+      ],
+      1: [{ hora:'09:30', cliente:'Caio A.', servico:'Barba Completa' }, { hora:'11:00', cliente:'Pedro M.', servico:'Corte Simples' }, { hora:'15:00', cliente:'Marcos L.', servico:'Corte + Barba' }],
+      2: [{ hora:'10:00', cliente:'Fábio N.', servico:'Barba Completa' }, { hora:'14:00', cliente:'Gustavo P.', servico:'Corte Simples' }],
+      3: [{ hora:'09:00', cliente:'Vitor H.', servico:'Corte + Barba' }, { hora:'11:30', cliente:'Diogo R.', servico:'Corte Simples' }, { hora:'16:00', cliente:'Samuel F.', servico:'Barba Completa' }],
+      4: [{ hora:'09:00', cliente:'Bruno T.', servico:'Corte Simples' }, { hora:'14:30', cliente:'Felipe M.', servico:'Corte + Barba' }],
+    },
+    2: { // Ricardo
+      0: [
+        { hora:'09:30', cliente:'João Pedro',     servico:'Corte + Barba'     },
+        { hora:'10:30', cliente:'Rui Barbosa',    servico:'Barba Completa'    },
+        { hora:'14:00', cliente:'André Lima',     servico:'Barba Completa'    },
+      ],
+      1: [{ hora:'10:00', cliente:'Carlos E.', servico:'Corte Simples' }, { hora:'15:30', cliente:'Rafael B.', servico:'Corte + Barba' }],
+      2: [{ hora:'09:00', cliente:'Marcos V.', servico:'Corte + Barba' }, { hora:'11:00', cliente:'Léo S.', servico:'Corte Simples' }, { hora:'16:00', cliente:'Wagner P.', servico:'Barba Completa' }],
+      3: [],
+      4: [{ hora:'09:00', cliente:'Thiago C.', servico:'Corte + Barba' }, { hora:'11:00', cliente:'Felipe A.', servico:'Corte Simples' }],
+    },
+    3: { // Caio
+      0: [
+        { hora:'09:00', cliente:'Fábio Costa',   servico:'Barba Completa'    },
+        { hora:'10:30', cliente:'Daniel F.',      servico:'Corte Simples'     },
+        { hora:'14:00', cliente:'Paulo R.',       servico:'Corte + Pigmento'  },
+        { hora:'15:30', cliente:'Henrique L.',    servico:'Corte Simples'     },
+      ],
+      1: [{ hora:'09:00', cliente:'Renato A.', servico:'Corte + Pigmento' }, { hora:'11:00', cliente:'Cláudio S.', servico:'Corte Simples' }],
+      2: [{ hora:'10:00', cliente:'Rodrigo M.', servico:'Barba Completa' }, { hora:'14:00', cliente:'Sandro P.', servico:'Corte + Pigmento' }, { hora:'16:30', cliente:'Alexsandro K.', servico:'Corte Simples' }],
+      3: [{ hora:'09:30', cliente:'Elias R.', servico:'Corte + Barba' }, { hora:'14:00', cliente:'Marcos T.', servico:'Corte Simples' }],
+      4: [{ hora:'09:00', cliente:'Roberto N.', servico:'Corte + Pigmento' }, { hora:'15:00', cliente:'Guilherme S.', servico:'Corte Simples' }],
+    },
+  };
+
+  // Todos os slots do dia (09:00–18:00 a cada 30min, exceto almoço 12:00–13:30)
+  const TODOS_SLOTS = [
+    '09:00','09:30','10:00','10:30','11:00','11:30',
+    '13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00','17:30','18:00',
+  ];
+  const SLOT_BLOQUEADOS = ['12:00','12:30','13:00']; // almoço
+
+  const DIAS_SEMANA = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+  let agBarberSel = 0;
+  let agDiaSel    = 0; // índice dentro da semana exibida (0–6)
+  let agSemanaOffset = 0; // semanas a partir de hoje
+
+  function getBaseDate() {
+    const today = new Date(2025, 3, 7); // segunda 07/04/2025 (mock)
+    const d = new Date(today);
+    d.setDate(d.getDate() + agSemanaOffset * 7);
+    // Volta para segunda-feira da semana
+    const dow = d.getDay();
+    d.setDate(d.getDate() - (dow === 0 ? 6 : dow - 1));
+    return d;
+  }
+
+  function renderWeekStrip() {
+    const base = getBaseDate();
+    const today = new Date(2025, 3, 7);
+    const strip = document.getElementById('week-strip');
+    strip.innerHTML = '';
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(base);
+      d.setDate(d.getDate() + i);
+      const isToday = d.toDateString() === today.toDateString();
+      const isActive = i === agDiaSel;
+      const agData = AGENDAMENTOS_MOCK[agBarberSel]?.[i] || [];
+      const dots = Math.min(agData.length, 3);
+
+      const btn = document.createElement('div');
+      btn.className = 'day-btn' + (isActive ? ' active' : '') + (isToday ? ' today' : '');
+      btn.onclick = () => { agDiaSel = i; renderWeekStrip(); renderSlots(); };
+      btn.innerHTML = `
+        <div class="day-label">${DIAS_SEMANA[d.getDay()]}</div>
+        <div class="day-num">${d.getDate()}</div>
+        <div class="day-dots">${'<div class="day-dot"></div>'.repeat(dots)}</div>
+      `;
+      strip.appendChild(btn);
+    }
+    // atualiza subtítulo
+    const selDate = new Date(base);
+    selDate.setDate(selDate.getDate() + agDiaSel);
+    const barb = BARBEIROS[agBarberSel];
+    document.getElementById('agenda-subtitulo').textContent =
+      `${barb.nome} · ${DIAS_SEMANA[selDate.getDay()]}, ${selDate.getDate()} ${MESES[selDate.getMonth()]}`;
+  }
+
+  function renderSlots() {
+    const container = document.getElementById('slots-container');
+    const agendados = AGENDAMENTOS_MOCK[agBarberSel]?.[agDiaSel] || [];
+    const agMap = {};
+    agendados.forEach(a => agMap[a.hora] = a);
+
+    container.innerHTML = '';
+
+    TODOS_SLOTS.forEach(hora => {
+      const ag = agMap[hora];
+      const card = document.createElement('div');
+      if (ag) {
+        card.className = 'slot-card booked';
+        card.innerHTML = `
+          <div class="slot-time" style="color:var(--primary)">${hora}</div>
+          <div class="slot-client">${ag.cliente}</div>
+          <div class="slot-service">${ag.servico}</div>
+          <span class="slot-badge booked">AGENDADO</span>
+        `;
+      } else {
+        card.className = 'slot-card avail';
+        card.onclick = () => {
+          // Pré-preenche o horário e barbeiro no modal
+          openModal('modalAgendamento');
+        };
+        card.innerHTML = `
+          <div class="slot-time" style="color:var(--success)">${hora}</div>
+          <div class="slot-avail-lbl">Horário livre</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">Clique para agendar</div>
+          <span class="slot-badge avail">LIVRE</span>
+        `;
+      }
+      container.appendChild(card);
+    });
+
+    // Slots de almoço
+    SLOT_BLOQUEADOS.forEach(hora => {
+      const card = document.createElement('div');
+      card.className = 'slot-card blocked';
+      card.innerHTML = `
+        <div class="slot-time" style="color:var(--danger)">${hora}</div>
+        <div class="slot-blocked-lbl">⏸ Almoço</div>
+      `;
+      container.insertBefore(card, container.children[6] || null); // posição após 11:30
+    });
+  }
+
+  function selectBarber(id) {
+    agBarberSel = id;
+    document.querySelectorAll('.ag-barber-card').forEach((el, i) => {
+      el.classList.toggle('active', i === id);
+    });
+    renderWeekStrip();
+    renderSlots();
+  }
+
+  function semanaAnterior() { agSemanaOffset--; agDiaSel = 0; renderWeekStrip(); renderSlots(); }
+  function proximaSemana()  { agSemanaOffset++; agDiaSel = 0; renderWeekStrip(); renderSlots(); }
+
+  // Inicializa agenda quando a página carregar
+  document.addEventListener('DOMContentLoaded', function() {
+    renderWeekStrip();
+    renderSlots();
   });
 </script>
 </body>
