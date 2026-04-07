@@ -9,23 +9,22 @@ import Mascote from "@/componentes/mascote"
 // ─────────────────────────────────────────────
 //  BANNERS — edite à vontade
 // ─────────────────────────────────────────────
-const BANNERS = [
-  {
-    icon: "📊",
-    title: "Dashboards em tempo real",
-    desc: "Acompanhe faturamento, despesas e KPIs do seu negócio em um único painel.",
-  },
-  {
-    icon: "🔁",
-    title: "Processos automatizados",
-    desc: "Tarefas manuais eliminadas, erros reduzidos e mais tempo para o que importa.",
-  },
-  {
-    icon: "🔗",
-    title: "Tudo integrado",
-    desc: "Vendas, estoque, financeiro e RH conectados em uma só plataforma.",
-  },
+const STATS = [
+  { val: "+2.4k", label: "Alunos ativos"       },
+  { val: "99.9%", label: "Disponibilidade"      },
+  { val: "12+",   label: "Módulos integrados"   },
 ]
+
+const MODULOS = [
+  { icon: "🎓", texto: "Alunos & Matrículas"   },
+  { icon: "📚", texto: "Cursos & Aulas"         },
+  { icon: "💰", texto: "Financeiro"             },
+  { icon: "🎥", texto: "Salas ao vivo"          },
+  { icon: "🏆", texto: "Certificados"           },
+  { icon: "📊", texto: "Relatórios"             },
+]
+
+const BARRAS = [42, 65, 50, 78, 58, 90, 72, 100]
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -75,17 +74,18 @@ export default function LoginPage() {
     <div className="min-h-screen flex bg-white">
 
       {/* ══════════════════════════════════════
-          ESQUERDA — Banner / Branding
+          ESQUERDA — Branding visual
       ══════════════════════════════════════ */}
       <div className="hidden lg:flex lg:w-[52%] relative flex-col bg-slate-950 overflow-hidden">
 
-        {/* Background glows */}
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.18)_0%,transparent_65%)] pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.07)_0%,transparent_65%)] pointer-events-none" />
-        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.03)_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none" />
+        {/* Camadas de fundo */}
+        <div className="absolute -top-32 -left-32 w-[550px] h-[550px] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.22)_0%,transparent_60%)] pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[450px] h-[450px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.08)_0%,transparent_65%)] pointer-events-none" />
+        <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.025)_1px,transparent_1px)] [background-size:28px_28px] pointer-events-none" />
 
-        {/* Spinning ring decoration */}
-        <div className="absolute top-[38%] right-[-80px] w-[320px] h-[320px] border border-dashed border-orange-500/15 rounded-full animate-spin-slow pointer-events-none" />
+        {/* Anéis giratórios */}
+        <div className="absolute top-[30%] right-[-60px] w-[340px] h-[340px] border border-dashed border-orange-500/10 rounded-full animate-spin-slow pointer-events-none" />
+        <div className="absolute top-[30%] right-[-20px] w-[260px] h-[260px] border border-dashed border-orange-400/08 rounded-full animate-spin-slow [animation-direction:reverse] [animation-duration:20s] pointer-events-none" />
 
         <div className="relative flex flex-col h-full p-12">
 
@@ -96,9 +96,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5, ease }}
             className="flex items-center gap-3"
           >
-            <div>
-              <img src="/favicon.ico" alt="StackSystems" style={{ width: "50px", height: "50px" }} />
-            </div>
+            <img src="/favicon.ico" alt="StackSystems" className="w-10 h-10 object-contain" />
             <div>
               <div className="font-serif text-[17px] font-bold text-white">
                 Stack<span className="text-orange-400">Systems</span>
@@ -109,53 +107,123 @@ export default function LoginPage() {
             </div>
           </motion.div>
 
-          {/* Main copy */}
+          {/* Headline */}
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={{ opacity: 0, y: 28 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.15, ease }}
-            className="mt-auto mb-10"
+            transition={{ duration: 0.65, delay: 0.12, ease }}
+            className="mt-10"
           >
-            <h1 className="font-serif text-[clamp(28px,3vw,42px)] font-bold text-white leading-[1.1] mb-4">
-              Sua plataforma de<br />
-              <span className="text-gradient">gestão inteligente</span>
+            <div className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/20 rounded-full px-3 py-1 mb-5">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+              <span className="text-orange-300 text-[10px] font-bold uppercase tracking-[0.14em]">
+                Plataforma online · 24h disponível
+              </span>
+            </div>
+            <h1 className="font-serif text-[clamp(26px,2.8vw,40px)] font-bold text-white leading-[1.1] mb-4">
+              Tudo que seu cursinho<br />
+              precisa em um só lugar.
             </h1>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-              Acesse seus sistemas, dashboards e relatórios — tudo em um único lugar, disponível 24h.
+            <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+              Gerencie alunos, matrículas, finanças e aulas ao vivo — com dados em tempo real
+              e acesso de qualquer dispositivo.
             </p>
           </motion.div>
 
-          {/* Banners */}
-          <div className="flex flex-col gap-3 mb-auto">
-            {BANNERS.map((b, i) => (
+          {/* Mockup de dashboard */}
+          <motion.div
+            initial={{ opacity: 0, y: 32, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.28, ease }}
+            className="mt-8 bg-slate-900/80 border border-slate-800/60 rounded-2xl p-5 relative overflow-hidden"
+          >
+            {/* Glow interno */}
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-[radial-gradient(circle,rgba(249,115,22,0.15)_0%,transparent_70%)] pointer-events-none" />
+
+            {/* Cabeçalho do mockup */}
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="text-[9px] text-slate-500 uppercase tracking-[0.15em] font-semibold">Visão geral — Hoje</div>
+                <div className="text-white font-bold text-sm font-serif mt-0.5">Dashboard Acadêmico</div>
+              </div>
+              <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-emerald-400 text-[9px] font-bold">Ao vivo</span>
+              </div>
+            </div>
+
+            {/* Gráfico de barras */}
+            <div className="flex items-end gap-1.5 h-16 mb-4">
+              {BARRAS.map((h, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ scaleY: 0 }}
+                  animate={{ scaleY: 1 }}
+                  transition={{ duration: 0.5, delay: 0.35 + i * 0.06, ease }}
+                  className="flex-1 rounded-t-sm origin-bottom"
+                  style={{
+                    height: `${h}%`,
+                    background: i === 7
+                      ? "linear-gradient(to top,#ea580c,#fb923c)"
+                      : i % 2 === 0
+                      ? "rgba(249,115,22,0.4)"
+                      : "rgba(249,115,22,0.15)",
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Mini KPIs */}
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: "Matrículas",  val: "184",   cor: "text-orange-400" },
+                { label: "Receita",     val: "R$48k", cor: "text-emerald-400" },
+                { label: "Salas ativas",val: "6",     cor: "text-blue-400"   },
+              ].map(({ label, val, cor }) => (
+                <div key={label} className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/40">
+                  <div className="text-[9px] text-slate-500 uppercase tracking-wide mb-1">{label}</div>
+                  <div className={`font-serif text-sm font-bold ${cor}`}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Grade de módulos */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.5, ease }}
+            className="mt-6 grid grid-cols-3 gap-2"
+          >
+            {MODULOS.map((m, i) => (
               <motion.div
-                key={b.title}
-                initial={{ opacity: 0, x: -30 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.5, delay: 0.25 + i * 0.1, ease }}
-                className="flex items-start gap-4 bg-white/[0.04] border border-white/[0.07] rounded-xl px-5 py-4 hover:bg-white/[0.07] hover:border-orange-500/25 transition-all duration-200 group"
+                key={m.texto}
+                initial={{ opacity: 0, scale: 0.85 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.55 + i * 0.06, ease }}
+                className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 hover:bg-orange-500/10 hover:border-orange-500/20 transition-all duration-200 group"
               >
-                <div className="w-9 h-9 rounded-lg bg-orange-500/15 flex items-center justify-center text-lg shrink-0">
-                  {b.icon}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-white mb-0.5 group-hover:text-orange-400 transition-colors">
-                    {b.title}
-                  </div>
-                  <div className="text-xs text-slate-500 leading-relaxed">{b.desc}</div>
-                </div>
+                <span className="text-base leading-none">{m.icon}</span>
+                <span className="text-[10px] text-slate-400 group-hover:text-white transition-colors font-medium leading-tight">
+                  {m.texto}
+                </span>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
 
-          {/* Bottom version */}
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.7 }}
-            className="mt-10 flex items-center justify-between"
+            transition={{ duration: 0.5, delay: 0.75 }}
+            className="mt-auto pt-6 flex items-center justify-between border-t border-white/[0.05]"
           >
-            <span className="text-xs text-slate-600">© 2025 StackSystems</span>
+            {STATS.map(({ val, label }) => (
+              <div key={label} className="text-center">
+                <div className="font-serif text-lg font-bold text-orange-400">{val}</div>
+                <div className="text-[9px] text-slate-600 uppercase tracking-wide mt-0.5">{label}</div>
+              </div>
+            ))}
             <span className="text-xs text-slate-700 bg-white/[0.04] border border-white/[0.06] px-3 py-1 rounded-full">
               v1.0.0
             </span>
