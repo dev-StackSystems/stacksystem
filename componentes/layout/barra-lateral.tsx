@@ -22,7 +22,7 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, DollarSign,
-  Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
+  Award, Building2, ShieldCheck, Video, Briefcase, UsersRound, Scissors,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 
@@ -70,6 +70,18 @@ const GRUPOS_MODULOS: GrupoNav[] = [
   },
 ]
 
+// ── Módulos externos (protótipos / sistemas adicionais) ────────────────────
+// Adicione aqui novos sistemas criados em modulos/{nome}/
+
+const GRUPOS_MODULOS_EXTERNOS: GrupoNav[] = [
+  {
+    titulo: "Outros Sistemas",
+    itens: [
+      { icone: Scissors, rotulo: "BarberPro", href: "/painel/modulos/barbeiro", modulo: "barbeiro" },
+    ],
+  },
+]
+
 // ── Grupos de navegação para o superAdmin (plataforma inteira) ─────────────
 
 const GRUPOS_SUPER_ADMIN: GrupoNav[] = [
@@ -98,6 +110,16 @@ function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: st
     if (grupo.titulo === null) { resultado.push(grupo); continue }
 
     // Filtra itens sem módulo (sempre visíveis) ou com módulo ativo
+    const itensFiltrados = grupo.itens.filter(
+      item => !item.modulo || modulos.includes(item.modulo)
+    )
+    if (itensFiltrados.length > 0) {
+      resultado.push({ titulo: grupo.titulo, itens: itensFiltrados })
+    }
+  }
+
+  // Módulos externos (barbeiro, petshop etc.) — filtra pelo módulo ativo
+  for (const grupo of GRUPOS_MODULOS_EXTERNOS) {
     const itensFiltrados = grupo.itens.filter(
       item => !item.modulo || modulos.includes(item.modulo)
     )
