@@ -35,7 +35,7 @@ const transporter = emailConfigurado
       },
     })
   : null
-
+ 
 /**
  * Envia e-mail de redefinição de senha.
  * Se o e-mail não estiver configurado, imprime o link no console (dev).
