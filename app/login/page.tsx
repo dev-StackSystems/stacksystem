@@ -30,7 +30,7 @@ const ease = [0.22, 1, 0.36, 1] as const
 
 export default function LoginPage() {
   const router = useRouter()
-  const [form, setForm]         = useState({ email: "", password: "" })
+  const [form, setForm]         = useState({ email: "", senha: "" })
   const [showPass, setShowPass] = useState(false)
   const [remember, setRemember] = useState(false)
   const [loading, setLoading]   = useState(false)
@@ -40,7 +40,7 @@ export default function LoginPage() {
     e.preventDefault()
     setError("")
 
-    if (!form.email || !form.password) {
+    if (!form.email || !form.senha) {
       setError("Preencha e-mail e senha para continuar.")
       return
     }
@@ -49,7 +49,7 @@ export default function LoginPage() {
 
     const result = await signIn("credentials", {
       email: form.email,
-      password: form.password,
+      senha: form.senha,
       redirect: false,
     })
 
@@ -57,11 +57,11 @@ export default function LoginPage() {
 
     if (result?.error) {
       const errorMessages: Record<string, string> = {
-        USER_NOT_FOUND:  "Nenhuma conta encontrada com este e-mail.",
-        WRONG_PASSWORD:  "Senha incorreta. Tente novamente.",
-        USER_INACTIVE:   "Este usuário está inativo. Contate o administrador.",
-        MISSING_FIELDS:  "Preencha e-mail e senha para continuar.",
-        DB_ERROR:        "Erro ao conectar no banco de dados. Verifique as configurações do servidor.",
+        USUARIO_NAO_ENCONTRADO: "Nenhuma conta encontrada com este e-mail.",
+        SENHA_INCORRETA:        "Senha incorreta. Tente novamente.",
+        USUARIO_INATIVO:        "Este usuário está inativo. Contate o administrador.",
+        CAMPOS_FALTANDO:        "Preencha e-mail e senha para continuar.",
+        ERRO_BANCO:             "Erro ao conectar no banco de dados. Verifique as configurações do servidor.",
       }
       setError(errorMessages[result.error] ?? `Erro de autenticação: ${result.error}`)
       return
@@ -235,8 +235,8 @@ export default function LoginPage() {
                   required
                   autoComplete="new-password"
                   placeholder="••••••••"
-                  value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  value={form.senha}
+                  onChange={e => setForm({ ...form, senha: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 pr-11 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
                 />
                 <button
