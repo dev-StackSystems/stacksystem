@@ -21,7 +21,7 @@ import { getToken } from "next-auth/jwt"
 
 // Mapeamento de query params para rotas
 const MAPA_ROTAS: Record<string, string> = {
-  login:   "/login",
+  login:   "/login", 
   logout:  "/",
   painel:  "/painel",
   home:    "/",
