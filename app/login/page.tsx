@@ -10,18 +10,18 @@ import Mascote from "@/componentes/mascote"
 //  BANNERS — edite à vontade
 // ─────────────────────────────────────────────
 const STATS = [
-  { val: "+2.4k", label: "Alunos ativos"       },
-  { val: "99.9%", label: "Disponibilidade"      },
-  { val: "12+",   label: "Módulos integrados"   },
+  { val: "100%",  label: "Personalizado"      },
+  { val: "99.9%", label: "Disponibilidade"    },
+  { val: "24h",   label: "Suporte técnico"    },
 ]
 
 const MODULOS = [
-  { icon: "🎓", texto: "Alunos & Matrículas"   },
-  { icon: "📚", texto: "Cursos & Aulas"         },
-  { icon: "💰", texto: "Financeiro"             },
-  { icon: "🎥", texto: "Salas ao vivo"          },
-  { icon: "🏆", texto: "Certificados"           },
-  { icon: "📊", texto: "Relatórios"             },
+  { icon: "👥", texto: "Clientes"           },
+  { icon: "💰", texto: "Financeiro"         },
+  { icon: "📦", texto: "Produtos"           },
+  { icon: "📊", texto: "Relatórios"         },
+  { icon: "🔔", texto: "Notificações"       },
+  { icon: "⚙️", texto: "Configurações"      },
 ]
 
 const BARRAS = [42, 65, 50, 78, 58, 90, 72, 100]
@@ -121,12 +121,12 @@ export default function LoginPage() {
               </span>
             </div>
             <h1 className="font-serif text-[clamp(26px,2.8vw,40px)] font-bold text-white leading-[1.1] mb-4">
-              Tudo que seu cursinho<br />
-              precisa em um só lugar.
+              Um sistema feito<br />
+              <span className="text-gradient">para o seu negócio.</span>
             </h1>
             <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
-              Gerencie alunos, matrículas, finanças e aulas ao vivo — com dados em tempo real
-              e acesso de qualquer dispositivo.
+              Desenvolvemos sistemas sob medida para cada tipo de empresa —
+              gestão completa, financeiro integrado e dados em tempo real.
             </p>
           </motion.div>
 
@@ -144,7 +144,7 @@ export default function LoginPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-[9px] text-slate-500 uppercase tracking-[0.15em] font-semibold">Visão geral — Hoje</div>
-                <div className="text-white font-bold text-sm font-serif mt-0.5">Dashboard Acadêmico</div>
+                <div className="text-white font-bold text-sm font-serif mt-0.5">Dashboard do Sistema</div>
               </div>
               <div className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-2.5 py-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -176,9 +176,9 @@ export default function LoginPage() {
             {/* Mini KPIs */}
             <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "Matrículas",  val: "184",   cor: "text-orange-400" },
-                { label: "Receita",     val: "R$48k", cor: "text-emerald-400" },
-                { label: "Salas ativas",val: "6",     cor: "text-blue-400"   },
+                { label: "Registros",  val: "1.2k",  cor: "text-orange-400"  },
+                { label: "Receita",    val: "R$48k", cor: "text-emerald-400" },
+                { label: "Usuários",   val: "24",    cor: "text-blue-400"    },
               ].map(({ label, val, cor }) => (
                 <div key={label} className="bg-slate-800/60 rounded-xl p-2.5 border border-slate-700/40">
                   <div className="text-[9px] text-slate-500 uppercase tracking-wide mb-1">{label}</div>
