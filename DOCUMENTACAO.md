@@ -461,20 +461,12 @@ npm run db:generate
 
 ### Criar nova empresa (super admin)
 
-1. Fazer login com `admin@stacksystems.com.br`
+1. Fazer login com `sup.stacksystems@gmail.com`
 2. Acessar **Painel → Empresas → Nova Empresa**
 3. Preencher dados e salvar
 4. Acessar **Empresas → Módulos** para ativar os módulos da empresa
 5. Criar usuários da empresa em **Usuários**
 
-### Contas de desenvolvimento
-
-| E-mail                         | Senha         | Papel              |
-|--------------------------------|---------------|--------------------|
-| `admin@stacksystems.com.br`    | `Admin@1234!` | Super Admin        |
-| `admin@apice.com.br`           | `Admin@1234!` | Admin da empresa   |
-| `tecnico@apice.com.br`         | `Admin@1234!` | Técnico            |
-| `professor@apice.com.br`       | `Admin@1234!` | Docente            |
 
 ---
 
