@@ -1,68 +1,88 @@
-import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+/**
+ * app/api/alunos/route.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * API REST para alunos matriculados na empresa.
+ *
+ * GET  /api/alunos — lista alunos da empresa
+ * POST /api/alunos — cadastra novo aluno
+ *
+ * Regras:
+ *   - E-mail e CPF são únicos dentro da empresa
+ *   - papel F não pode criar alunos
+ *   - superAdmin pode criar alunos em qualquer empresa via corpo.empresaId
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 
-const ALUNO_SELECT = {
+import { NextRequest, NextResponse } from "next/server"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
+
+// Campos padrão dos alunos retornados pela API
+const CAMPOS_ALUNO = {
   id: true, nome: true, email: true, cpf: true,
-  telefone: true, dataNasc: true, ativo: true, createdAt: true,
-  _count: { select: { matriculas: true } },
+  telefone: true, dataNasc: true, ativo: true, criadoEm: true,
+  _count: { select: { matriculas: true } }, // Contagem de matrículas do aluno
 }
 
-// GET /api/alunos — scoped por empresa
-export async function GET() {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+// ── GET /api/alunos ────────────────────────────────────────────────────────
 
-  // Super admin vê todos; demais precisam de empresa
-  if (!user.isSuperAdmin && !user.empresaId) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+export async function GET() {
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
+
+  // Não-superAdmin precisa ter empresa vinculada
+  if (!usuario.superAdmin && !usuario.empresaId) {
+    return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
   }
 
-  const where = user.isSuperAdmin ? {} : { empresaId: user.empresaId! }
+  // superAdmin vê todos os alunos; demais veem apenas da própria empresa
+  const filtro = usuario.superAdmin ? {} : { empresaId: usuario.empresaId! }
 
   const alunos = await db.aluno.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    select: ALUNO_SELECT,
+    where:   filtro,
+    orderBy: { criadoEm: "desc" },
+    select:  CAMPOS_ALUNO,
   })
 
   return NextResponse.json(alunos)
 }
 
-// POST /api/alunos — cria aluno vinculado à empresa do usuário
-export async function POST(request: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+// ── POST /api/alunos ───────────────────────────────────────────────────────
 
-  // Apenas quem pode gerenciar alunos: não-F com empresa definida
-  if (user.role === UserRole.F && !user.isSuperAdmin) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+export async function POST(requisicao: NextRequest) {
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
+
+  // Docente não pode cadastrar alunos
+  if (usuario.papel === PapelUsuario.F && !usuario.superAdmin) {
+    return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
   }
 
-  const body = await request.json()
-  const { nome, email, cpf, telefone, dataNasc } = body
+  const corpo = await requisicao.json()
+  const { nome, email, cpf, telefone, dataNasc } = corpo
 
   if (!nome || !email) {
-    return NextResponse.json({ error: "Nome e e-mail são obrigatórios." }, { status: 400 })
+    return NextResponse.json({ erro: "Nome e e-mail são obrigatórios." }, { status: 400 })
   }
 
-  // Empresa: super admin pode receber empresaId no body; demais usam a própria
-  const empresaId = user.isSuperAdmin ? (body.empresaId ?? null) : user.empresaId
+  // superAdmin pode passar empresaId no corpo; demais usam a própria empresa
+  const empresaId = usuario.superAdmin ? (corpo.empresaId ?? null) : usuario.empresaId
   if (!empresaId) {
-    return NextResponse.json({ error: "Empresa é obrigatória." }, { status: 400 })
+    return NextResponse.json({ erro: "Empresa é obrigatória." }, { status: 400 })
   }
 
-  // Email único por empresa
-  const existingEmail = await db.aluno.findFirst({ where: { empresaId, email } })
-  if (existingEmail) {
-    return NextResponse.json({ error: "E-mail já cadastrado nesta empresa." }, { status: 409 })
+  // Valida unicidade de e-mail dentro da empresa
+  const emailDuplicado = await db.aluno.findFirst({ where: { empresaId, email } })
+  if (emailDuplicado) {
+    return NextResponse.json({ erro: "E-mail já cadastrado nesta empresa." }, { status: 409 })
   }
 
+  // Valida unicidade de CPF dentro da empresa (se fornecido)
   if (cpf) {
-    const existingCpf = await db.aluno.findFirst({ where: { empresaId, cpf } })
-    if (existingCpf) {
-      return NextResponse.json({ error: "CPF já cadastrado nesta empresa." }, { status: 409 })
+    const cpfDuplicado = await db.aluno.findFirst({ where: { empresaId, cpf } })
+    if (cpfDuplicado) {
+      return NextResponse.json({ erro: "CPF já cadastrado nesta empresa." }, { status: 409 })
     }
   }
 
@@ -71,11 +91,11 @@ export async function POST(request: NextRequest) {
       empresaId,
       nome,
       email,
-      cpf: cpf || null,
+      cpf:      cpf      || null,
       telefone: telefone || null,
       dataNasc: dataNasc ? new Date(dataNasc) : null,
     },
-    select: ALUNO_SELECT,
+    select: CAMPOS_ALUNO,
   })
 
   return NextResponse.json(aluno, { status: 201 })

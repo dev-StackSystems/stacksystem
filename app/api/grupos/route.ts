@@ -1,55 +1,77 @@
+/**
+ * app/api/grupos/route.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * API REST para grupos de usuários dentro da empresa.
+ *
+ * GET  /api/grupos — lista grupos da empresa
+ * POST /api/grupos — cria novo grupo
+ *
+ * Um grupo pode ter isAdmin=true (acesso completo aos módulos da empresa)
+ * ou uma lista específica de módulos permitidos.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+
+// ── GET /api/grupos ────────────────────────────────────────────────────────
 
 export async function GET() {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  const where = user.isSuperAdmin ? {} : { empresaId: user.empresaId ?? undefined }
+  // superAdmin vê todos; demais veem apenas da própria empresa
+  const filtro = usuario.superAdmin ? {} : { empresaId: usuario.empresaId ?? undefined }
 
   const grupos = await db.grupo.findMany({
-    where,
+    where:   filtro,
     orderBy: { nome: "asc" },
     include: {
       empresa: { select: { nome: true } },
       modulos: { select: { modulo: true } },
-      _count: { select: { usuarios: true } },
+      _count:  { select: { usuarios: true } }, // Contagem de usuários no grupo
     },
   })
 
   return NextResponse.json(grupos)
 }
 
-export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  if (user.role !== "A" && !user.grupoIsAdmin)
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+// ── POST /api/grupos ───────────────────────────────────────────────────────
 
-  const { nome, descricao, isAdmin, empresaId, modulos } = await req.json()
+export async function POST(requisicao: NextRequest) {
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  if (!nome?.trim()) return NextResponse.json({ error: "Nome obrigatório" }, { status: 400 })
+  // Apenas admin da empresa ou superAdmin pode criar grupos
+  if (usuario.papel !== "A" && !usuario.grupoIsAdmin) {
+    return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
+  }
 
-  const empId = user.isSuperAdmin ? empresaId : user.empresaId
-  if (!empId) return NextResponse.json({ error: "Empresa não encontrada" }, { status: 400 })
+  const { nome, descricao, isAdmin, empresaId, modulos } = await requisicao.json()
+
+  if (!nome?.trim()) return NextResponse.json({ erro: "Nome obrigatório" }, { status: 400 })
+
+  // Resolve a empresa: superAdmin pode criar em qualquer; demais usam a própria
+  const empresaResolvida = usuario.superAdmin ? empresaId : usuario.empresaId
+  if (!empresaResolvida) return NextResponse.json({ erro: "Empresa não encontrada" }, { status: 400 })
 
   const grupo = await db.grupo.create({
     data: {
-      nome: nome.trim(),
-      descricao: descricao?.trim() || null,
-      isAdmin: isAdmin ?? false,
-      empresaId: empId,
+      nome:        nome.trim(),
+      descricao:   descricao?.trim() || null,
+      isAdmin:     isAdmin ?? false,
+      empresaId:   empresaResolvida,
       modulos: {
         createMany: {
-          data: (modulos ?? []).map((m: string) => ({ modulo: m })),
-          skipDuplicates: true,
+          data:            (modulos ?? []).map((m: string) => ({ modulo: m })),
+          skipDuplicates:  true,
         },
       },
     },
     include: {
       modulos: { select: { modulo: true } },
-      _count: { select: { usuarios: true } },
+      _count:  { select: { usuarios: true } },
     },
   })
 

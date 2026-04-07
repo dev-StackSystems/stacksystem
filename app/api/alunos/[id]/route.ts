@@ -1,26 +1,26 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
 type Params = { params: Promise<{ id: string }> }
 
 const ALUNO_SELECT = {
   id: true, nome: true, email: true, cpf: true,
-  telefone: true, dataNasc: true, ativo: true, createdAt: true,
+  telefone: true, dataNasc: true, ativo: true, criadoEm: true,
   _count: { select: { matriculas: true } },
 }
 
-async function getAlunoScoped(id: string, user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>) {
+async function getAlunoScoped(id: string, user: NonNullable<Awaited<ReturnType<typeof getUsuarioAtual>>>) {
   const aluno = await db.aluno.findUnique({ where: { id }, select: { ...ALUNO_SELECT, empresaId: true } })
   if (!aluno) return null
   // Super admin acessa qualquer um; demais apenas da própria empresa
-  if (!user.isSuperAdmin && aluno.empresaId !== user.empresaId) return null
+  if (!user.superAdmin && aluno.empresaId !== user.empresaId) return null
   return aluno
 }
 
 export async function GET(_: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { id } = await params
@@ -31,10 +31,10 @@ export async function GET(_: NextRequest, { params }: Params) {
 }
 
 export async function PUT(request: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  if (user.role === UserRole.F && !user.isSuperAdmin) {
+  if (user.papel === PapelUsuario.F && !user.superAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -83,11 +83,11 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 // DELETE — soft delete, apenas admin de empresa ou super admin
 export async function DELETE(_: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
-  const isEmpresaAdmin = user.role === UserRole.A || user.grupoIsAdmin
-  if (!user.isSuperAdmin && !isEmpresaAdmin) {
+  const isEmpresaAdmin = user.papel === PapelUsuario.A || user.grupoIsAdmin
+  if (!user.superAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 

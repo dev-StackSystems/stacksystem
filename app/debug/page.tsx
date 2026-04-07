@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic"
 
 import { getServerSession } from "next-auth"
-import { authOptions } from "@/backend/auth/nextauth-config"
+import { opcoesAuth } from "@/servidor/autenticacao/config"
 import { redirect } from "next/navigation"
-import { db } from "@/backend/database/prisma-client"
+import { db } from "@/servidor/banco/cliente"
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
 type CheckResult = { ok: boolean; label: string; value?: string; error?: string }
@@ -48,10 +48,10 @@ async function runChecks(): Promise<CheckResult[]> {
   // ── Contagem de registros ──────────────────────────────
   try {
     const [users, alunos, empresas, cursos, matriculas, baixas, certificados] = await Promise.all([
-      db.user.count(),
+      db.usuario.count(),
       db.aluno.count(),
       db.empresa.count(),
-      db.empCurso.count(),
+      db.cursoDaEmpresa.count(),
       db.matricula.count(),
       db.baixa.count(),
       db.certificado.count(),
@@ -76,8 +76,8 @@ async function runChecks(): Promise<CheckResult[]> {
 }
 
 export default async function DebugPage() {
-  const session = await getServerSession(authOptions)
-  if (!session || session.user.role !== "A") redirect("/dashboard")
+  const session = await getServerSession(opcoesAuth)
+  if (!session || session.user.papel !== "A") redirect("/painel")
 
   const checks = await runChecks()
   const allOk = checks.every(c => c.ok)

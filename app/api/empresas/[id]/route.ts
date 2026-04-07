@@ -1,23 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
 // PUT /api/empresas/[id]
 // — isSuperAdmin: edita tudo
-// — UserRole.A da empresa / grupoIsAdmin: edita dados e identidade visual (sem tipoSistema/ativa)
+// — PapelUsuario.A da empresa / grupoIsAdmin: edita dados e identidade visual (sem tipoSistema/ativa)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { id } = await params
 
-  const isSuperAdmin = user.isSuperAdmin
+  const isSuperAdmin = user.superAdmin
   const isEmpresaAdmin =
-    (user.role === UserRole.A || user.grupoIsAdmin) && user.empresaId === id
+    (user.papel === PapelUsuario.A || user.grupoIsAdmin) && user.empresaId === id
 
   if (!isSuperAdmin && !isEmpresaAdmin) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
@@ -89,9 +89,9 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  if (!user.isSuperAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+  if (!user.superAdmin) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
 

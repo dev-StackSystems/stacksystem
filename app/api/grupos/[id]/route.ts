@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
 
 type Params = { params: Promise<{ id: string }> }
 
 export async function GET(_: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
 
   const { id } = await params
@@ -19,9 +19,9 @@ export async function GET(_: NextRequest, { params }: Params) {
 }
 
 export async function PUT(req: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  if (user.role !== "A" && !user.grupoIsAdmin)
+  if (user.papel !== "A" && !user.grupoIsAdmin)
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
@@ -30,7 +30,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
   const existing = await db.grupo.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 })
 
-  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+  if (!user.superAdmin && existing.empresaId !== user.empresaId)
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   await db.$transaction([
@@ -61,15 +61,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
 }
 
 export async function DELETE(_: NextRequest, { params }: Params) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
-  if (user.role !== "A" && !user.grupoIsAdmin)
+  if (user.papel !== "A" && !user.grupoIsAdmin)
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   const { id } = await params
   const existing = await db.grupo.findUnique({ where: { id } })
   if (!existing) return NextResponse.json({ error: "Grupo não encontrado" }, { status: 404 })
-  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId)
+  if (!user.superAdmin && existing.empresaId !== user.empresaId)
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
 
   await db.grupo.delete({ where: { id } })

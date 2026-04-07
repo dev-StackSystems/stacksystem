@@ -1,30 +1,44 @@
+/**
+ * app/api/baixas/route.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * API REST para baixas financeiras (cobranças e pagamentos).
+ *
+ * GET  /api/baixas — lista baixas da empresa
+ * POST /api/baixas — registra nova baixa
+ *
+ * Tipos: mensalidade | matricula | certificado | outros
+ * Status: pago | pendente | cancelado
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
-// GET /api/baixas — scoped por empresa via matricula → empCurso
+// ── GET /api/baixas ────────────────────────────────────────────────────────
+
 export async function GET() {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  if (!user.isSuperAdmin && !user.empresaId) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+  if (!usuario.superAdmin && !usuario.empresaId) {
+    return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
   }
 
   // Filtra baixas pelas matrículas dos cursos da empresa
-  const where = user.isSuperAdmin
+  const filtro = usuario.superAdmin
     ? {}
-    : { matricula: { empCurso: { empresaId: user.empresaId! } } }
+    : { matricula: { curso: { empresaId: usuario.empresaId! } } }
 
   const baixas = await db.baixa.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
+    where:   filtro,
+    orderBy: { criadoEm: "desc" },
     include: {
       matricula: {
         select: {
           aluno: { select: { nome: true } },
-          empCurso: { select: { nome: true } },
+          curso: { select: { nome: true } },
         },
       },
     },
@@ -33,51 +47,53 @@ export async function GET() {
   return NextResponse.json(baixas)
 }
 
-// POST /api/baixas — admin de empresa ou super admin
-export async function POST(request: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+// ── POST /api/baixas ───────────────────────────────────────────────────────
 
-  const canCreate =
-    user.isSuperAdmin ||
-    user.role === UserRole.A ||
-    user.role === UserRole.T ||
-    user.grupoIsAdmin
-  if (!canCreate) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+export async function POST(requisicao: NextRequest) {
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  const body = await request.json()
-  const { matriculaId, descricao, valor, tipo, status, dataPag, dataVenc } = body
+  const podeCriar =
+    usuario.superAdmin ||
+    usuario.papel === PapelUsuario.A ||
+    usuario.papel === PapelUsuario.T ||
+    usuario.grupoIsAdmin
+
+  if (!podeCriar) return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
+
+  const corpo = await requisicao.json()
+  const { matriculaId, descricao, valor, tipo, status, dataPagamento, dataVencimento } = corpo
 
   if (valor === undefined || valor === null || valor === "") {
-    return NextResponse.json({ error: "Valor é obrigatório." }, { status: 400 })
+    return NextResponse.json({ erro: "Valor é obrigatório." }, { status: 400 })
   }
 
   // Valida que a matrícula pertence à empresa do usuário
-  if (!user.isSuperAdmin && matriculaId && user.empresaId) {
+  if (!usuario.superAdmin && matriculaId && usuario.empresaId) {
     const matricula = await db.matricula.findUnique({
-      where: { id: matriculaId },
-      select: { empCurso: { select: { empresaId: true } } },
+      where:  { id: matriculaId },
+      select: { curso: { select: { empresaId: true } } },
     })
-    if (!matricula || matricula.empCurso.empresaId !== user.empresaId) {
-      return NextResponse.json({ error: "Matrícula não pertence à sua empresa." }, { status: 403 })
+    if (!matricula || matricula.curso.empresaId !== usuario.empresaId) {
+      return NextResponse.json({ erro: "Matrícula não pertence à sua empresa." }, { status: 403 })
     }
   }
 
   const baixa = await db.baixa.create({
     data: {
-      matriculaId: matriculaId || null,
-      descricao: descricao || null,
-      valor: parseFloat(valor),
-      tipo: tipo ?? "mensalidade",
-      status: status ?? "pendente",
-      dataPag: dataPag ? new Date(dataPag) : null,
-      dataVenc: dataVenc ? new Date(dataVenc) : null,
+      matriculaId:    matriculaId     || null,
+      descricao:      descricao       || null,
+      valor:          parseFloat(valor),
+      tipo:           tipo            ?? "mensalidade",
+      status:         status          ?? "pendente",
+      dataPagamento:  dataPagamento   ? new Date(dataPagamento)  : null,
+      dataVencimento: dataVencimento  ? new Date(dataVencimento) : null,
     },
     include: {
       matricula: {
         select: {
           aluno: { select: { nome: true } },
-          empCurso: { select: { nome: true } },
+          curso: { select: { nome: true } },
         },
       },
     },

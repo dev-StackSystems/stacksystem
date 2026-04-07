@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser, requireRole } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual, exigirPapel } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
 // PUT /api/cursos/[id] — ADMIN e TECH
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole([UserRole.A, UserRole.T])
+  const authResult = await exigirPapel([PapelUsuario.A, PapelUsuario.T])
   if (authResult instanceof NextResponse) return authResult
-  const user = authResult.user
+  const user = authResult.usuario
 
   const { id } = await params
   const body = await request.json()
@@ -20,13 +20,13 @@ export async function PUT(
     return NextResponse.json({ error: "Nome é obrigatório" }, { status: 400 })
   }
 
-  const existing = await db.empCurso.findUnique({ where: { id } })
+  const existing = await db.cursoDaEmpresa.findUnique({ where: { id } })
   if (!existing) {
     return NextResponse.json({ error: "Curso não encontrado" }, { status: 404 })
   }
 
   // Validação de escopo: empresa admin só edita cursos da própria empresa
-  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId) {
+  if (!user.superAdmin && existing.empresaId !== user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -37,7 +37,7 @@ export async function PUT(
     }
   }
 
-  const curso = await db.empCurso.update({
+  const curso = await db.cursoDaEmpresa.update({
     where: { id },
     data: {
       empresaId: empresaId?.trim() || existing.empresaId,
@@ -59,22 +59,22 @@ export async function DELETE(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole([UserRole.A])
+  const authResult = await exigirPapel([PapelUsuario.A])
   if (authResult instanceof NextResponse) return authResult
-  const user = authResult.user
+  const user = authResult.usuario
 
   const { id } = await params
 
-  const existing = await db.empCurso.findUnique({ where: { id } })
+  const existing = await db.cursoDaEmpresa.findUnique({ where: { id } })
   if (!existing) {
     return NextResponse.json({ error: "Curso não encontrado" }, { status: 404 })
   }
 
-  if (!user.isSuperAdmin && existing.empresaId !== user.empresaId) {
+  if (!user.superAdmin && existing.empresaId !== user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
-  const curso = await db.empCurso.update({
+  const curso = await db.cursoDaEmpresa.update({
     where: { id },
     data: { ativo: false },
   })

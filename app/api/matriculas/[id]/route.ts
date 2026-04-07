@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { requireRole } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { exigirPapel } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
 type Params = { params: Promise<{ id: string }> }
 
 // PUT /api/matriculas/[id] — roles A e T
 export async function PUT(request: NextRequest, { params }: Params) {
-  const auth = await requireRole([UserRole.A, UserRole.T])
+  const auth = await exigirPapel([PapelUsuario.A, PapelUsuario.T])
   if (auth instanceof NextResponse) return auth
-  const user = auth.user
+  const user = auth.usuario
 
   const { id } = await params
   const body = await request.json()
@@ -17,13 +17,13 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
   const existing = await db.matricula.findUnique({
     where: { id },
-    include: { empCurso: { select: { empresaId: true } } },
+    include: { curso: { select: { empresaId: true } } },
   })
   if (!existing) {
     return NextResponse.json({ error: "Matrícula não encontrada." }, { status: 404 })
   }
 
-  if (!user.isSuperAdmin && existing.empCurso.empresaId !== user.empresaId) {
+  if (!user.superAdmin && existing.curso.empresaId !== user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 
@@ -37,7 +37,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     },
     include: {
       aluno: { select: { nome: true, email: true } },
-      empCurso: {
+      curso: {
         select: {
           nome: true,
           empresa: { select: { nome: true } },
@@ -51,21 +51,21 @@ export async function PUT(request: NextRequest, { params }: Params) {
 
 // DELETE /api/matriculas/[id] — soft delete (status = "cancelada"), só role A
 export async function DELETE(_request: NextRequest, { params }: Params) {
-  const auth = await requireRole([UserRole.A])
+  const auth = await exigirPapel([PapelUsuario.A])
   if (auth instanceof NextResponse) return auth
-  const user = auth.user
+  const user = auth.usuario
 
   const { id } = await params
 
   const existing = await db.matricula.findUnique({
     where: { id },
-    include: { empCurso: { select: { empresaId: true } } },
+    include: { curso: { select: { empresaId: true } } },
   })
   if (!existing) {
     return NextResponse.json({ error: "Matrícula não encontrada." }, { status: 404 })
   }
 
-  if (!user.isSuperAdmin && existing.empCurso.empresaId !== user.empresaId) {
+  if (!user.superAdmin && existing.curso.empresaId !== user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
   }
 

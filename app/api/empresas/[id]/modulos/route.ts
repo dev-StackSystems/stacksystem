@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { requireRole } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/shared/constants/sistema-types"
+import { db } from "@/servidor/banco/cliente"
+import { exigirPapel } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/tipos/sistema"
 
 const MODULOS_KEYS = MODULOS_DISPONIVEIS.map((m) => m.key)
 
@@ -11,12 +11,12 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole([UserRole.A, UserRole.T, UserRole.F])
+  const authResult = await exigirPapel([PapelUsuario.A, PapelUsuario.T, PapelUsuario.F])
   if (authResult instanceof NextResponse) return authResult
 
   const { id } = await params
 
-  const modulos = await db.empresaModulo.findMany({
+  const modulos = await db.moduloDaEmpresa.findMany({
     where: { empresaId: id },
   })
 
@@ -30,7 +30,7 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireRole([UserRole.A])
+  const authResult = await exigirPapel([PapelUsuario.A])
   if (authResult instanceof NextResponse) return authResult
 
   const { id } = await params
@@ -56,10 +56,10 @@ export async function POST(
     }
 
     const upserts = MODULOS_KEYS.map((key) =>
-      db.empresaModulo.upsert({
+      db.moduloDaEmpresa.upsert({
         where: { empresaId_modulo: { empresaId: id, modulo: key } },
-        create: { empresaId: id, modulo: key, ativo: tipo.modulos.includes(key) },
-        update: { ativo: tipo.modulos.includes(key) },
+        create: { empresaId: id, modulo: key, ativo: (tipo.modulos as readonly string[]).includes(key) },
+        update: { ativo: (tipo.modulos as readonly string[]).includes(key) },
       })
     )
 
@@ -76,7 +76,7 @@ export async function POST(
 
   // Upsert de cada módulo disponível
   const upserts = MODULOS_KEYS.map((key) =>
-    db.empresaModulo.upsert({
+    db.moduloDaEmpresa.upsert({
       where: { empresaId_modulo: { empresaId: id, modulo: key } },
       create: { empresaId: id, modulo: key, ativo: modulos.includes(key) },
       update: { ativo: modulos.includes(key) },

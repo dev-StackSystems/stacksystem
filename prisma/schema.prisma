@@ -1,3 +1,21 @@
+// =============================================================================
+// ESQUEMA DO BANCO DE DADOS — StackSystems
+// =============================================================================
+// Banco: PostgreSQL (Neon serverless)
+// ORM:   Prisma v5
+//
+// Convenções:
+//   - Todos os nomes de campos estão em português
+//   - Toda tabela multi-tenant contém o campo empresaId
+//   - Campos criadoEm / atualizadoEm substituem createdAt / updatedAt
+//
+// Para aplicar mudanças ao banco:
+//   npx prisma db push
+//
+// Para abrir o painel visual do banco:
+//   npm run db:studio
+// =============================================================================
+
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
@@ -8,41 +26,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
+// ---------------------------------------------------------------------------
+// PAPEL DO USUÁRIO (papel = role)
+// A = Administrador da empresa — acesso total à própria empresa
+// T = Técnico               — acesso conforme permissões do grupo/setor
+// F = Docente (Corpo Docente) — acesso restrito (alunos, aulas)
+// ---------------------------------------------------------------------------
+enum PapelUsuario {
   A // Administrador
   T // Técnico
-  F // Corpo Docente
+  F // Docente
 }
 
-// ─── Auth / Usuários internos ──────────────────────────
-model User {
-  id           String    @id @default(cuid())
-  name         String
-  email        String    @unique
-  password     String
-  role         UserRole  @default(F)
-  isSuperAdmin Boolean   @default(false) // Apenas o desenvolvedor/i3 — acesso irrestrito a todas as empresas
-  department   String?
-  phone        String?
+// ===========================================================================
+// AUTENTICAÇÃO — Usuários internos do sistema
+// ===========================================================================
+
+model Usuario {
+  id           String      @id @default(cuid())
+  nome         String
+  email        String      @unique
+  senha        String
+  papel        PapelUsuario @default(F)
+  superAdmin   Boolean     @default(false) // Apenas desenvolvedor/i3 — acesso a todas as empresas
+  departamento String?
+  telefone     String?
   avatar       String?
-  active       Boolean   @default(true)
+  ativo        Boolean     @default(true)
   empresaId    String?
   setorId      String?
   grupoId      String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  criadoEm     DateTime    @default(now())
+  atualizadoEm DateTime    @updatedAt
 
-  empresa       Empresa?        @relation(fields: [empresaId], references: [id])
-  setor         Setor?          @relation(fields: [setorId], references: [id])
-  grupo         Grupo?          @relation(fields: [grupoId], references: [id])
+  // Relacionamentos
+  empresa       Empresa?        @relation(fields: [empresaId],  references: [id])
+  setor         Setor?          @relation(fields: [setorId],    references: [id])
+  grupo         Grupo?          @relation(fields: [grupoId],    references: [id])
   accounts      Account[]
   sessions      Session[]
-  segurancaLogs SegurancaUser[]
+  logsSeguranca SegurancaUsuario[]
   salasCreadas  Sala[]
+  permissoes    PermissaoUsuario[]
 
-  @@map("users")
+  @@map("usuarios")
 }
 
+// ---------------------------------------------------------------------------
+// Account / Session / VerificationToken
+// Mantidos em inglês — NextAuth.js exige esses nomes exatos de campo
+// ---------------------------------------------------------------------------
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -57,7 +90,7 @@ model Account {
   id_token          String? @db.Text
   session_state     String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -69,7 +102,7 @@ model Session {
   userId       String
   expires      DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user Usuario @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("sessions")
 }
@@ -83,19 +116,24 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-// ─── Empresas ─────────────────────────────────────────
+// ===========================================================================
+// EMPRESA — Tenant principal do sistema (≡ prefeituras no i3 SCMWeb)
+// ===========================================================================
 model Empresa {
   id          String   @id @default(cuid())
-  // Identificação (como i3: pref_nome, pref_sigla, pref_cnpj)
+
+  // Identificação
   nome        String
-  sigla       String?  // Ex: PMSM, SEMEDUC
+  sigla       String?
   cnpj        String?  @unique
-  // Contato (como i3: pref_email, pref_telefone, pref_fax, pref_site)
+
+  // Contato
   email       String?
   telefone    String?
   fax         String?
   site        String?
-  // Endereço (como i3: pref_endereco, pref_bairro, pref_cep, pref_municipio, cod_uf)
+
+  // Endereço
   endereco    String?
   bairro      String?
   cep         String?
@@ -103,54 +141,62 @@ model Empresa {
   uf          String?
   latitude    String?
   longitude   String?
-  // Identidade visual (como i3: cor_topo, cor_portal, company_logo, pref_icone, pref_capa)
-  cor         String?  // Cor primária hex
-  cor2        String?  // Cor secundária hex
+
+  // Identidade visual
+  cor         String?  // Cor primária (hex)
+  cor2        String?  // Cor secundária (hex)
   logo        String?  // URL da logomarca
-  brasao      String?  // URL do brasão/ícone oficial
+  brasao      String?  // URL do brasão/ícone
   banner      String?  // URL do banner/capa
-  // Configuração (como i3: nome_sistema, tipoSistema, pref_mascara)
-  nomeSistema String?  // Nome da plataforma: "Portal SEMEDUC"
+
+  // Configuração do sistema
+  nomeSistema String?  // Ex: "Portal SEMEDUC"
   tipoSistema String?  // escola | treinamento | consultoria | clinica | personalizado
   mascara     String?  // Máscara de numeração ex: ###/AAAA
   descricao   String?
   anuncios    String?  // JSON: [{titulo, texto, cor}]
   ativa       Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  cursos   EmpCurso[]
-  usuarios User[]
-  alunos   Aluno[]
-  modulos  EmpresaModulo[]
-  salas    Sala[]
-  setores  Setor[]
-  grupos   Grupo[]
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  // Relacionamentos
+  cursos      CursoDaEmpresa[]
+  usuarios    Usuario[]
+  alunos      Aluno[]
+  modulos     ModuloDaEmpresa[]
+  salas       Sala[]
+  setores     Setor[]
+  grupos      Grupo[]
+  permissoes  PermissaoUsuario[]
 
   @@map("empresas")
 }
 
-// ─── Setores (departamentos da empresa) ───────────────
+// ===========================================================================
+// SETORES — Departamentos da empresa (≡ secretarias/deptos no i3)
+// ===========================================================================
 model Setor {
   id        String   @id @default(cuid())
   empresaId String
   nome      String
   descricao String?
   ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
   empresa  Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   modulos  SetorModulo[]
-  usuarios User[]
+  usuarios Usuario[]
 
   @@unique([empresaId, nome])
   @@map("setores")
 }
 
+// Módulos liberados para um setor
 model SetorModulo {
   setorId String
-  modulo  String
+  modulo  String // alunos, cursos, matriculas, etc.
 
   setor Setor @relation(fields: [setorId], references: [id], onDelete: Cascade)
 
@@ -158,25 +204,29 @@ model SetorModulo {
   @@map("setor_modulos")
 }
 
-// ─── Grupos de usuários (criáveis por empresa) ────────
+// ===========================================================================
+// GRUPOS — Grupos de usuários dentro da empresa (≡ user_menus no i3)
+// ===========================================================================
 model Grupo {
-  id        String   @id @default(cuid())
-  empresaId String
-  nome      String
-  descricao String?
-  isAdmin   Boolean  @default(false) // acesso completo aos módulos da empresa
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  descricao    String?
+  isAdmin      Boolean  @default(false) // Admin do grupo: acesso completo aos módulos da empresa
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
-  empresa  Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
-  modulos  GrupoModulo[]
-  usuarios User[]
+  empresa    Empresa          @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  modulos    GrupoModulo[]
+  usuarios   Usuario[]
+  permissoes PermissaoUsuario[]
 
   @@unique([empresaId, nome])
   @@map("grupos")
 }
 
+// Módulos liberados para um grupo
 model GrupoModulo {
   grupoId String
   modulo  String
@@ -187,8 +237,11 @@ model GrupoModulo {
   @@map("grupo_modulos")
 }
 
-// ─── Módulos por empresa ───────────────────────────────
-model EmpresaModulo {
+// ===========================================================================
+// MÓDULOS POR EMPRESA — Quais módulos cada empresa tem ativados
+// (≡ pref_sistemas no i3)
+// ===========================================================================
+model ModuloDaEmpresa {
   id        String  @id @default(cuid())
   empresaId String
   modulo    String  // alunos, cursos, matriculas, baixas, certificados, salas, aulas
@@ -197,157 +250,197 @@ model EmpresaModulo {
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@unique([empresaId, modulo])
-  @@map("empresa_modulos")
+  @@map("modulos_da_empresa")
 }
 
-// ─── Salas WebRTC ──────────────────────────────────────
-model Sala {
-  id              String   @id @default(cuid())
-  nome            String
-  codigo          String   @unique
-  empresaId       String?
-  criadoPorId     String
-  maxParticipantes Int     @default(10)
-  ativa           Boolean  @default(true)
-  createdAt       DateTime @default(now())
+// ===========================================================================
+// PERMISSÕES GRANULARES — CRUD por módulo por usuário/grupo
+// (≡ user_seguranca no i3 SCMWeb)
+// Resolução: permissão do usuário individual tem prioridade sobre o grupo.
+// superAdmin / papel A / grupoIsAdmin = acesso total (não consultado).
+// ===========================================================================
+model PermissaoUsuario {
+  id        String   @id @default(cuid())
+  empresaId String
+  usuarioId String?  // Permissão individual (sobrepõe grupo)
+  grupoId   String?  // Permissão por grupo (fallback)
+  modulo    String   // alunos, cursos, salas, matriculas, baixas, etc.
+  podeLer   Boolean  @default(true)
+  podeCriar Boolean  @default(false)
+  podeEditar Boolean @default(false)
+  podeDeletar Boolean @default(false)
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
-  empresa    Empresa?    @relation(fields: [empresaId], references: [id])
-  criadoPor  User        @relation(fields: [criadoPorId], references: [id])
-  signal     SalaSignal?
+  empresa  Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  usuario  Usuario? @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  grupo    Grupo?   @relation(fields: [grupoId],   references: [id], onDelete: Cascade)
+
+  // Um registro por combinação usuário+módulo+empresa
+  @@unique([empresaId, usuarioId, modulo])
+  // Um registro por combinação grupo+módulo+empresa
+  @@unique([empresaId, grupoId, modulo])
+  @@map("permissoes_usuario")
+}
+
+// ===========================================================================
+// SALAS — Salas de videoaula (WebRTC)
+// ===========================================================================
+model Sala {
+  id               String   @id @default(cuid())
+  nome             String
+  codigo           String   @unique // Código de acesso ex: ABC123
+  empresaId        String?
+  criadoPorId      String
+  maxParticipantes Int      @default(10)
+  ativa            Boolean  @default(true)
+  criadoEm         DateTime @default(now())
+
+  empresa   Empresa?    @relation(fields: [empresaId], references: [id])
+  criadoPor Usuario     @relation(fields: [criadoPorId], references: [id])
+  sinal     SinalSala?
 
   @@map("salas")
 }
 
-// ─── Sinalização WebRTC (HTTP polling) ────────────────
-model SalaSignal {
+// Sinalização WebRTC via HTTP polling (offer/answer/ICE candidates)
+model SinalSala {
   id         String   @id @default(cuid())
   salaId     String   @unique
   offer      String?  @db.Text
   answer     String?  @db.Text
-  callerName String?
-  calleeName String?
+  nomeCaller String?
+  nomeCallee String?
   iceCaller  String   @default("[]") @db.Text
   iceCallee  String   @default("[]") @db.Text
-  updatedAt  DateTime @updatedAt
+  atualizadoEm DateTime @updatedAt
 
   sala Sala @relation(fields: [salaId], references: [id], onDelete: Cascade)
 
-  @@map("sala_signals")
+  @@map("sinais_sala")
 }
 
-// ─── Cursos por empresa ────────────────────────────────
-model EmpCurso {
-  id           String  @id @default(cuid())
+// ===========================================================================
+// CURSOS — Cursos oferecidos pela empresa
+// ===========================================================================
+model CursoDaEmpresa {
+  id           String   @id @default(cuid())
   empresaId    String
   nome         String
   descricao    String?
   cargaHoraria Int?
-  ativo        Boolean @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
-  empresa      Empresa      @relation(fields: [empresaId], references: [id])
-  modulos      Modulo[]
+  empresa      Empresa       @relation(fields: [empresaId], references: [id])
+  modulos      ModuloCurso[]
   matriculas   Matricula[]
   certificados Certificado[]
 
-  @@map("emp_cursos")
+  @@map("cursos_da_empresa")
 }
 
-// ─── Módulos ───────────────────────────────────────────
-model Modulo {
-  id          String   @id @default(cuid())
-  empCursoId  String
-  nome        String
-  descricao   String?
-  ordem       Int      @default(0)
-  ativo       Boolean  @default(true)
-  createdAt   DateTime @default(now())
+// Módulos/capítulos do curso
+model ModuloCurso {
+  id         String   @id @default(cuid())
+  cursoId    String
+  nome       String
+  descricao  String?
+  ordem      Int      @default(0)
+  ativo      Boolean  @default(true)
+  criadoEm   DateTime @default(now())
 
-  empCurso EmpCurso @relation(fields: [empCursoId], references: [id])
-  aulas    Aula[]
+  curso  CursoDaEmpresa @relation(fields: [cursoId], references: [id])
+  aulas  Aula[]
 
-  @@map("modulos")
+  @@map("modulos_curso")
 }
 
-// ─── Aulas ────────────────────────────────────────────
+// Aulas dentro de um módulo
 model Aula {
   id        String   @id @default(cuid())
   moduloId  String
   nome      String
   tipo      String   @default("video") // video, online, texto, pdf
-  duracao   Int?     // em minutos
+  duracao   Int?     // Em minutos
   url       String?
   ordem     Int      @default(0)
   ativa     Boolean  @default(true)
-  createdAt DateTime @default(now())
+  criadoEm  DateTime @default(now())
 
-  modulo     Modulo          @relation(fields: [moduloId], references: [id])
+  modulo     ModuloCurso     @relation(fields: [moduloId], references: [id])
   andamentos AlunoAndamento[]
 
   @@map("aulas")
 }
 
-// ─── Alunos ───────────────────────────────────────────
+// ===========================================================================
+// ALUNOS — Pessoas matriculadas em cursos da empresa
+// ===========================================================================
 model Aluno {
   id        String    @id @default(cuid())
-  empresaId String?   // Aluno pertence a uma empresa específica (como pref_contribuinte)
+  empresaId String?
   nome      String
   email     String
   cpf       String?
   telefone  String?
   dataNasc  DateTime?
   ativo     Boolean   @default(true)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  criadoEm  DateTime  @default(now())
+  atualizadoEm DateTime @updatedAt
 
   empresa      Empresa?      @relation(fields: [empresaId], references: [id])
   matriculas   Matricula[]
   certificados Certificado[]
 
-  // Unicidade por empresa — quando empresaId for NULL usa email global por compatibilidade
+  // E-mail e CPF únicos dentro da empresa
   @@unique([empresaId, email])
   @@unique([empresaId, cpf])
   @@map("alunos")
 }
 
-// ─── Matrículas ───────────────────────────────────────
+// ===========================================================================
+// MATRÍCULAS — Vínculo aluno ↔ curso
+// ===========================================================================
 model Matricula {
   id         String   @id @default(cuid())
   alunoId    String
-  empCursoId String
-  status     String   @default("ativa") // ativa, concluida, cancelada
+  cursoId    String
+  status     String   @default("ativa")    // ativa, concluida, cancelada
   dataInicio DateTime @default(now())
   dataFim    DateTime?
   valor      Decimal  @default(0) @db.Decimal(10, 2)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  criadoEm   DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
 
-  aluno      Aluno          @relation(fields: [alunoId], references: [id])
-  empCurso   EmpCurso       @relation(fields: [empCursoId], references: [id])
+  aluno      Aluno           @relation(fields: [alunoId],  references: [id])
+  curso      CursoDaEmpresa  @relation(fields: [cursoId],  references: [id])
   andamentos AlunoAndamento[]
   baixas     Baixa[]
 
   @@map("matriculas")
 }
 
-// ─── Andamento dos alunos ─────────────────────────────
+// Progresso do aluno por aula
 model AlunoAndamento {
   id          String    @id @default(cuid())
   matriculaId String
   aulaId      String
   concluida   Boolean   @default(false)
-  dataConc    DateTime?
-  createdAt   DateTime  @default(now())
+  dataConclusao DateTime?
+  criadoEm    DateTime  @default(now())
 
   matricula Matricula @relation(fields: [matriculaId], references: [id])
-  aula      Aula      @relation(fields: [aulaId], references: [id])
+  aula      Aula      @relation(fields: [aulaId],      references: [id])
 
   @@unique([matriculaId, aulaId])
   @@map("alunos_andamento")
 }
 
-// ─── Baixas financeiras ───────────────────────────────
+// ===========================================================================
+// BAIXAS FINANCEIRAS — Cobranças e pagamentos de matrículas
+// ===========================================================================
 model Baixa {
   id          String   @id @default(cuid())
   matriculaId String?
@@ -355,39 +448,43 @@ model Baixa {
   valor       Decimal  @db.Decimal(10, 2)
   tipo        String   @default("mensalidade") // mensalidade, matricula, certificado, outros
   status      String   @default("pendente")    // pago, pendente, cancelado
-  dataPag     DateTime?
-  dataVenc    DateTime?
-  createdAt   DateTime @default(now())
+  dataPagamento DateTime?
+  dataVencimento DateTime?
+  criadoEm    DateTime @default(now())
 
   matricula Matricula? @relation(fields: [matriculaId], references: [id])
 
   @@map("baixas")
 }
 
-// ─── Certificados ─────────────────────────────────────
+// ===========================================================================
+// CERTIFICADOS — Emitidos ao concluir um curso
+// ===========================================================================
 model Certificado {
   id          String   @id @default(cuid())
   alunoId     String
-  empCursoId  String
+  cursoId     String
   codigo      String   @unique @default(cuid())
   dataEmissao DateTime @default(now())
 
-  aluno    Aluno    @relation(fields: [alunoId], references: [id])
-  empCurso EmpCurso @relation(fields: [empCursoId], references: [id])
+  aluno  Aluno          @relation(fields: [alunoId],  references: [id])
+  curso  CursoDaEmpresa @relation(fields: [cursoId],  references: [id])
 
   @@map("certificados")
 }
 
-// ─── Auditoria de segurança ───────────────────────────
-model SegurancaUser {
+// ===========================================================================
+// AUDITORIA DE SEGURANÇA — Log de ações dos usuários
+// ===========================================================================
+model SegurancaUsuario {
   id        String   @id @default(cuid())
-  userId    String
-  acao      String   // login, logout, create_user, edit_user, etc.
+  usuarioId String
+  acao      String   // login, logout, criar_usuario, editar_usuario, etc.
   detalhes  String?
   ip        String?
-  createdAt DateTime @default(now())
+  criadoEm  DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id])
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
 
-  @@map("seguranca_user")
+  @@map("seguranca_usuario")
 }

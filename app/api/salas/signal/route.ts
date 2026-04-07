@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { db } from "@/backend/database/prisma-client"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { db } from "@/servidor/banco/cliente"
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
 
 async function findSignalByCodigo(room: string) {
   const sala = await db.sala.findUnique({
     where: { codigo: room },
-    include: { signal: true },
+    include: { sinal: true },
   })
   return sala
 }
@@ -18,7 +18,7 @@ async function findSignalByCodigo(room: string) {
 //     POST /api/salas/signal?action=ice&room=CODE    body: { role, candidate }
 
 export async function GET(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 })
     }
 
-    const sig = sala.signal
+    const sig = sala.sinal
     if (!sig) {
       return NextResponse.json({
         offer: null,
@@ -53,8 +53,8 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       offer: sig.offer ? JSON.parse(sig.offer) : null,
       answer: sig.answer ? JSON.parse(sig.answer) : null,
-      caller_name: sig.callerName,
-      callee_name: sig.calleeName,
+      nomeCaller: sig.nomeCaller,
+      nomeCallee: sig.nomeCallee,
       ice_caller: JSON.parse(sig.iceCaller),
       ice_callee: JSON.parse(sig.iceCallee),
     })
@@ -67,11 +67,11 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 })
     }
 
-    if (sala.signal) {
-      await db.salaSignal.delete({ where: { salaId: sala.id } })
+    if (sala.sinal) {
+      await db.sinalSala.delete({ where: { salaId: sala.id } })
     }
     // Recria vazio para a próxima sessão
-    await db.salaSignal.create({ data: { salaId: sala.id } })
+    await db.sinalSala.create({ data: { salaId: sala.id } })
 
     return NextResponse.json({ ok: true })
   }
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getCurrentUser()
+  const user = await getUsuarioAtual()
   if (!user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
@@ -99,9 +99,9 @@ export async function POST(req: NextRequest) {
   }
 
   // Garante que o SalaSignal existe
-  let sig = sala.signal
+  let sig = sala.sinal
   if (!sig) {
-    sig = await db.salaSignal.create({ data: { salaId: sala.id } })
+    sig = await db.sinalSala.create({ data: { salaId: sala.id } })
   }
 
   // ── set ───────────────────────────────────────────────────────────────────
@@ -112,10 +112,10 @@ export async function POST(req: NextRequest) {
     const data: Record<string, string> = {}
     if (offer !== undefined) data.offer = JSON.stringify(offer)
     if (answer !== undefined) data.answer = JSON.stringify(answer)
-    if (caller_name !== undefined) data.callerName = caller_name
-    if (callee_name !== undefined) data.calleeName = callee_name
+    if (caller_name !== undefined) data.nomeCaller = caller_name
+    if (callee_name !== undefined) data.nomeCallee = callee_name
 
-    await db.salaSignal.update({
+    await db.sinalSala.update({
       where: { salaId: sala.id },
       data,
     })
@@ -135,14 +135,14 @@ export async function POST(req: NextRequest) {
     if (role === "caller") {
       const current: RTCIceCandidateInit[] = JSON.parse(sig.iceCaller)
       current.push(candidate)
-      await db.salaSignal.update({
+      await db.sinalSala.update({
         where: { salaId: sala.id },
         data: { iceCaller: JSON.stringify(current) },
       })
     } else if (role === "callee") {
       const current: RTCIceCandidateInit[] = JSON.parse(sig.iceCallee)
       current.push(candidate)
-      await db.salaSignal.update({
+      await db.sinalSala.update({
         where: { salaId: sala.id },
         data: { iceCallee: JSON.stringify(current) },
       })

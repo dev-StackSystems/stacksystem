@@ -1,28 +1,43 @@
+/**
+ * app/api/matriculas/route.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * API REST para matrículas (vínculo aluno ↔ curso).
+ *
+ * GET  /api/matriculas — lista matrículas da empresa
+ * POST /api/matriculas — cria nova matrícula
+ *
+ * Status possíveis: "ativa" | "concluida" | "cancelada"
+ *
+ * Validação de tenant: aluno e curso devem pertencer à mesma empresa do usuário.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/backend/database/prisma-client"
-import { getCurrentUser } from "@/backend/auth/session-helpers"
-import { UserRole } from "@prisma/client"
+import { db } from "@/servidor/banco/cliente"
+import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { PapelUsuario } from "@prisma/client"
 
-// GET /api/matriculas — scoped por empresa via empCurso
+// ── GET /api/matriculas ────────────────────────────────────────────────────
+
 export async function GET() {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  if (!user.isSuperAdmin && !user.empresaId) {
-    return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+  if (!usuario.superAdmin && !usuario.empresaId) {
+    return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
   }
 
-  // Filtra matrículas pelos cursos da empresa do usuário
-  const where = user.isSuperAdmin
+  // Filtra matrículas pelos cursos da empresa (via relacionamento curso → empresa)
+  const filtro = usuario.superAdmin
     ? {}
-    : { empCurso: { empresaId: user.empresaId! } }
+    : { curso: { empresaId: usuario.empresaId! } }
 
   const matriculas = await db.matricula.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
+    where:   filtro,
+    orderBy: { criadoEm: "desc" },
     include: {
       aluno: { select: { nome: true, email: true } },
-      empCurso: {
+      curso: {
         select: {
           nome: true,
           empresa: { select: { nome: true } },
@@ -34,48 +49,58 @@ export async function GET() {
   return NextResponse.json(matriculas)
 }
 
-// POST /api/matriculas — admin de empresa ou super admin
-export async function POST(request: NextRequest) {
-  const user = await getCurrentUser()
-  if (!user) return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+// ── POST /api/matriculas ───────────────────────────────────────────────────
 
-  const canCreate =
-    user.isSuperAdmin ||
-    user.role === UserRole.A ||
-    user.role === UserRole.T ||
-    user.grupoIsAdmin
-  if (!canCreate) return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
+export async function POST(requisicao: NextRequest) {
+  const usuario = await getUsuarioAtual()
+  if (!usuario) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
 
-  const body = await request.json()
-  const { alunoId, empCursoId, status, valor, dataInicio, dataFim } = body
+  const podeCriar =
+    usuario.superAdmin ||
+    usuario.papel === PapelUsuario.A ||
+    usuario.papel === PapelUsuario.T ||
+    usuario.grupoIsAdmin
 
-  if (!alunoId || !empCursoId) {
-    return NextResponse.json({ error: "Aluno e curso são obrigatórios." }, { status: 400 })
+  if (!podeCriar) return NextResponse.json({ erro: "Acesso negado" }, { status: 403 })
+
+  const corpo = await requisicao.json()
+  const { alunoId, cursoId, status, valor, dataInicio, dataFim } = corpo
+
+  if (!alunoId || !cursoId) {
+    return NextResponse.json({ erro: "Aluno e curso são obrigatórios." }, { status: 400 })
   }
 
-  // Valida que o curso e o aluno pertencem à empresa do usuário (se não for super admin)
-  if (!user.isSuperAdmin && user.empresaId) {
-    const curso = await db.empCurso.findUnique({ where: { id: empCursoId }, select: { empresaId: true } })
-    if (!curso || curso.empresaId !== user.empresaId) {
-      return NextResponse.json({ error: "Curso não pertence à sua empresa." }, { status: 403 })
+  // Valida que o curso e o aluno pertencem à empresa do usuário
+  if (!usuario.superAdmin && usuario.empresaId) {
+    const curso = await db.cursoDaEmpresa.findUnique({
+      where:  { id: cursoId },
+      select: { empresaId: true },
+    })
+    if (!curso || curso.empresaId !== usuario.empresaId) {
+      return NextResponse.json({ erro: "Curso não pertence à sua empresa." }, { status: 403 })
     }
-    const aluno = await db.aluno.findUnique({ where: { id: alunoId }, select: { empresaId: true } })
-    if (!aluno || aluno.empresaId !== user.empresaId) {
-      return NextResponse.json({ error: "Aluno não pertence à sua empresa." }, { status: 403 })
+
+    const aluno = await db.aluno.findUnique({
+      where:  { id: alunoId },
+      select: { empresaId: true },
+    })
+    if (!aluno || aluno.empresaId !== usuario.empresaId) {
+      return NextResponse.json({ erro: "Aluno não pertence à sua empresa." }, { status: 403 })
     }
   }
 
   const matricula = await db.matricula.create({
     data: {
-      alunoId, empCursoId,
-      status: status ?? "ativa",
-      valor: valor ? parseFloat(valor) : 0,
+      alunoId,
+      cursoId,
+      status:     status     ?? "ativa",
+      valor:      valor ? parseFloat(valor) : 0,
       dataInicio: dataInicio ? new Date(dataInicio) : new Date(),
-      dataFim: dataFim ? new Date(dataFim) : null,
+      dataFim:    dataFim    ? new Date(dataFim)    : null,
     },
     include: {
       aluno: { select: { nome: true, email: true } },
-      empCurso: {
+      curso: {
         select: {
           nome: true,
           empresa: { select: { nome: true } },
