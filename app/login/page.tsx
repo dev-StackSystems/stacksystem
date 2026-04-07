@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation"
 import { signIn } from "next-auth/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
+import Mascote from "@/componentes/mascote"
 
 // ─────────────────────────────────────────────
 //  BANNERS — edite à vontade
@@ -95,8 +96,8 @@ export default function LoginPage() {
             transition={{ duration: 0.5, ease }}
             className="flex items-center gap-3"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-xl font-serif shadow-lg shadow-orange-500/25">
-              S
+            <div>
+              <img src="/favicon.ico" alt="StackSystems" style={{ width: "50px", height: "50px" }} />
             </div>
             <div>
               <div className="font-serif text-[17px] font-bold text-white">
@@ -182,7 +183,7 @@ export default function LoginPage() {
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-3 mb-10">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-lg font-serif">
-            S
+            <img src="/favicon.ico" alt="StackSystems" style={{ width: "50px", height: "50px" }} />
           </div>
           <span className="font-serif text-lg font-bold text-slate-900">
             Stack<span className="text-orange-500">Systems</span>
@@ -271,6 +272,7 @@ export default function LoginPage() {
               </label>
               <button
                 type="button"
+                onClick={() => router.push("/login/esqueci-senha")}
                 className="text-xs text-orange-500 hover:text-orange-600 font-semibold transition-colors"
               >
                 Esqueci minha senha
@@ -323,6 +325,9 @@ export default function LoginPage() {
           </div>
         </motion.div>
       </div>
+
+      {/* Stacky — assistente de suporte ao login */}
+      <Mascote modo="login" />
     </div>
   )
 }

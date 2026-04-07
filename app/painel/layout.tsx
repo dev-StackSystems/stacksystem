@@ -21,6 +21,7 @@ import { db } from "@/servidor/banco/cliente"
 import { BarraLateral } from "@/componentes/layout/barra-lateral"
 import { BarraTopo } from "@/componentes/layout/barra-topo"
 import { ProvedorSessao } from "@/componentes/layout/provedor-sessao"
+import Mascote from "@/componentes/mascote"
 import { AlertTriangle } from "lucide-react"
 
 export default async function LayoutPainel({ children }: { children: React.ReactNode }) {
@@ -99,6 +100,9 @@ export default async function LayoutPainel({ children }: { children: React.React
           <main className="flex-1 p-6 md:p-8">{children}</main>
         </div>
       </div>
+
+      {/* Stacky — assistente do sistema */}
+      <Mascote modo="painel" />
     </ProvedorSessao>
   )
 }

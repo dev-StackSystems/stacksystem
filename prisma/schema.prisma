@@ -65,9 +65,10 @@ model Usuario {
   grupo         Grupo?          @relation(fields: [grupoId],    references: [id])
   accounts      Account[]
   sessions      Session[]
-  logsSeguranca SegurancaUsuario[]
-  salasCreadas  Sala[]
-  permissoes    PermissaoUsuario[]
+  logsSeguranca    SegurancaUsuario[]
+  salasCreadas     Sala[]
+  permissoes       PermissaoUsuario[]
+  tokensRedefinicao TokenRedefinicaoSenha[]
 
   @@map("usuarios")
 }
@@ -471,6 +472,22 @@ model Certificado {
   curso  CursoDaEmpresa @relation(fields: [cursoId],  references: [id])
 
   @@map("certificados")
+}
+
+// ===========================================================================
+// TOKENS DE REDEFINIÇÃO DE SENHA
+// ===========================================================================
+model TokenRedefinicaoSenha {
+  id        String   @id @default(cuid())
+  usuarioId String
+  token     String   @unique @default(cuid())
+  expiraEm  DateTime
+  usado     Boolean  @default(false)
+  criadoEm  DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@map("tokens_redefinicao_senha")
 }
 
 // ===========================================================================
