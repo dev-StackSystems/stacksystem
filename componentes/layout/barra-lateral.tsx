@@ -194,14 +194,20 @@ export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, marca }
             />
           ) : (
             <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-sm font-serif shadow"
+              className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white text-sm font-serif shadow overflow-hidden"
               style={
                 semMarca
                   ? { background: "linear-gradient(135deg, #fb923c, #ea580c)" }
                   : { background: `linear-gradient(135deg, ${corMarca}cc, ${corMarca})` }
               }
             >
-              {marca ? marca.nome.charAt(0).toUpperCase() : "S"}
+              {/* Sem marca = StackSystems (favicon); com marca = inicial da empresa */}
+              {semMarca ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src="/favicon.ico" alt="StackSystems" className="w-5 h-5 object-contain" />
+              ) : (
+                marca.nome.charAt(0).toUpperCase()
+              )}
             </div>
           )}
 

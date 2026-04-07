@@ -59,8 +59,9 @@ export default function EsqueciSenhaPage() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center font-bold text-white text-lg font-serif shadow-md shadow-orange-200">
-            S
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md shadow-orange-200 overflow-hidden">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/favicon.ico" alt="StackSystems" className="w-6 h-6 object-contain" />
           </div>
           <span className="font-serif text-[17px] font-bold text-slate-900">
             Stack<span className="text-orange-500">Systems</span>

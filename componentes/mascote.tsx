@@ -632,8 +632,10 @@ export default function Mascote({ modo = "landing" }: Props) {
               >
                 {/* Header */}
                 <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-600 shrink-0">
-                  <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center font-bold text-white text-xs font-serif">
-                    S
+                  {/* Stacky em pose — foto divertida do mascote */}
+                  <div className="w-9 h-9 rounded-lg bg-white/15 flex items-center justify-center overflow-hidden shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/stacky-pose.svg" alt="Stacky" className="w-full h-full object-contain drop-shadow-sm" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-bold text-sm leading-none">Stacky</p>
@@ -852,13 +854,14 @@ export default function Mascote({ modo = "landing" }: Props) {
                 </div>
               </div>
 
-              {/* Badge "S" */}
+              {/* Badge — logo StackSystems */}
               <motion.div
                 animate={{ rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -bottom-1 -right-2 w-6 h-6 rounded-full bg-white border-2 border-orange-400 flex items-center justify-center shadow-md"
+                className="absolute -bottom-1 -right-2 w-6 h-6 rounded-full bg-white border-2 border-orange-400 flex items-center justify-center shadow-md overflow-hidden"
               >
-                <span className="text-[10px] font-black text-orange-500 font-serif">S</span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/favicon.ico" alt="S" className="w-4 h-4 object-contain" />
               </motion.div>
             </motion.div>
           </motion.div>
