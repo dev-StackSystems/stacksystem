@@ -12,6 +12,8 @@ import {
   Wifi,
   WifiOff,
   Clock,
+  Monitor,
+  MonitorOff,
 } from "lucide-react"
 
 interface Props {
@@ -39,6 +41,7 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
   const remoteVideoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const localStreamRef = useRef<MediaStream | null>(null)
+  const screenStreamRef = useRef<MediaStream | null>(null)
   const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const knownIceRef = useRef({ caller: 0, callee: 0 })
@@ -53,6 +56,7 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
   const [remoteName, setRemoteName] = useState("")
   const [micOn, setMicOn] = useState(true)
   const [camOn, setCamOn] = useState(true)
+  const [screenOn, setScreenOn] = useState(false)
   const [copied, setCopied] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [status, setStatus] = useState("Aguardando...")
@@ -306,10 +310,15 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
       pcRef.current.close()
       pcRef.current = null
     }
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((t) => t.stop())
+      screenStreamRef.current = null
+    }
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop())
       localStreamRef.current = null
     }
+    setScreenOn(false)
     if (doReset && activeCode && role === "caller") {
       api("reset", activeCode).catch(() => {})
     }
@@ -345,6 +354,55 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
       t.enabled = newVal
     })
     setCamOn(newVal)
+  }
+
+  /** Reverte o vídeo local de volta à câmera após o compartilhamento encerrar */
+  function revertToCam() {
+    const camTrack = localStreamRef.current?.getVideoTracks()[0] ?? null
+    const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video") ?? null
+    if (sender && camTrack) sender.replaceTrack(camTrack).catch(() => {})
+    if (localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current
+    }
+    screenStreamRef.current?.getTracks().forEach((t) => t.stop())
+    screenStreamRef.current = null
+    setScreenOn(false)
+  }
+
+  /** Alterna compartilhamento de tela */
+  async function toggleScreenShare() {
+    if (screenOn) {
+      revertToCam()
+      return
+    }
+    try {
+      const screenStream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: false,
+      })
+      screenStreamRef.current = screenStream
+      const screenTrack = screenStream.getVideoTracks()[0]
+
+      // Substitui o track de vídeo na conexão WebRTC sem renegociação
+      const sender = pcRef.current?.getSenders().find((s) => s.track?.kind === "video") ?? null
+      if (sender) await sender.replaceTrack(screenTrack)
+
+      // Exibe preview da tela no vídeo local (PiP)
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = screenStream
+      }
+
+      // Quando o usuário parar o compartilhamento pelo browser, reverte automaticamente
+      screenTrack.onended = () => revertToCam()
+
+      setScreenOn(true)
+    } catch (err: unknown) {
+      const e = err as DOMException
+      if (e.name !== "NotAllowedError") {
+        setError("Não foi possível iniciar o compartilhamento de tela.")
+      }
+      // NotAllowedError = usuário cancelou — sem mensagem de erro
+    }
   }
 
   // ── Copy helpers ─────────────────────────────────────────────────────────
@@ -625,13 +683,16 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
             muted
             className="w-full h-full object-cover"
           />
-          {!camOn && (
+          {!camOn && !screenOn && (
             <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
               <VideoOff size={18} className="text-slate-500" />
             </div>
           )}
-          <div className="absolute bottom-1 left-1.5 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5">
-            <span className="text-white text-[9px] font-semibold">Você</span>
+          <div className="absolute bottom-1 left-1.5 bg-black/60 backdrop-blur-sm rounded-md px-1.5 py-0.5 flex items-center gap-1">
+            {screenOn && <Monitor size={9} className="text-orange-400" />}
+            <span className="text-white text-[9px] font-semibold">
+              {screenOn ? "Tela" : "Você"}
+            </span>
           </div>
         </div>
 
@@ -661,6 +722,19 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
             }`}
           >
             {camOn ? <Video size={18} /> : <VideoOff size={18} />}
+          </button>
+
+          {/* Compartilhar tela */}
+          <button
+            onClick={toggleScreenShare}
+            title={screenOn ? "Parar compartilhamento" : "Compartilhar tela"}
+            className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${
+              screenOn
+                ? "bg-orange-500/20 border-orange-500/50 text-orange-400 hover:bg-orange-500/30"
+                : "bg-slate-800 border-white/10 text-white hover:bg-slate-700"
+            }`}
+          >
+            {screenOn ? <MonitorOff size={18} /> : <Monitor size={18} />}
           </button>
 
           {/* Encerrar */}
