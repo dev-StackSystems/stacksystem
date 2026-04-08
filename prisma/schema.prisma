@@ -28,14 +28,18 @@ datasource db {
 
 // ---------------------------------------------------------------------------
 // PAPEL DO USUÁRIO (papel = role)
-// A = Administrador da empresa — acesso total à própria empresa
-// T = Técnico               — acesso conforme permissões do grupo/setor
-// F = Docente (Corpo Docente) — acesso restrito (alunos, aulas)
+// A = Administrador — acesso total à empresa, gerencia tudo
+// T = Técnico       — gerencia usuários; abaixo do Admin
+// I = Interno       — usuário interno com permissões padrão (genérico)
+// E = Externo       — usuário externo com acesso restrito (genérico)
+// F = Docente       — específico de sistemas educacionais (cursinho/escola)
 // ---------------------------------------------------------------------------
 enum PapelUsuario {
   A // Administrador
   T // Técnico
-  F // Docente
+  I // Interno
+  E // Externo
+  F // Docente (Corpo Docente)
 }
 
 // ===========================================================================

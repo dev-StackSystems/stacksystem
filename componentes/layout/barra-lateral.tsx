@@ -107,7 +107,7 @@ function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: st
     }
   }
 
-  // Admin da empresa ou admin do grupo: vê configurações
+  // Administrador ou admin do grupo: acesso total à gestão da empresa
   if (papel === "A" || grupoIsAdmin) {
     resultado.push({
       titulo: "Empresa",
@@ -119,12 +119,13 @@ function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: st
       ],
     })
   } else if (papel === "T") {
-    // Técnico: só lista de usuários
+    // Técnico: gerencia usuários mas não configura a empresa
     resultado.push({
       titulo: "Empresa",
       itens: [{ icone: Users, rotulo: "Usuários", href: "/painel/usuarios" }],
     })
   }
+  // Interno (I), Externo (E) e Docente (F): sem seção de gestão
 
   return resultado
 }

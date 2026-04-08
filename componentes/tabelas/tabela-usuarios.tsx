@@ -60,8 +60,10 @@ interface Props {
 // ── Configuração de exibição por papel ────────────────────────────────────
 
 const CONFIG_PAPEL: Record<string, { rotulo: string; classe: string }> = {
-  A: { rotulo: "Administrador", classe: "bg-purple-50 text-purple-600 border border-purple-200"  },
-  T: { rotulo: "Técnico",       classe: "bg-blue-50 text-blue-600 border border-blue-200"         },
+  A: { rotulo: "Administrador", classe: "bg-purple-50 text-purple-600 border border-purple-200"   },
+  T: { rotulo: "Técnico",       classe: "bg-blue-50 text-blue-600 border border-blue-200"          },
+  I: { rotulo: "Interno",       classe: "bg-slate-50 text-slate-600 border border-slate-200"       },
+  E: { rotulo: "Externo",       classe: "bg-amber-50 text-amber-600 border border-amber-200"       },
   F: { rotulo: "Corpo Docente", classe: "bg-emerald-50 text-emerald-600 border border-emerald-200" },
 }
 

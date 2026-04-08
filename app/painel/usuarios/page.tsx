@@ -47,8 +47,10 @@ export default async function PaginaUsuarios() {
   const sessao = await getServerSession(opcoesAuth)
   if (!sessao) redirect("/login")
 
-  // Docente não tem acesso à gestão de usuários
-  if (sessao.user.papel === PapelUsuario.F && !sessao.user.superAdmin) {
+  // Apenas Admin e Técnico acessam a gestão de usuários
+  const papeisComAcesso = [PapelUsuario.A, PapelUsuario.T]
+  if (!sessao.user.superAdmin && !sessao.user.grupoIsAdmin &&
+      !papeisComAcesso.includes(sessao.user.papel as PapelUsuario)) {
     redirect("/painel")
   }
 

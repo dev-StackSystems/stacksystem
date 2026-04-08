@@ -62,16 +62,16 @@ const classeLabel  = "block text-[10px] font-bold uppercase tracking-[0.08em] te
 const classeInput  = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
 const classeSelect = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
-// Papéis disponíveis por tipo de usuário
-const PAPEIS_ADMIN = [
-  { valor: "A", rotulo: "Administrador do Sistema" },
-  { valor: "T", rotulo: "Técnico"                  },
-  { valor: "F", rotulo: "Corpo Docente"             },
+// Perfis genéricos — disponíveis em qualquer tipo de sistema
+const PAPEIS_BASE = [
+  { valor: "A", rotulo: "Administrador" },
+  { valor: "T", rotulo: "Técnico"       },
+  { valor: "I", rotulo: "Interno"       },
+  { valor: "E", rotulo: "Externo"       },
 ]
-const PAPEIS_EMPRESA = [
-  { valor: "T", rotulo: "Técnico"      },
-  { valor: "F", rotulo: "Corpo Docente" },
-]
+
+// Tipos de sistema que admitem o perfil Corpo Docente
+const SISTEMAS_EDUCACIONAIS = ["escola", "treinamento", "consultoria"]
 
 // ── Componente ─────────────────────────────────────────────────────────────
 
@@ -188,6 +188,8 @@ export function FormularioUsuario({
   const setoresFiltrados    = setores.filter(s => s.empresaId === form.empresaId)
   const gruposFiltrados     = grupos.filter(g => g.empresaId === form.empresaId)
   const empresaObrigatoria  = form.papel !== "A"
+  // Corpo Docente só disponível se a empresa é de sistema educacional
+  const mostrarDocente = SISTEMAS_EDUCACIONAIS.includes(empresaSelecionada?.tipoSistema ?? "")
 
   return (
     <>
@@ -274,9 +276,12 @@ export function FormularioUsuario({
                     className={`${classeSelect} ${!form.papel ? "border-amber-300 bg-amber-50/50" : ""}`}
                   >
                     <option value="">— Selecionar perfil —</option>
-                    {(isAdminSistema ? PAPEIS_ADMIN : PAPEIS_EMPRESA).map(p => (
+                    {PAPEIS_BASE.map(p => (
                       <option key={p.valor} value={p.valor}>{p.rotulo}</option>
                     ))}
+                    {mostrarDocente && (
+                      <option value="F">Corpo Docente</option>
+                    )}
                   </select>
                 </div>
 

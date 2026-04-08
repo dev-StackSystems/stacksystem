@@ -20,7 +20,7 @@ declare module "next-auth" {
       id:           string        // ID único do usuário (cuid)
       name:         string        // Nome completo (campo padrão JWT)
       email:        string        // E-mail (campo padrão JWT)
-      papel:        string        // Papel: "A" | "T" | "F"
+      papel:        string        // Papel: "A" | "T" | "I" | "E" | "F"
       superAdmin:   boolean       // Acesso irrestrito a todas as empresas (desenvolvedor/i3)
       empresaId:    string | null // ID da empresa vinculada
       grupoId:      string | null // ID do grupo do usuário

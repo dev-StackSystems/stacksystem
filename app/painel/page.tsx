@@ -26,6 +26,8 @@ import {
 const ROTULOS_PAPEL: Record<string, string> = {
   A: "Administrador",
   T: "Técnico",
+  I: "Interno",
+  E: "Externo",
   F: "Corpo Docente",
 }
 
