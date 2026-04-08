@@ -48,9 +48,9 @@ export default async function PaginaUsuarios() {
   if (!sessao) redirect("/login")
 
   // Apenas Admin e Técnico acessam a gestão de usuários
-  const papeisComAcesso = [PapelUsuario.A, PapelUsuario.T]
+  const papel = sessao.user.papel as PapelUsuario
   if (!sessao.user.superAdmin && !sessao.user.grupoIsAdmin &&
-      !papeisComAcesso.includes(sessao.user.papel as PapelUsuario)) {
+      papel !== PapelUsuario.A && papel !== PapelUsuario.T) {
     redirect("/painel")
   }
 
