@@ -19,6 +19,10 @@ export default async function SalasPage() {
       ? { ativa: true }
       : { ativa: true, empresaId: session.user.empresaId ?? undefined }
 
+  // Papéis internos: podem criar salas e entrar como host
+  const PAPEIS_INTERNOS = ["A", "T", "I"]
+  const ehInterno = session.user.superAdmin || PAPEIS_INTERNOS.includes(session.user.papel ?? "")
+
   const salas = await db.sala.findMany({
     where,
     orderBy: { criadoEm: "desc" },
@@ -37,14 +41,17 @@ export default async function SalasPage() {
           <p className="text-sm text-slate-400 mt-1">Videoconferências em tempo real</p>
         </div>
 
-        <SalaFormModal
-          trigger={
-            <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all shadow-sm shadow-orange-200">
-              <Plus size={16} />
-              Nova Sala
-            </button>
-          }
-        />
+        {/* Apenas internos (A, T, I) podem criar salas */}
+        {ehInterno && (
+          <SalaFormModal
+            trigger={
+              <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all shadow-sm shadow-orange-200">
+                <Plus size={16} />
+                Nova Sala
+              </button>
+            }
+          />
+        )}
       </div>
 
       {/* Grid de salas */}
@@ -57,14 +64,16 @@ export default async function SalasPage() {
           <p className="text-sm text-slate-400 mt-2 max-w-xs">
             Crie uma nova sala para iniciar videoconferências com sua equipe.
           </p>
-          <SalaFormModal
-            trigger={
-              <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all">
-                <Plus size={16} />
-                Criar primeira sala
-              </button>
-            }
-          />
+          {ehInterno && (
+            <SalaFormModal
+              trigger={
+                <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all">
+                  <Plus size={16} />
+                  Criar primeira sala
+                </button>
+              }
+            />
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -78,6 +87,7 @@ export default async function SalasPage() {
               }}
               userId={session.user.id}
               isAdmin={isAdmin}
+              ehInterno={ehInterno}
             />
           ))}
         </div>

@@ -49,11 +49,19 @@ export async function GET() {
   }
 }
 
+// Papéis que podem criar salas e hospedar chamadas
+const PAPEIS_INTERNOS = ["A", "T", "I"]
+
 // ── POST /api/salas ────────────────────────────────────────────────────────
 
 export async function POST(requisicao: NextRequest) {
   const sessao = await getServerSession(opcoesAuth)
   if (!sessao?.user) return NextResponse.json({ erro: "Não autenticado" }, { status: 401 })
+
+  const ehInterno = sessao.user.superAdmin || PAPEIS_INTERNOS.includes(sessao.user.papel ?? "")
+  if (!ehInterno) {
+    return NextResponse.json({ erro: "Sem permissão para criar salas." }, { status: 403 })
+  }
 
   try {
     const corpo = await requisicao.json()

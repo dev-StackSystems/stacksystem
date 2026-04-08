@@ -33,8 +33,16 @@ export default async function SalaVideoPage({ params, searchParams }: Props) {
     notFound()
   }
 
-  // Dono da sala entra direto como caller; outros entram como convidados
-  const ehDono = sala.criadoPorId === session.user.id || session.user.superAdmin === true
+  const PAPEIS_INTERNOS = ["A", "T", "I"]
+  const ehInterno = session.user.superAdmin || PAPEIS_INTERNOS.includes(session.user.papel ?? "")
+
+  // Externo sem código de convite → não pode entrar diretamente
+  if (!ehInterno && !join) {
+    redirect("/painel/salas")
+  }
+
+  // Dono da sala entra como caller; externos sempre como callee (via link)
+  const ehDono = ehInterno && (sala.criadoPorId === session.user.id || session.user.superAdmin === true)
 
   return (
     <VideoRoom
