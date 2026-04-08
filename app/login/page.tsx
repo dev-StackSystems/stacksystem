@@ -1,7 +1,7 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { signIn } from "next-auth/react"
+import { Suspense, useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { signIn, signOut } from "next-auth/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
 import Mascote from "@/componentes/mascote"
@@ -29,12 +29,26 @@ const BARRAS = [42, 65, 50, 78, 58, 90, 72, 100]
 const ease = [0.22, 1, 0.36, 1] as const
 
 export default function LoginPage() {
-  const router = useRouter()
+  return (
+    <Suspense>
+      <LoginConteudo />
+    </Suspense>
+  )
+}
+
+function LoginConteudo() {
+  const router       = useRouter()
+  const searchParams = useSearchParams()
   const [form, setForm]         = useState({ email: "", senha: "" })
   const [showPass, setShowPass] = useState(false)
   const [remember, setRemember] = useState(false)
   const [loading, setLoading]   = useState(false)
   const [error, setError]       = useState("")
+
+  // Destrói sessão ativa ao entrar na página de login
+  useEffect(() => {
+    signOut({ redirect: false })
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -67,7 +81,8 @@ export default function LoginPage() {
       return
     }
 
-    router.push("/painel")
+    const destino = searchParams.get("callbackUrl") ?? "/painel"
+    router.push(destino)
   }
 
   return (

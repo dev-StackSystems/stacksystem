@@ -11,6 +11,7 @@
 
 import { db }               from "@/servidor/banco/cliente"
 import { getServerSession } from "next-auth"
+import { redirect }         from "next/navigation"
 import { opcoesAuth }       from "@/servidor/autenticacao/config"
 import { TIPOS_SISTEMA }    from "@/tipos/sistema"
 import Link                 from "next/link"
@@ -91,7 +92,7 @@ export default async function PaginaPainel() {
   let modulosAtivos: string[] = []
 
   if (empresaId) {
-    const [emp, empMods] = await Promise.all([
+    const [emp, empMods, empCustom] = await Promise.all([
       db.empresa.findUnique({
         where:  { id: empresaId },
         select: {
@@ -105,9 +106,19 @@ export default async function PaginaPainel() {
         where:  { empresaId, ativo: true },
         select: { modulo: true },
       }),
+      db.moduloCustomDaEmpresa.findMany({
+        where:  { empresaId, ativo: true },
+        select: { catalogo: { select: { href: true } } },
+        orderBy: { criadoEm: "asc" },
+      }),
     ])
-    empresa      = emp
+    empresa       = emp
     modulosAtivos = empMods.map(m => m.modulo)
+
+    // Empresa sem módulos builtin mas com módulos custom → redireciona direto para o módulo
+    if (!isAdmin && modulosAtivos.length === 0 && empCustom.length > 0) {
+      redirect(empCustom[0].catalogo.href)
+    }
   }
 
   // Informações do tipo de sistema (cursinho, escola, etc.)

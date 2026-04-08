@@ -29,12 +29,16 @@ const MAPA_ROTAS: Record<string, string> = {
   contato: "/#contato",
 }
 
+// Rotas que exigem autenticação
+const ROTAS_PROTEGIDAS = ["/painel", "/modulos"]
+
 export async function proxy(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl
 
-  // ── 1. Proteção do painel ────────────────────────────────────────────────
-  // Qualquer rota dentro de /painel/* exige autenticação válida
-  if (pathname.startsWith("/painel")) {
+  // ── 1. Proteção de rotas autenticadas ───────────────────────────────────
+  // /painel/* e /modulos/* exigem autenticação válida
+  const precisaAuth = ROTAS_PROTEGIDAS.some(rota => pathname.startsWith(rota))
+  if (precisaAuth) {
     const token = await getToken({
       req:    request,
       secret: process.env.NEXTAUTH_SECRET,
@@ -42,7 +46,9 @@ export async function proxy(request: NextRequest) {
 
     // Sem token → redireciona para a página de login
     if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url))
+      const loginUrl = new URL("/login", request.url)
+      loginUrl.searchParams.set("callbackUrl", pathname)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
@@ -62,7 +68,7 @@ export async function proxy(request: NextRequest) {
   return NextResponse.next()
 }
 
-// Aplica o middleware somente nas rotas do painel e na raiz
+// Aplica o middleware nas rotas protegidas e na raiz
 export const config = {
-  matcher: ["/painel/:path*", "/"],
+  matcher: ["/painel/:path*", "/modulos/:path*", "/"],
 }
