@@ -108,16 +108,16 @@ export default async function PaginaPainel() {
       }),
       db.moduloCustomDaEmpresa.findMany({
         where:  { empresaId, ativo: true },
-        select: { catalogo: { select: { href: true } } },
+        select: { catalogo: { select: { id: true, href: true } } },
         orderBy: { criadoEm: "asc" },
       }),
     ])
     empresa       = emp
     modulosAtivos = empMods.map(m => m.modulo)
 
-    // Empresa sem módulos builtin mas com módulos custom → redireciona direto para o módulo
+    // Empresa sem módulos builtin mas com módulos custom → redireciona para rota mascarada
     if (!isAdmin && modulosAtivos.length === 0 && empCustom.length > 0) {
-      redirect(empCustom[0].catalogo.href)
+      redirect(`/painel/app/${empCustom[0].catalogo.id}`)
     }
   }
 
