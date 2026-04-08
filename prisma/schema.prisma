@@ -162,14 +162,15 @@ model Empresa {
   atualizadoEm DateTime @updatedAt
 
   // Relacionamentos
-  cursos      CursoDaEmpresa[]
-  usuarios    Usuario[]
-  alunos      Aluno[]
-  modulos     ModuloDaEmpresa[]
-  salas       Sala[]
-  setores     Setor[]
-  grupos      Grupo[]
-  permissoes  PermissaoUsuario[]
+  cursos        CursoDaEmpresa[]
+  usuarios      Usuario[]
+  alunos        Aluno[]
+  modulos       ModuloDaEmpresa[]
+  modulosCustom ModuloCustomDaEmpresa[]
+  salas         Sala[]
+  setores       Setor[]
+  grupos        Grupo[]
+  permissoes    PermissaoUsuario[]
 
   @@map("empresas")
 }
@@ -239,19 +240,57 @@ model GrupoModulo {
 }
 
 // ===========================================================================
-// MÓDULOS POR EMPRESA — Quais módulos cada empresa tem ativados
+// MÓDULOS POR EMPRESA — Quais módulos built-in cada empresa tem ativados
 // (≡ pref_sistemas no i3)
 // ===========================================================================
 model ModuloDaEmpresa {
   id        String  @id @default(cuid())
   empresaId String
-  modulo    String  // alunos, cursos, matriculas, baixas, certificados, salas, aulas
+  modulo    String  // chave builtin: alunos, cursos, matriculas, baixas, certificados, salas
   ativo     Boolean @default(true)
 
   empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
 
   @@unique([empresaId, modulo])
   @@map("modulos_da_empresa")
+}
+
+// ===========================================================================
+// CATÁLOGO DE MÓDULOS — Módulos customizados criados pelo superAdmin
+// Cada entrada define um sistema/tela acessível pelo painel.
+// ===========================================================================
+model ModuloCatalogo {
+  id        String   @id @default(cuid())
+  chave     String   @unique  // identificador único ex: "barbeiro", "petshop"
+  rotulo    String            // Nome exibido na sidebar ex: "BarberPro"
+  href      String            // Rota/caminho ex: "/painel/modulos/barbeiro"
+  icone     String   @default("Layout") // Emoji ou nome de ícone ex: "✂️"
+  descricao String?
+  tipo      String   @default("iframe") // interno | iframe | externo
+  ativo     Boolean  @default(true)
+  criadoEm  DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresas ModuloCustomDaEmpresa[]
+
+  @@map("modulos_catalogo")
+}
+
+// ===========================================================================
+// MÓDULOS CUSTOM POR EMPRESA — Vincula módulos do catálogo a uma empresa
+// ===========================================================================
+model ModuloCustomDaEmpresa {
+  id         String  @id @default(cuid())
+  empresaId  String
+  catalogoId String
+  ativo      Boolean @default(true)
+  criadoEm   DateTime @default(now())
+
+  empresa  Empresa        @relation(fields: [empresaId],  references: [id], onDelete: Cascade)
+  catalogo ModuloCatalogo @relation(fields: [catalogoId], references: [id], onDelete: Cascade)
+
+  @@unique([empresaId, catalogoId])
+  @@map("modulos_custom_da_empresa")
 }
 
 // ===========================================================================

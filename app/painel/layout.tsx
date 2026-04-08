@@ -52,7 +52,7 @@ export default async function LayoutPainel({ children }: { children: React.React
   }
 
   // Carrega módulos ativos + dados da empresa em paralelo
-  const [modulosAtivos, empresa] = await Promise.all([
+  const [{ chaves: modulosAtivos, custom: modulosCustom }, empresa] = await Promise.all([
     resolverModulos(sessao.user),
     sessao.user.empresaId
       ? db.empresa.findUnique({
@@ -91,6 +91,7 @@ export default async function LayoutPainel({ children }: { children: React.React
           superAdmin={superAdmin}
           grupoIsAdmin={sessao.user.grupoIsAdmin}
           modulos={modulosAtivos}
+          modulosCustom={modulosCustom}
           marca={empresa ?? null}
         />
 

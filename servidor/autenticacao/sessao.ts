@@ -39,6 +39,18 @@ type UsuarioSessao = {
 }
 
 // ---------------------------------------------------------------------------
+// Tipo que representa um módulo customizado vindo do catálogo
+// ---------------------------------------------------------------------------
+export type ModuloCustom = {
+  id:     string
+  chave:  string
+  rotulo: string
+  href:   string
+  icone:  string
+  tipo:   string
+}
+
+// ---------------------------------------------------------------------------
 // Tipo de retorno das permissões granulares
 // ---------------------------------------------------------------------------
 export type Permissao = {
@@ -121,30 +133,38 @@ export async function exigirSuperAdmin(): Promise<SuccessAuth | NextResponse> {
 // resolverModulos
 // ---------------------------------------------------------------------------
 
+export type ResultadoModulos = {
+  chaves:  string[]        // chaves dos módulos builtin (alunos, cursos, etc.)
+  custom:  ModuloCustom[]  // módulos customizados do catálogo
+}
+
 /**
  * Calcula os módulos que o usuário pode acessar.
  *
- * Retorna array vazio [] para superAdmin (sidebar mostra tudo sem filtro).
+ * Retorna chaves vazias para superAdmin (sidebar mostra tudo sem filtro).
  * Para admin da empresa (papel A ou grupoIsAdmin): todos os módulos ativos da empresa.
- * Para T/F: interseção de empresa ∩ grupo ∩ setor.
+ * Para T/F: interseção de empresa ∩ grupo ∩ setor (módulos builtin).
+ * Módulos customizados são sempre visíveis para admins da empresa.
  */
-export async function resolverModulos(usuario: UsuarioSessao): Promise<string[]> {
+export async function resolverModulos(usuario: UsuarioSessao): Promise<ResultadoModulos> {
   // superAdmin: sem filtro — sidebar mostra tudo
-  if (usuario.superAdmin) return []
+  if (usuario.superAdmin) return { chaves: [], custom: [] }
+  if (!usuario.empresaId) return { chaves: [], custom: [] }
 
-  if (!usuario.empresaId) return []
+  // Busca módulos builtin e customizados da empresa em paralelo
+  const [modulosDaEmpresa, modulosCustom] = await Promise.all([
+    db.moduloDaEmpresa
+      .findMany({ where: { empresaId: usuario.empresaId, ativo: true }, select: { modulo: true } })
+      .then(r => r.map(m => m.modulo)),
+    db.moduloCustomDaEmpresa.findMany({
+      where:   { empresaId: usuario.empresaId, ativo: true },
+      select:  { catalogo: { select: { id: true, chave: true, rotulo: true, href: true, icone: true, tipo: true } } },
+    }).then(r => r.map(m => m.catalogo)),
+  ])
 
-  // Busca os módulos ativos da empresa
-  const modulosDaEmpresa = await db.moduloDaEmpresa
-    .findMany({
-      where:  { empresaId: usuario.empresaId, ativo: true },
-      select: { modulo: true },
-    })
-    .then(r => r.map(m => m.modulo))
-
-  // Admin da empresa ou grupo admin vê todos os módulos da empresa
+  // Admin da empresa ou grupo admin vê todos os módulos
   if (usuario.papel === PapelUsuario.A || usuario.grupoIsAdmin) {
-    return modulosDaEmpresa
+    return { chaves: modulosDaEmpresa, custom: modulosCustom }
   }
 
   // Técnico/Docente: busca módulos do grupo e setor em paralelo
@@ -161,12 +181,13 @@ export async function resolverModulos(usuario: UsuarioSessao): Promise<string[]>
       : null,
   ])
 
-  // Aplica interseção: empresa ∩ grupo ∩ setor
-  let resultado = modulosDaEmpresa
-  if (modulosDoGrupo !== null) resultado = resultado.filter(m => modulosDoGrupo.includes(m))
-  if (modulosDoSetor !== null) resultado = resultado.filter(m => modulosDoSetor.includes(m))
+  // Aplica interseção builtin: empresa ∩ grupo ∩ setor
+  let chaves = modulosDaEmpresa
+  if (modulosDoGrupo !== null) chaves = chaves.filter(m => modulosDoGrupo.includes(m))
+  if (modulosDoSetor !== null) chaves = chaves.filter(m => modulosDoSetor.includes(m))
 
-  return resultado
+  // Módulos custom: visíveis apenas para admins (T/F não veem por padrão)
+  return { chaves, custom: [] }
 }
 
 // ---------------------------------------------------------------------------

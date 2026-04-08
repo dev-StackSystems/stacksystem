@@ -22,9 +22,10 @@ import { signOut } from "next-auth/react"
 import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, DollarSign,
-  Award, Building2, ShieldCheck, Video, Briefcase, UsersRound, Scissors,
+  Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
+import type { ModuloCustom } from "@/servidor/autenticacao/sessao"
 
 // ── Tipos internos ─────────────────────────────────────────────────────────
 
@@ -70,18 +71,6 @@ const GRUPOS_MODULOS: GrupoNav[] = [
   },
 ]
 
-// ── Módulos externos (protótipos / sistemas adicionais) ────────────────────
-// Adicione aqui novos sistemas criados em modulos/{nome}/
-
-const GRUPOS_MODULOS_EXTERNOS: GrupoNav[] = [
-  {
-    titulo: "Outros Sistemas",
-    itens: [
-      { icone: Scissors, rotulo: "BarberPro", href: "/painel/modulos/barbeiro", modulo: "barbeiro" },
-    ],
-  },
-]
-
 // ── Grupos de navegação para o superAdmin (plataforma inteira) ─────────────
 
 const GRUPOS_SUPER_ADMIN: GrupoNav[] = [
@@ -110,16 +99,6 @@ function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: st
     if (grupo.titulo === null) { resultado.push(grupo); continue }
 
     // Filtra itens sem módulo (sempre visíveis) ou com módulo ativo
-    const itensFiltrados = grupo.itens.filter(
-      item => !item.modulo || modulos.includes(item.modulo)
-    )
-    if (itensFiltrados.length > 0) {
-      resultado.push({ titulo: grupo.titulo, itens: itensFiltrados })
-    }
-  }
-
-  // Módulos externos (barbeiro, petshop etc.) — filtra pelo módulo ativo
-  for (const grupo of GRUPOS_MODULOS_EXTERNOS) {
     const itensFiltrados = grupo.itens.filter(
       item => !item.modulo || modulos.includes(item.modulo)
     )
@@ -160,20 +139,19 @@ interface MarcaEmpresa {
 }
 
 interface Props {
-  papel:        string         // Papel do usuário: "A" | "T" | "F"
-  superAdmin:   boolean        // Flag do desenvolvedor/i3
-  grupoIsAdmin: boolean        // Flag do grupo admin
-  modulos:      string[]       // Módulos ativos para o usuário
-  marca?:       MarcaEmpresa | null // Branding da empresa
+  papel:         string            // Papel do usuário: "A" | "T" | "F"
+  superAdmin:    boolean           // Flag do desenvolvedor/i3
+  grupoIsAdmin:  boolean           // Flag do grupo admin
+  modulos:       string[]          // Chaves dos módulos builtin ativos
+  modulosCustom: ModuloCustom[]    // Módulos do catálogo atribuídos à empresa
+  marca?:        MarcaEmpresa | null
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
 
-export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, marca }: Props) {
-  // Controla se a sidebar está aberta em mobile
+export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, modulosCustom, marca }: Props) {
   const [aberta, setAberta] = useState(false)
 
-  // superAdmin usa o menu da plataforma; demais usam o menu filtrado por módulos
   const grupos = superAdmin
     ? GRUPOS_SUPER_ADMIN
     : montarGruposFiltrados(papel, grupoIsAdmin, modulos)
@@ -253,6 +231,7 @@ export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, marca }
 
         {/* Links de navegação */}
         <nav className="flex-1 px-3 py-4 flex flex-col gap-4 overflow-y-auto">
+          {/* Grupos estáticos (builtin) */}
           {grupos.map((grupo, indice) => (
             <div key={indice}>
               {grupo.titulo && (
@@ -273,6 +252,44 @@ export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, marca }
               </div>
             </div>
           ))}
+
+          {/* Módulos do catálogo atribuídos à empresa */}
+          {modulosCustom.length > 0 && (
+            <div>
+              <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                Sistemas
+              </p>
+              <div className="flex flex-col gap-0.5">
+                {modulosCustom.map(m => (
+                  <a
+                    key={m.id}
+                    href={m.href}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                  >
+                    <span className="text-base leading-none w-[17px] text-center">{m.icone}</span>
+                    <span>{m.rotulo}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* superAdmin: link para gerenciar catálogo de módulos */}
+          {superAdmin && (
+            <div>
+              <p className="px-3 mb-1 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-600">
+                Catálogo
+              </p>
+              <div className="flex flex-col gap-0.5">
+                <LinkNavLateral
+                  href="/painel/catalogo-modulos"
+                  rotulo="Módulos & Sistemas"
+                  icone={Layers}
+                  corMarca="#f97316"
+                />
+              </div>
+            </div>
+          )}
         </nav>
 
         {/* Botão de sair */}
