@@ -25,6 +25,7 @@ export default async function SalaVideoPage({ params, searchParams }: Props) {
       nome: true,
       codigo: true,
       ativa: true,
+      criadoPorId: true,
     },
   })
 
@@ -32,12 +33,16 @@ export default async function SalaVideoPage({ params, searchParams }: Props) {
     notFound()
   }
 
+  // Dono da sala entra direto como caller; outros entram como convidados
+  const ehDono = sala.criadoPorId === session.user.id || session.user.superAdmin === true
+
   return (
     <VideoRoom
       salaId={sala.id}
       salaCodigo={sala.codigo}
       nomeSala={sala.nome}
       userName={session.user.name ?? "Usuário"}
+      ehDono={ehDono}
     />
   )
 }

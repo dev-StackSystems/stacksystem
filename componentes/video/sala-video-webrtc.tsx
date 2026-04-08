@@ -33,6 +33,7 @@ interface Props {
   salaCodigo: string
   nomeSala:   string
   userName:   string
+  ehDono:     boolean  // true = entra direto como caller, sem lobby
 }
 
 // ── Tipos internos ─────────────────────────────────────────────────────────
@@ -54,7 +55,7 @@ const ICE_SERVERS = {
 // COMPONENTE PRINCIPAL
 // ══════════════════════════════════════════════════════════════════════════
 
-export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
+export function VideoRoom({ salaId, salaCodigo, nomeSala, userName, ehDono }: Props) {
   const router = useRouter()
 
   // ── Refs de media/webrtc ────────────────────────────────────────────────
@@ -104,11 +105,21 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
     }
   })
 
-  // ── Auto-join via ?join=CODE na URL ─────────────────────────────────────
+  // ── Auto-start na montagem ───────────────────────────────────────────────
+  // Dono da sala: inicia direto como caller (sem passar pelo lobby).
+  // Convidado com ?join=CODE: pré-preenche o código no lobby.
   useEffect(() => {
-    const p = new URLSearchParams(window.location.search)
-    const j = p.get("join")
-    if (j) setCodigoInput(j.toUpperCase())
+    const params = new URLSearchParams(window.location.search)
+    const joinParam = params.get("join")
+
+    if (joinParam) {
+      // Convidado com link — pré-preenche código, usuário clica Entrar
+      setCodigoInput(joinParam.toUpperCase())
+    } else if (ehDono) {
+      // Dono da sala — inicia direto como caller
+      criarSala()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // ── Cleanup ao desmontar ─────────────────────────────────────────────────
