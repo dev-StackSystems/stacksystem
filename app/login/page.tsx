@@ -62,8 +62,9 @@ function LoginConteudo() {
     setLoading(true)
 
     const result = await signIn("credentials", {
-      email: form.email,
-      senha: form.senha,
+      email:   form.email,
+      senha:   form.senha,
+      lembrar: remember ? "true" : "false",
       redirect: false,
     })
 

@@ -26,7 +26,8 @@ import bcrypt from "bcryptjs"
 
 export const opcoesAuth: NextAuthOptions = {
   // Estratégia JWT: sessão fica no cookie, não no banco
-  session: { strategy: "jwt" },
+  // maxAge máximo = 30 dias (quando "lembrar de mim" está marcado)
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
 
   // Página customizada de login
   pages: { signIn: "/login" },
@@ -35,8 +36,9 @@ export const opcoesAuth: NextAuthOptions = {
     CredentialsProvider({
       name: "credentials",
       credentials: {
-        email:  { label: "E-mail", type: "email"    },
-        senha:  { label: "Senha",  type: "password" },
+        email:   { label: "E-mail",        type: "email"    },
+        senha:   { label: "Senha",         type: "password" },
+        lembrar: { label: "Lembrar de mim", type: "text"    },
       },
 
       /**
@@ -48,6 +50,7 @@ export const opcoesAuth: NextAuthOptions = {
         if (!credenciais?.email || !credenciais?.senha) {
           throw new Error("CAMPOS_FALTANDO")
         }
+        const lembrar = credenciais.lembrar === "true"
 
         // Busca o usuário com o grupo (para verificar isAdmin do grupo)
         let usuario
@@ -95,6 +98,7 @@ export const opcoesAuth: NextAuthOptions = {
           grupoId:      usuario.grupoId  ?? null,
           setorId:      usuario.setorId  ?? null,
           grupoIsAdmin: usuario.grupo?.isAdmin ?? false,
+          lembrar,
         }
       },
     }),
@@ -115,6 +119,7 @@ export const opcoesAuth: NextAuthOptions = {
           grupoId:      string | null
           setorId:      string | null
           grupoIsAdmin: boolean
+          lembrar:      boolean
         }
         token.id           = u.id
         token.papel        = u.papel
@@ -123,6 +128,12 @@ export const opcoesAuth: NextAuthOptions = {
         token.grupoId      = u.grupoId    ?? null
         token.setorId      = u.setorId    ?? null
         token.grupoIsAdmin = u.grupoIsAdmin ?? false
+
+        // Sem "lembrar de mim": sessão expira em 8 horas
+        // Com "lembrar de mim": usa o maxAge padrão de 30 dias
+        if (!u.lembrar) {
+          token.exp = Math.floor(Date.now() / 1000) + 8 * 60 * 60
+        }
       }
       return token
     },
