@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { getServerSession } from "next-auth"
+import { opcoesAuth } from "@/servidor/autenticacao/config"
 import { db } from "@/servidor/banco/cliente"
 
 // ─── Helpers ───────────────────────────────────────────────────────────────
@@ -18,8 +19,8 @@ async function findSignalByCodigo(room: string) {
 //     POST /api/salas/signal?action=ice&room=CODE    body: { role, candidate }
 
 export async function GET(req: NextRequest) {
-  const user = await getUsuarioAtual()
-  if (!user) {
+  const sessao = await getServerSession(opcoesAuth)
+  if (!sessao?.user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
@@ -51,12 +52,12 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
-      offer: sig.offer ? JSON.parse(sig.offer) : null,
-      answer: sig.answer ? JSON.parse(sig.answer) : null,
-      nomeCaller: sig.nomeCaller,
-      nomeCallee: sig.nomeCallee,
-      ice_caller: JSON.parse(sig.iceCaller),
-      ice_callee: JSON.parse(sig.iceCallee),
+      offer:       sig.offer  ? JSON.parse(sig.offer)  : null,
+      answer:      sig.answer ? JSON.parse(sig.answer) : null,
+      caller_name: sig.nomeCaller ?? null,
+      callee_name: sig.nomeCallee ?? null,
+      ice_caller:  JSON.parse(sig.iceCaller),
+      ice_callee:  JSON.parse(sig.iceCallee),
     })
   }
 
@@ -80,8 +81,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const user = await getUsuarioAtual()
-  if (!user) {
+  const sessao = await getServerSession(opcoesAuth)
+  if (!sessao?.user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
   }
 
