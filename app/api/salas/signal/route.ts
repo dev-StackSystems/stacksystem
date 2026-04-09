@@ -1,22 +1,58 @@
+/**
+ * app/api/salas/signal/route.ts
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Servidor de sinalização WebRTC — lógica idêntica ao webtrc.php.
+ *
+ * O PHP usava /tmp/webrtc_room_{CODE}.json como armazenamento.
+ * Aqui usamos SinalWebrtc { codigo, dados } no banco — mesma estrutura JSON.
+ *
+ * GET  ?action=get&room=CODE    → retorna os dados da sala
+ * GET  ?action=reset&room=CODE  → apaga os dados da sala
+ * POST ?action=set&room=CODE    body: { offer?, answer?, caller_name?, callee_name? }
+ * POST ?action=ice&room=CODE    body: { role, candidate }
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
+
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { opcoesAuth } from "@/servidor/autenticacao/config"
 import { db } from "@/servidor/banco/cliente"
 
-// ─── Helpers ───────────────────────────────────────────────────────────────
+// ── Tipo do JSON armazenado (espelho do PHP) ───────────────────────────────
 
-async function findSignalByCodigo(room: string) {
-  const sala = await db.sala.findUnique({
-    where: { codigo: room },
-    include: { sinal: true },
-  })
-  return sala
+interface DadosSala {
+  offer?:       { type: string; sdp: string }
+  answer?:      { type: string; sdp: string }
+  caller_name?: string
+  callee_name?: string
+  ice_caller:   RTCIceCandidateInit[]
+  ice_callee:   RTCIceCandidateInit[]
+  updated_at?:  number
 }
 
-// ─── GET /api/salas/signal?action=get&room=CODE
-//     GET /api/salas/signal?action=reset&room=CODE
-// ─── POST /api/salas/signal?action=set&room=CODE   body: { offer?, answer?, caller_name?, callee_name? }
-//     POST /api/salas/signal?action=ice&room=CODE    body: { role, candidate }
+// ── Helper: lê os dados da sala ou retorna objeto vazio ────────────────────
+
+async function lerDados(codigo: string): Promise<DadosSala> {
+  const registro = await db.sinalWebrtc.findUnique({ where: { codigo } })
+  if (!registro) return { ice_caller: [], ice_callee: [] }
+  try {
+    return JSON.parse(registro.dados) as DadosSala
+  } catch {
+    return { ice_caller: [], ice_callee: [] }
+  }
+}
+
+// ── Helper: grava os dados da sala ────────────────────────────────────────
+
+async function gravarDados(codigo: string, dados: DadosSala) {
+  await db.sinalWebrtc.upsert({
+    where:  { codigo },
+    update: { dados: JSON.stringify(dados) },
+    create: { codigo, dados: JSON.stringify(dados) },
+  })
+}
+
+// ── GET ────────────────────────────────────────────────────────────────────
 
 export async function GET(req: NextRequest) {
   const sessao = await getServerSession(opcoesAuth)
@@ -26,59 +62,26 @@ export async function GET(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const action = searchParams.get("action")
-  const room = searchParams.get("room")?.toUpperCase()
+  const codigo = (searchParams.get("room") ?? "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase()
 
-  if (!room) {
-    return NextResponse.json({ error: "Parâmetro 'room' obrigatório" }, { status: 400 })
-  }
+  if (!codigo) return NextResponse.json({ error: "room obrigatório" }, { status: 400 })
 
-  // ── get ──────────────────────────────────────────────────────────────────
+  // ── get ─────────────────────────────────────────────────────────────────
   if (action === "get") {
-    const sala = await findSignalByCodigo(room)
-    if (!sala) {
-      return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 })
-    }
-
-    const sig = sala.sinal
-    if (!sig) {
-      return NextResponse.json({
-        offer: null,
-        answer: null,
-        caller_name: null,
-        callee_name: null,
-        ice_caller: [],
-        ice_callee: [],
-      })
-    }
-
-    return NextResponse.json({
-      offer:       sig.offer  ? JSON.parse(sig.offer)  : null,
-      answer:      sig.answer ? JSON.parse(sig.answer) : null,
-      caller_name: sig.nomeCaller ?? null,
-      callee_name: sig.nomeCallee ?? null,
-      ice_caller:  JSON.parse(sig.iceCaller),
-      ice_callee:  JSON.parse(sig.iceCallee),
-    })
+    const dados = await lerDados(codigo)
+    return NextResponse.json(dados)
   }
 
-  // ── reset ─────────────────────────────────────────────────────────────────
+  // ── reset ────────────────────────────────────────────────────────────────
   if (action === "reset") {
-    const sala = await findSignalByCodigo(room)
-    if (!sala) {
-      return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 })
-    }
-
-    if (sala.sinal) {
-      await db.sinalSala.delete({ where: { salaId: sala.id } })
-    }
-    // Recria vazio para a próxima sessão
-    await db.sinalSala.create({ data: { salaId: sala.id } })
-
+    await db.sinalWebrtc.deleteMany({ where: { codigo } })
     return NextResponse.json({ ok: true })
   }
 
   return NextResponse.json({ error: "Ação inválida" }, { status: 400 })
 }
+
+// ── POST ───────────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest) {
   const sessao = await getServerSession(opcoesAuth)
@@ -88,69 +91,46 @@ export async function POST(req: NextRequest) {
 
   const { searchParams } = new URL(req.url)
   const action = searchParams.get("action")
-  const room = searchParams.get("room")?.toUpperCase()
+  const codigo = (searchParams.get("room") ?? "").replace(/[^a-zA-Z0-9]/g, "").toUpperCase()
 
-  if (!room) {
-    return NextResponse.json({ error: "Parâmetro 'room' obrigatório" }, { status: 400 })
-  }
+  if (!codigo) return NextResponse.json({ error: "room obrigatório" }, { status: 400 })
 
-  const sala = await findSignalByCodigo(room)
-  if (!sala) {
-    return NextResponse.json({ error: "Sala não encontrada" }, { status: 404 })
-  }
+  const body = await req.json().catch(() => ({}))
 
-  // Garante que o SalaSignal existe
-  let sig = sala.sinal
-  if (!sig) {
-    sig = await db.sinalSala.create({ data: { salaId: sala.id } })
-  }
-
-  // ── set ───────────────────────────────────────────────────────────────────
+  // ── set ──────────────────────────────────────────────────────────────────
   if (action === "set") {
-    const body = await req.json()
-    const { offer, answer, caller_name, callee_name } = body
+    const dados = await lerDados(codigo)
 
-    const data: Record<string, string> = {}
-    if (offer !== undefined) data.offer = JSON.stringify(offer)
-    if (answer !== undefined) data.answer = JSON.stringify(answer)
-    if (caller_name !== undefined) data.nomeCaller = caller_name
-    if (callee_name !== undefined) data.nomeCallee = callee_name
+    // Mescla os campos do body nos dados existentes (igual ao PHP)
+    if (body.offer       !== undefined) dados.offer       = body.offer
+    if (body.answer      !== undefined) dados.answer      = body.answer
+    if (body.caller_name !== undefined) dados.caller_name = body.caller_name
+    if (body.callee_name !== undefined) dados.callee_name = body.callee_name
+    dados.updated_at = Date.now()
 
-    await db.sinalSala.update({
-      where: { salaId: sala.id },
-      data,
-    })
-
+    await gravarDados(codigo, dados)
     return NextResponse.json({ ok: true })
   }
 
-  // ── ice ───────────────────────────────────────────────────────────────────
+  // ── ice ──────────────────────────────────────────────────────────────────
   if (action === "ice") {
-    const body = await req.json()
     const { role, candidate } = body
-
     if (!role || !candidate) {
-      return NextResponse.json({ error: "Campos 'role' e 'candidate' obrigatórios" }, { status: 400 })
+      return NextResponse.json({ error: "role e candidate obrigatórios" }, { status: 400 })
     }
+
+    const dados = await lerDados(codigo)
 
     if (role === "caller") {
-      const current: RTCIceCandidateInit[] = JSON.parse(sig.iceCaller)
-      current.push(candidate)
-      await db.sinalSala.update({
-        where: { salaId: sala.id },
-        data: { iceCaller: JSON.stringify(current) },
-      })
+      dados.ice_caller = [...(dados.ice_caller ?? []), candidate]
     } else if (role === "callee") {
-      const current: RTCIceCandidateInit[] = JSON.parse(sig.iceCallee)
-      current.push(candidate)
-      await db.sinalSala.update({
-        where: { salaId: sala.id },
-        data: { iceCallee: JSON.stringify(current) },
-      })
+      dados.ice_callee = [...(dados.ice_callee ?? []), candidate]
     } else {
-      return NextResponse.json({ error: "Role deve ser 'caller' ou 'callee'" }, { status: 400 })
+      return NextResponse.json({ error: "role inválido" }, { status: 400 })
     }
 
+    dados.updated_at = Date.now()
+    await gravarDados(codigo, dados)
     return NextResponse.json({ ok: true })
   }
 

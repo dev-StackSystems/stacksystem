@@ -364,6 +364,15 @@ model SinalSala {
   @@map("sinais_sala")
 }
 
+// Sinalização WebRTC simples — espelho exato do PHP (código como chave, sem FK)
+model SinalWebrtc {
+  codigo       String   @id
+  dados        String   @default("{}") @db.Text
+  atualizadoEm DateTime @updatedAt
+
+  @@map("sinais_webrtc")
+}
+
 // ===========================================================================
 // CURSOS — Cursos oferecidos pela empresa
 // ===========================================================================
