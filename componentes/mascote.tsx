@@ -22,7 +22,7 @@
 
 "use client"
 import { useEffect, useState, useRef, useCallback } from "react"
-import { motion, AnimatePresence } from "motion/react"
+import { motion, AnimatePresence, type Transition } from "motion/react"
 import { X, Send } from "lucide-react"
 import { useRouter } from "next/navigation"
 
@@ -568,7 +568,7 @@ export default function Mascote({ modo = "landing" }: Props) {
     ? { y: [0, -10, 0], rotate: [0, 3, -3, 3, 0] }
     : { y: [0, -7, 0] }
 
-  const floatTrans = dormindo
+  const floatTrans: Transition = dormindo
     ? { duration: 5, repeat: Infinity, ease: "easeInOut" }
     : assustado
     ? { duration: 0.6, ease: "easeOut" }
