@@ -80,40 +80,48 @@ app.prepare().then(() => {
     console.log(`[WebRTC] Conectado: ${socket.id} (usuário=${socket.data.usuarioId})`)
 
     // Entrar em uma sala de videoaula
-    socket.on("entrar-sala", (idSala: string) => {
+    // Aceita { idSala, nomeUsuario } — envia membros existentes de volta ao novo participante
+    socket.on("entrar-sala", ({ idSala, nomeUsuario }: { idSala: string; nomeUsuario: string }) => {
+      socket.data.nomeUsuario = nomeUsuario
+
+      // Coleta membros já presentes ANTES de adicionar o novo
+      const membrosExistentes: { id: string; nome: string }[] = []
+      const setExistente = salas.get(idSala)
+      if (setExistente) {
+        for (const sid of setExistente) {
+          const s = io.sockets.sockets.get(sid)
+          if (s) membrosExistentes.push({ id: sid, nome: s.data.nomeUsuario ?? "Participante" })
+        }
+      }
+
       socket.join(idSala)
       if (!salas.has(idSala)) salas.set(idSala, new Set())
       salas.get(idSala)!.add(socket.id)
-      // Notifica os outros participantes da sala
-      socket.to(idSala).emit("usuario-entrou", socket.id)
-      console.log(`[WebRTC] ${socket.id} entrou na sala ${idSala}`)
+
+      // Informa ao novo participante quem já está na sala
+      socket.emit("membros-sala", membrosExistentes)
+
+      // Notifica os já presentes sobre o novo — envia { id, nome }
+      socket.to(idSala).emit("usuario-entrou", { id: socket.id, nome: nomeUsuario })
+
+      console.log(
+        `[WebRTC] ${socket.id} (${nomeUsuario}) entrou na sala ${idSala} — ${membrosExistentes.length} já presente(s)`
+      )
     })
 
-    // Enviar oferta WebRTC para outro participante
-    socket.on("oferta", ({ idSala, oferta, para }: { idSala: string; oferta: RTCSessionDescriptionInit; para?: string }) => {
-      if (para) {
-        io.to(para).emit("oferta", { oferta, de: socket.id })
-      } else {
-        socket.to(idSala).emit("oferta", { oferta, de: socket.id })
-      }
+    // Enviar oferta WebRTC — sempre unicast (para: socketId destino)
+    socket.on("oferta", ({ idSala, oferta, para }: { idSala: string; oferta: RTCSessionDescriptionInit; para: string }) => {
+      io.to(para).emit("oferta", { oferta, de: socket.id })
     })
 
-    // Enviar resposta WebRTC
-    socket.on("resposta", ({ idSala, resposta, para }: { idSala: string; resposta: RTCSessionDescriptionInit; para?: string }) => {
-      if (para) {
-        io.to(para).emit("resposta", { resposta, de: socket.id })
-      } else {
-        socket.to(idSala).emit("resposta", { resposta, de: socket.id })
-      }
+    // Enviar resposta WebRTC — sempre unicast
+    socket.on("resposta", ({ idSala, resposta, para }: { idSala: string; resposta: RTCSessionDescriptionInit; para: string }) => {
+      io.to(para).emit("resposta", { resposta, de: socket.id })
     })
 
-    // Compartilhar candidato ICE (negociação de conexão P2P)
-    socket.on("candidato-ice", ({ idSala, candidato, para }: { idSala: string; candidato: RTCIceCandidateInit; para?: string }) => {
-      if (para) {
-        io.to(para).emit("candidato-ice", { candidato, de: socket.id })
-      } else {
-        socket.to(idSala).emit("candidato-ice", { candidato, de: socket.id })
-      }
+    // Compartilhar candidato ICE — sempre unicast
+    socket.on("candidato-ice", ({ idSala, candidato, para }: { idSala: string; candidato: RTCIceCandidateInit; para: string }) => {
+      io.to(para).emit("candidato-ice", { candidato, de: socket.id })
     })
 
     // Sair de uma sala

@@ -8,41 +8,35 @@ export const dynamic = "force-dynamic"
 
 interface Props {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ join?: string }>
 }
 
-export default async function SalaVideoPage({ params, searchParams }: Props) {
+export default async function SalaVideoPage({ params }: Props) {
   const session = await getServerSession(opcoesAuth)
   if (!session?.user) redirect("/login")
 
   const { id } = await params
-  const { join } = await searchParams
 
   const sala = await db.sala.findUnique({
     where: { id },
     select: {
-      id: true,
-      nome: true,
+      id:    true,
+      nome:  true,
       codigo: true,
       ativa: true,
-      criadoPorId: true,
+      empresaId: true,
     },
   })
 
-  if (!sala || !sala.ativa) {
-    notFound()
-  }
+  if (!sala || !sala.ativa) notFound()
 
-  const PAPEIS_INTERNOS = ["A", "T", "I"]
-  const ehInterno = session.user.superAdmin || PAPEIS_INTERNOS.includes(session.user.papel ?? "")
+  // Isolamento de tenant: superAdmin acessa qualquer sala;
+  // demais só acessam salas da própria empresa
+  const pertenceEmpresa =
+    session.user.superAdmin ||
+    !sala.empresaId ||
+    sala.empresaId === session.user.empresaId
 
-  // Externo sem código de convite → não pode entrar diretamente
-  if (!ehInterno && !join) {
-    redirect("/painel/salas")
-  }
-
-  // Dono da sala entra como caller; externos sempre como callee (via link)
-  const ehDono = ehInterno && (sala.criadoPorId === session.user.id || session.user.superAdmin === true)
+  if (!pertenceEmpresa) redirect("/painel/salas")
 
   return (
     <VideoRoom
@@ -50,7 +44,6 @@ export default async function SalaVideoPage({ params, searchParams }: Props) {
       salaCodigo={sala.codigo}
       nomeSala={sala.nome}
       userName={session.user.name ?? "Usuário"}
-      ehDono={ehDono}
     />
   )
 }

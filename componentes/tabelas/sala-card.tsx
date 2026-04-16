@@ -19,10 +19,10 @@ interface Props {
   sala: SalaData
   userId: string
   isAdmin: boolean
-  ehInterno?: boolean  // false = externo: só visualiza, não pode entrar como host
+  ehInterno?: boolean  // mantido por compatibilidade, todos podem entrar
 }
 
-export function SalaCard({ sala, userId, isAdmin, ehInterno = true }: Props) {
+export function SalaCard({ sala, userId, isAdmin }: Props) {
   const router = useRouter()
   const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -108,22 +108,14 @@ export function SalaCard({ sala, userId, isAdmin, ehInterno = true }: Props) {
 
       {/* Actions */}
       <div className="flex gap-2 mt-auto pt-2 border-t border-slate-50">
-        {ehInterno ? (
-          /* Internos (A, T, I): entra como host */
-          <button
-            onClick={handleEnter}
-            className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
-          >
-            <LogIn size={15} />
-            Entrar na Sala
-          </button>
-        ) : (
-          /* Externos (E, F): só visualizam — precisam de link com código */
-          <div className="flex-1 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-400 font-medium">
-            <LogIn size={14} className="shrink-0" />
-            Acesso via link
-          </div>
-        )}
+        {/* Todos os usuários autenticados podem entrar na sala */}
+        <button
+          onClick={handleEnter}
+          className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+        >
+          <LogIn size={15} />
+          Entrar na Sala
+        </button>
 
         {canDelete && (
           <button

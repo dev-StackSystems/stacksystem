@@ -1,22 +1,22 @@
 /**
  * componentes/video/sala-video-webrtc.tsx
  * ─────────────────────────────────────────────────────────────────────────────
- * Sala de vídeo WebRTC — baseado na mesma lógica do webtrc.php que funciona.
+ * Sala de vídeo WebRTC via Socket.io — topologia mesh P2P.
  *
- * Dois estados:
- *   lobby  — formulário para criar (caller) ou entrar (callee)
- *   sala   — chamada ativa com vídeo local (canto) + remoto (tela cheia)
- *
- * FIXES v3:
- *   - ICE candidates perdidos: contador NÃO avança se remoteDescription null
- *   - TURN servers adicionados (OpenRelay público) para conexão cross-network
- *   - hangUp limpa srcObject dos vídeos
- *   - Painel de debug visível para diagnóstico
+ * Fluxo de conexão:
+ *   1. Captura mídia local (câmera + microfone)
+ *   2. Conecta ao Socket.io (mesma origem, autenticação via cookie NextAuth)
+ *   3. Emite "entrar-sala" → servidor responde "membros-sala" (quem já está)
+ *   4. Cria RTCPeerConnection + offer para cada membro existente
+ *   5. Novos participantes que chegam disparam "usuario-entrou" → mesma lógica
+ *   6. Quem recebe offer cria answer; ICE candidates trafegam via socket
+ *   7. Conexão P2P estabelecida, vídeo aparece no grid
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, useCallback } from "react"
+import { io, Socket } from "socket.io-client"
 
 // ── Props ─────────────────────────────────────────────────────────────────
 
@@ -25,17 +25,15 @@ interface Props {
   salaCodigo: string
   nomeSala:   string
   userName:   string
-  ehDono:     boolean
 }
 
-// ── ICE config com STUN + TURN público ───────────────────────────────────
+// ── ICE config: STUN público + TURN OpenRelay ────────────────────────────
 
 const ICE_CONFIG: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302"  },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
-    // TURN público (OpenRelay) — necessário para redes diferentes
     {
       urls: [
         "turn:openrelay.metered.ca:80",
@@ -49,600 +47,602 @@ const ICE_CONFIG: RTCConfiguration = {
   iceCandidatePoolSize: 10,
 }
 
-// ═════════════════════════════════════════════════════════════════════════
-// COMPONENTE
-// ═════════════════════════════════════════════════════════════════════════
+// ── VideoTile ─────────────────────────────────────────────────────────────
+// Componente independente com ref própria para evitar re-renders do grid.
 
-export function VideoRoom({ salaId, salaCodigo, nomeSala, userName, ehDono }: Props) {
+interface VideoTileProps {
+  stream:  MediaStream | null
+  nome:    string
+  muted?:  boolean
+  local?:  boolean
+  grande?: boolean
+}
 
-  // ── Refs ──────────────────────────────────────────────────────────────
-  const localVideoRef  = useRef<HTMLVideoElement>(null)
-  const remoteVideoRef = useRef<HTMLVideoElement>(null)
-  const pcRef          = useRef<RTCPeerConnection | null>(null)
+function VideoTile({ stream, nome, muted = false, local = false, grande = false }: VideoTileProps) {
+  const ref = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (ref.current) ref.current.srcObject = stream ?? null
+  }, [stream])
+
+  return (
+    <div
+      className={`relative rounded-xl overflow-hidden bg-[#161616] border border-[#252525] ${
+        grande ? "aspect-video" : "aspect-video"
+      }`}
+    >
+      <video
+        ref={ref}
+        autoPlay
+        playsInline
+        muted={muted}
+        className={`w-full h-full object-cover ${local ? "scale-x-[-1]" : ""} ${
+          !stream ? "opacity-0" : "opacity-100"
+        }`}
+      />
+
+      {/* Avatar quando sem stream */}
+      {!stream && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-16 h-16 rounded-full bg-[#2A2A2A] flex items-center justify-center">
+            <span className="text-2xl font-bold text-[#555]">
+              {nome?.[0]?.toUpperCase() ?? "?"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Etiqueta de nome */}
+      <div className="absolute bottom-2 left-2 bg-black/60 backdrop-blur-sm rounded-full px-2.5 py-0.5">
+        <span className="text-white text-xs font-semibold">
+          {local ? `${nome} (você)` : nome}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// COMPONENTE PRINCIPAL
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface ParticipanteInfo {
+  nome:   string
+  stream: MediaStream | null
+}
+
+export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
+
+  // ── Refs estáveis ─────────────────────────────────────────────────────
   const localStreamRef = useRef<MediaStream | null>(null)
-  const pollTimerRef   = useRef<ReturnType<typeof setInterval> | null>(null)
-  const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null)
-  const roomCodeRef    = useRef("")
-  const myRoleRef      = useRef<"caller" | "callee" | "">("")
-  const knownIceCaller = useRef(0)
-  const knownIceCallee = useRef(0)
+  const socketRef      = useRef<Socket | null>(null)
+  const pcsRef         = useRef(new Map<string, RTCPeerConnection>())
+  const pendingIceRef  = useRef(new Map<string, RTCIceCandidateInit[]>())
+  const peerNamesRef   = useRef(new Map<string, string>())
 
   // ── State ─────────────────────────────────────────────────────────────
-  const [tela,        setTela]        = useState<"lobby" | "sala">("lobby")
-  const [codigoInput, setCodigoInput] = useState("")
-  const [nomeRemoto,  setNomeRemoto]  = useState("")
-  const [micOn,       setMicOn]       = useState(true)
-  const [camOn,       setCamOn]       = useState(true)
-  const [remotoConectado, setRemotoConectado] = useState(false)
-  const [statusTexto, setStatusTexto] = useState("Aguardando outro participante...")
-  const [timerTexto,  setTimerTexto]  = useState("00:00")
-  const [erroLobby,   setErroLobby]   = useState("")
-  const [erroSala,    setErroSala]    = useState("")
-  const [ocupado,     setOcupado]     = useState(false)
-  const [copiado,     setCopado]      = useState(false)
-  const [mostrarDebug, setMostrarDebug] = useState(false)
-  const [logs,        setLogs]        = useState<string[]>([])
+  const [localStream,    setLocalStream]    = useState<MediaStream | null>(null)
+  const [participantes,  setParticipantes]  = useState(new Map<string, ParticipanteInfo>())
+  const [micOn,          setMicOn]          = useState(true)
+  const [camOn,          setCamOn]          = useState(true)
+  const [copiado,        setCopiado]        = useState(false)
+  const [erro,           setErro]           = useState("")
+  const [carregando,     setCarregando]     = useState(true)
+  const [logs,           setLogs]           = useState<string[]>([])
+  const [mostrarDebug,   setMostrarDebug]   = useState(false)
 
-  // ── Debug log ─────────────────────────────────────────────────────────
-  function addLog(msg: string) {
+  // ── Log ───────────────────────────────────────────────────────────────
+  const log = useCallback((msg: string) => {
     const ts = new Date().toTimeString().slice(0, 8)
-    setLogs(prev => [`[${ts}] ${msg}`, ...prev].slice(0, 60))
-  }
+    setLogs(prev => [`[${ts}] ${msg}`, ...prev].slice(0, 80))
+    console.log(`[WebRTC] ${msg}`)
+  }, [])
 
-  // ── API helper ────────────────────────────────────────────────────────
-  async function api(action: string, room: string, body?: object) {
-    const url  = `/api/salas/signal?action=${action}&room=${encodeURIComponent(room)}`
-    const opts: RequestInit = body
-      ? { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }
-      : { method: "GET" }
-    const res = await fetch(url, opts)
-    if (!res.ok) throw new Error(`Signal API ${action} falhou (${res.status})`)
-    return res.json()
-  }
+  // ── Helpers de participantes ───────────────────────────────────────────
+  const atualizarParticipante = useCallback((id: string, data: Partial<ParticipanteInfo>) => {
+    setParticipantes(prev => {
+      const next = new Map(prev)
+      const atual = next.get(id) ?? { nome: peerNamesRef.current.get(id) ?? "Participante", stream: null }
+      next.set(id, { ...atual, ...data })
+      return next
+    })
+  }, [])
 
-  // ── startTimer ────────────────────────────────────────────────────────
-  function startTimer() {
-    let segundos = 0
-    timerRef.current = setInterval(() => {
-      segundos++
-      const m = String(Math.floor(segundos / 60)).padStart(2, "0")
-      const s = String(segundos % 60).padStart(2, "0")
-      setTimerTexto(`${m}:${s}`)
-    }, 1000)
-  }
+  const removerParticipante = useCallback((id: string) => {
+    pcsRef.current.get(id)?.close()
+    pcsRef.current.delete(id)
+    pendingIceRef.current.delete(id)
+    peerNamesRef.current.delete(id)
+    setParticipantes(prev => { const next = new Map(prev); next.delete(id); return next })
+  }, [])
 
-  // ── CRIAR SALA (caller) ───────────────────────────────────────────────
-  async function criarSala() {
-    setErroLobby("")
-    setOcupado(true)
-    const codigo = salaCodigo
-    roomCodeRef.current = codigo
-    myRoleRef.current   = "caller"
-    addLog(`Criando sala: ${codigo}`)
-    try {
-      await api("reset", codigo)
-      addLog("Sinal resetado")
-    } catch (e: unknown) {
-      setErroLobby((e as Error).message)
-      setOcupado(false)
-      return
-    }
-    await startCall()
-    setOcupado(false)
-  }
+  // ── Cria RTCPeerConnection para um peer ───────────────────────────────
+  const criarPC = useCallback((peerId: string) => {
+    // Fecha conexão anterior se existir
+    pcsRef.current.get(peerId)?.close()
 
-  // ── ENTRAR NA SALA (callee) ───────────────────────────────────────────
-  async function entrarSala() {
-    setErroLobby("")
-    const codigo = codigoInput.trim().toUpperCase()
-    if (!codigo) { setErroLobby("Digite o código da sala."); return }
-
-    setOcupado(true)
-    addLog(`Entrando na sala: ${codigo}`)
-
-    let data: Record<string, unknown>
-    try {
-      data = await api("get", codigo)
-    } catch (e: unknown) {
-      setErroLobby((e as Error).message)
-      setOcupado(false)
-      return
-    }
-
-    if (!data.offer) {
-      setErroLobby("Sala não encontrada ou sem chamada ativa. Peça ao criador para aguardar.")
-      addLog("Nenhum offer encontrado no sinal")
-      setOcupado(false)
-      return
-    }
-
-    addLog("Offer encontrado — iniciando como callee")
-    roomCodeRef.current = codigo
-    myRoleRef.current   = "callee"
-    await startCall()
-    setOcupado(false)
-  }
-
-  // ── START CALL ────────────────────────────────────────────────────────
-  async function startCall() {
-    setTela("sala")
-    setRemotoConectado(false)
-    setStatusTexto("Conectando...")
-    knownIceCaller.current = 0
-    knownIceCallee.current = 0
-
-    // Captura mídia local
-    let stream: MediaStream
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      localStreamRef.current = stream
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream
-      addLog("Mídia local capturada")
-    } catch (err: unknown) {
-      const e = err as DOMException
-      const msg =
-        e.name === "NotAllowedError" || e.name === "PermissionDeniedError"
-          ? "Permissão negada. Permita câmera/microfone no navegador."
-          : e.name === "NotFoundError"
-          ? "Câmera/microfone não encontrado."
-          : e.name === "NotReadableError"
-          ? "Câmera/microfone em uso por outro app."
-          : `Erro ao acessar mídia: ${e.message}`
-      addLog(`ERRO mídia: ${msg}`)
-      setErroSala(msg)
-      setTela("lobby")
-      return
-    }
-
-    // Cria RTCPeerConnection
     const pc = new RTCPeerConnection(ICE_CONFIG)
-    pcRef.current = pc
-    addLog("RTCPeerConnection criada")
+    pcsRef.current.set(peerId, pc)
 
-    // Adiciona tracks locais
-    stream.getTracks().forEach(t => pc.addTrack(t, stream))
+    // Adiciona tracks locais à nova conexão
+    localStreamRef.current?.getTracks().forEach(t => {
+      pc.addTrack(t, localStreamRef.current!)
+    })
 
-    // Recebe stream remoto
-    pc.ontrack = (e) => {
-      addLog(`ontrack: ${e.streams.length} streams`)
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = e.streams[0]
-      }
-      setRemotoConectado(true)
-      setStatusTexto("Conectado")
-      if (timerRef.current === null) startTimer()
-    }
-
-    // Envia ICE candidates
-    pc.onicecandidate = async (e) => {
-      if (e.candidate) {
-        addLog(`ICE local gerado: ${e.candidate.type} ${e.candidate.protocol}`)
-        try {
-          await api("ice", roomCodeRef.current, {
-            role:      myRoleRef.current,
-            candidate: e.candidate.toJSON(),
-          })
-        } catch { /* ignora */ }
-      } else {
-        addLog("ICE gathering completo")
+    // Envia ICE candidates via socket
+    pc.onicecandidate = (ev) => {
+      if (ev.candidate && socketRef.current?.connected) {
+        socketRef.current.emit("candidato-ice", {
+          idSala:    salaId,
+          candidato: ev.candidate.toJSON(),
+          para:      peerId,
+        })
       }
     }
 
-    pc.oniceconnectionstatechange = () => {
-      const s = pc.iceConnectionState
-      addLog(`ICE state: ${s}`)
-      if (s === "connected" || s === "completed") {
-        setStatusTexto("Conectado")
-        setRemotoConectado(true)
-      }
-      if (s === "disconnected") setStatusTexto("Desconectado")
-      if (s === "failed")       setStatusTexto("Falha na conexão")
+    // Recebe stream remoto → atualiza grid
+    pc.ontrack = (ev) => {
+      const peerNome = peerNamesRef.current.get(peerId) ?? "Participante"
+      log(`Track recebido de ${peerNome}`)
+      atualizarParticipante(peerId, { stream: ev.streams[0] ?? null })
     }
 
-    pc.onsignalingstatechange = () => {
-      addLog(`Signaling state: ${pc.signalingState}`)
-    }
-
+    // Monitora estado da conexão
     pc.onconnectionstatechange = () => {
-      addLog(`Connection state: ${pc.connectionState}`)
-    }
-
-    // Executa fluxo conforme papel
-    if (myRoleRef.current === "caller") {
-      await doCaller(pc)
-    } else {
-      await doCallee(pc)
-    }
-
-    // Inicia polling a 1500ms
-    pollTimerRef.current = setInterval(() => pollSignaling(pc), 1500)
-  }
-
-  // ── doCaller ──────────────────────────────────────────────────────────
-  async function doCaller(pc: RTCPeerConnection) {
-    addLog("doCaller: criando offer")
-    const offer = await pc.createOffer()
-    await pc.setLocalDescription(offer)
-    await api("set", roomCodeRef.current, {
-      offer:       { type: offer.type, sdp: offer.sdp },
-      caller_name: userName,
-    })
-    addLog("Offer enviado ao sinal")
-    setStatusTexto("Aguardando outro participante...")
-  }
-
-  // ── doCallee ──────────────────────────────────────────────────────────
-  async function doCallee(pc: RTCPeerConnection) {
-    addLog("doCallee: buscando offer do sinal")
-    const data = await api("get", roomCodeRef.current)
-    addLog("setRemoteDescription (offer)")
-    await pc.setRemoteDescription(new RTCSessionDescription(data.offer))
-    if (data.caller_name) setNomeRemoto(data.caller_name as string)
-
-    addLog("Criando answer")
-    const answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
-    await api("set", roomCodeRef.current, {
-      answer:      { type: answer.type, sdp: answer.sdp },
-      callee_name: userName,
-    })
-    addLog("Answer enviado ao sinal")
-    setStatusTexto("Conectando...")
-  }
-
-  // ── pollSignaling ─────────────────────────────────────────────────────
-  // CORREÇÃO: o contador só avança quando remoteDescription está disponível.
-  // Antes estava avançando mesmo sem processar os candidatos, perdendo-os.
-  async function pollSignaling(pc: RTCPeerConnection) {
-    if (!pc || pc.signalingState === "closed") return
-    try {
-      const data = await api("get", roomCodeRef.current)
-
-      // Caller: recebe o answer
-      if (myRoleRef.current === "caller" && data.answer && pc.signalingState === "have-local-offer") {
-        addLog("Caller: answer recebido → setRemoteDescription")
-        await pc.setRemoteDescription(new RTCSessionDescription(data.answer))
-        if (data.callee_name) setNomeRemoto(data.callee_name as string)
+      const state = pc.connectionState
+      const nome  = peerNamesRef.current.get(peerId) ?? peerId
+      log(`${nome}: ${state}`)
+      if (state === "failed") {
+        log(`Conexão com ${nome} falhou — removendo`)
+        removerParticipante(peerId)
       }
-
-      // ICE candidates do peer remoto
-      const chave = myRoleRef.current === "caller" ? "ice_callee" : "ice_caller"
-      const candidatos: RTCIceCandidateInit[] = (data[chave] as RTCIceCandidateInit[]) || []
-      const conhecido = myRoleRef.current === "caller" ? knownIceCallee.current : knownIceCaller.current
-
-      // SE remoteDescription ainda não está disponível, NÃO avança o contador.
-      // O próximo poll vai tentar novamente com os mesmos candidatos.
-      if (!pc.remoteDescription) {
-        if (candidatos.length > conhecido) {
-          addLog(`ICE: ${candidatos.length - conhecido} candidatos pendentes (sem remoteDescription)`)
-        }
-        return
-      }
-
-      // Processa candidatos novos
-      for (let i = conhecido; i < candidatos.length; i++) {
-        try {
-          await pc.addIceCandidate(new RTCIceCandidate(candidatos[i]))
-          addLog(`ICE adicionado [${i}] de ${chave}`)
-        } catch (e) {
-          addLog(`ICE erro [${i}]: ${e}`)
-        }
-      }
-
-      // Só atualiza o contador depois de processar todos
-      if (myRoleRef.current === "caller") knownIceCallee.current = candidatos.length
-      else                                knownIceCaller.current = candidatos.length
-
-    } catch (e) {
-      addLog(`Poll erro: ${e}`)
     }
-  }
 
-  // ── hangUp ────────────────────────────────────────────────────────────
-  async function hangUp() {
-    if (pollTimerRef.current) { clearInterval(pollTimerRef.current); pollTimerRef.current = null }
-    if (timerRef.current)     { clearInterval(timerRef.current);     timerRef.current     = null }
-    pcRef.current?.close(); pcRef.current = null
-    localStreamRef.current?.getTracks().forEach(t => t.stop()); localStreamRef.current = null
-    // Limpa srcObjects dos elementos de vídeo
-    if (localVideoRef.current)  localVideoRef.current.srcObject  = null
-    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null
-    if (myRoleRef.current === "caller" && roomCodeRef.current) {
-      try { await api("reset", roomCodeRef.current) } catch { /* ignora */ }
+    return pc
+  }, [salaId, log, atualizarParticipante, removerParticipante])
+
+  // ── Processa ICE candidates enfileirados (chegaram antes do remoteDesc) ─
+  const processarPendingIce = useCallback(async (peerId: string) => {
+    const pending = pendingIceRef.current.get(peerId)
+    if (!pending?.length) return
+    const pc = pcsRef.current.get(peerId)
+    if (!pc?.remoteDescription) return
+
+    for (const c of pending) {
+      try { await pc.addIceCandidate(new RTCIceCandidate(c)) } catch { /* ignora */ }
     }
-    addLog("Chamada encerrada")
-    setTela("lobby")
-    setRemotoConectado(false)
-    setTimerTexto("00:00")
-    setNomeRemoto("")
-    setMicOn(true)
-    setCamOn(true)
-    myRoleRef.current = ""
-    roomCodeRef.current = ""
-  }
+    pendingIceRef.current.delete(peerId)
+    log(`${pending.length} ICE pendente(s) processado(s) para ${peerNamesRef.current.get(peerId) ?? peerId}`)
+  }, [log])
+
+  // ── Encerrar chamada ──────────────────────────────────────────────────
+  const hangUp = useCallback(() => {
+    socketRef.current?.emit("sair-sala", salaId)
+    socketRef.current?.disconnect()
+    socketRef.current = null
+
+    pcsRef.current.forEach(pc => pc.close())
+    pcsRef.current.clear()
+    pendingIceRef.current.clear()
+    peerNamesRef.current.clear()
+
+    localStreamRef.current?.getTracks().forEach(t => t.stop())
+    localStreamRef.current = null
+
+    setLocalStream(null)
+    setParticipantes(new Map())
+    log("Chamada encerrada")
+
+    window.history.back()
+  }, [salaId, log])
 
   // ── Controles de mídia ────────────────────────────────────────────────
-  function toggleMic() {
+  const toggleMic = useCallback(() => {
     if (!localStreamRef.current) return
     const novo = !micOn
     localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = novo })
     setMicOn(novo)
-  }
+  }, [micOn])
 
-  function toggleCam() {
+  const toggleCam = useCallback(() => {
     if (!localStreamRef.current) return
     const novo = !camOn
     localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = novo })
-    if (localVideoRef.current) localVideoRef.current.style.opacity = novo ? "1" : "0"
     setCamOn(novo)
-  }
+  }, [camOn])
 
-  function copiarCodigo() {
-    navigator.clipboard.writeText(roomCodeRef.current || salaCodigo).catch(() => {})
-    setCopado(true)
-    setTimeout(() => setCopado(false), 2000)
-  }
+  const copiarLink = useCallback(() => {
+    const url = `${window.location.origin}/painel/salas/${salaId}`
+    navigator.clipboard.writeText(url).catch(() => {})
+    setCopiado(true)
+    setTimeout(() => setCopiado(false), 2000)
+  }, [salaId])
 
-  // ── Auto-start na montagem ────────────────────────────────────────────
+  // ── Efeito principal: mídia + socket ──────────────────────────────────
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const joinParam = params.get("join")
+    let mounted = true
 
-    if (joinParam) {
-      setCodigoInput(joinParam.toUpperCase())
-    } else if (ehDono) {
-      criarSala()
+    const init = async () => {
+      // 1. Captura mídia local
+      let stream: MediaStream
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      } catch (err) {
+        if (!mounted) return
+        const e = err as DOMException
+        setErro(
+          e.name === "NotAllowedError" || e.name === "PermissionDeniedError"
+            ? "Permissão negada. Permita câmera e microfone no navegador e recarregue."
+            : e.name === "NotFoundError"
+            ? "Câmera ou microfone não encontrado neste dispositivo."
+            : e.name === "NotReadableError"
+            ? "Câmera ou microfone já está em uso por outro aplicativo."
+            : `Erro ao acessar mídia: ${(err as Error).message}`
+        )
+        setCarregando(false)
+        return
+      }
+
+      if (!mounted) { stream.getTracks().forEach(t => t.stop()); return }
+      localStreamRef.current = stream
+      setLocalStream(stream)
+      log("Mídia local capturada")
+
+      // 2. Conecta ao Socket.io (mesma origem — cookie NextAuth enviado automaticamente)
+      const socket = io({ transports: ["websocket", "polling"] })
+      socketRef.current = socket
+
+      socket.on("connect", () => {
+        if (!mounted) return
+        log(`Socket conectado: ${socket.id}`)
+        socket.emit("entrar-sala", { idSala: salaId, nomeUsuario: userName })
+        setCarregando(false)
+      })
+
+      socket.on("connect_error", (err) => {
+        if (!mounted) return
+        log(`Erro socket: ${err.message}`)
+        setErro("Não foi possível conectar ao servidor de sinalização. Verifique sua conexão.")
+        setCarregando(false)
+      })
+
+      // ── Membros que já estavam na sala quando entrei ──────────────────
+      // Para cada um: crio PC e envio offer (eu sou o iniciador dessas conexões)
+      socket.on("membros-sala", async (membros: { id: string; nome: string }[]) => {
+        if (!mounted) return
+        log(`${membros.length} membro(s) já na sala`)
+
+        for (const m of membros) {
+          peerNamesRef.current.set(m.id, m.nome)
+          atualizarParticipante(m.id, { nome: m.nome, stream: null })
+
+          const pc = criarPC(m.id)
+          try {
+            const offer = await pc.createOffer()
+            await pc.setLocalDescription(offer)
+            socket.emit("oferta", {
+              idSala: salaId,
+              oferta: { type: offer.type, sdp: offer.sdp },
+              para:   m.id,
+            })
+            log(`Offer → ${m.nome}`)
+          } catch (e) {
+            log(`Erro criando offer para ${m.nome}: ${e}`)
+          }
+        }
+      })
+
+      // ── Novo participante chegou ──────────────────────────────────────
+      // Mesmo fluxo: crio PC e envio offer para ele
+      socket.on("usuario-entrou", async ({ id, nome }: { id: string; nome: string }) => {
+        if (!mounted) return
+        log(`Novo participante: ${nome}`)
+        peerNamesRef.current.set(id, nome)
+        atualizarParticipante(id, { nome, stream: null })
+
+        const pc = criarPC(id)
+        try {
+          const offer = await pc.createOffer()
+          await pc.setLocalDescription(offer)
+          socket.emit("oferta", {
+            idSala: salaId,
+            oferta: { type: offer.type, sdp: offer.sdp },
+            para:   id,
+          })
+          log(`Offer → ${nome}`)
+        } catch (e) {
+          log(`Erro criando offer para ${nome}: ${e}`)
+        }
+      })
+
+      // ── Recebi offer de outro participante ────────────────────────────
+      // Crio PC, defino remote description, crio answer, envio de volta
+      socket.on("oferta", async ({ oferta, de }: { oferta: RTCSessionDescriptionInit; de: string }) => {
+        if (!mounted) return
+        const nome = peerNamesRef.current.get(de) ?? "Participante"
+        log(`Offer recebido de ${nome}`)
+
+        // Garante que o peer está registrado
+        if (!peerNamesRef.current.has(de)) {
+          peerNamesRef.current.set(de, nome)
+          atualizarParticipante(de, { nome, stream: null })
+        }
+
+        const pc = criarPC(de)
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(oferta))
+          await processarPendingIce(de)
+
+          const answer = await pc.createAnswer()
+          await pc.setLocalDescription(answer)
+          socket.emit("resposta", {
+            idSala:  salaId,
+            resposta: { type: answer.type, sdp: answer.sdp },
+            para:    de,
+          })
+          log(`Answer → ${nome}`)
+        } catch (e) {
+          log(`Erro processando offer de ${nome}: ${e}`)
+        }
+      })
+
+      // ── Recebi answer para meu offer ──────────────────────────────────
+      socket.on("resposta", async ({ resposta, de }: { resposta: RTCSessionDescriptionInit; de: string }) => {
+        if (!mounted) return
+        const pc = pcsRef.current.get(de)
+        if (!pc) return
+        const nome = peerNamesRef.current.get(de) ?? de
+        try {
+          await pc.setRemoteDescription(new RTCSessionDescription(resposta))
+          log(`Answer de ${nome} processado`)
+          await processarPendingIce(de)
+        } catch (e) {
+          log(`Erro processando answer de ${nome}: ${e}`)
+        }
+      })
+
+      // ── ICE candidate de outro participante ───────────────────────────
+      socket.on("candidato-ice", async ({ candidato, de }: { candidato: RTCIceCandidateInit; de: string }) => {
+        if (!mounted) return
+        const pc = pcsRef.current.get(de)
+        if (!pc) return
+
+        if (pc.remoteDescription) {
+          try { await pc.addIceCandidate(new RTCIceCandidate(candidato)) } catch { /* ignora */ }
+        } else {
+          // Enfileira — processa quando remote description chegar
+          const fila = pendingIceRef.current.get(de) ?? []
+          pendingIceRef.current.set(de, [...fila, candidato])
+        }
+      })
+
+      // ── Participante saiu ─────────────────────────────────────────────
+      socket.on("usuario-saiu", (id: string) => {
+        if (!mounted) return
+        const nome = peerNamesRef.current.get(id) ?? id
+        log(`${nome} saiu da sala`)
+        removerParticipante(id)
+      })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
-  // ── Cleanup ao desmontar ──────────────────────────────────────────────
-  useEffect(() => {
+    init()
+
     return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current)
-      if (timerRef.current)     clearInterval(timerRef.current)
-      pcRef.current?.close()
+      mounted = false
+      socketRef.current?.emit("sair-sala", salaId)
+      socketRef.current?.disconnect()
+      pcsRef.current.forEach(pc => pc.close())
+      pcsRef.current.clear()
       localStreamRef.current?.getTracks().forEach(t => t.stop())
     }
-  }, [])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salaId, userName])
 
   // ═══════════════════════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════════════════════
 
+  // ── Loading ───────────────────────────────────────────────────────────
+  if (carregando) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-[#FF6B00] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#999] text-sm">Iniciando câmera e microfone…</p>
+          <p className="text-[#444] text-xs mt-1">Aguarde a solicitação de permissão do navegador</p>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Erro de mídia / conexão ───────────────────────────────────────────
+  if (erro) {
+    return (
+      <div className="min-h-screen bg-[#0A0A0A] flex items-center justify-center p-6">
+        <div className="bg-[#141414] border border-red-900/40 rounded-2xl p-8 max-w-md text-center">
+          <div className="w-14 h-14 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg width="24" height="24" fill="none" stroke="#EF4444" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+          <h2 className="text-white font-bold text-lg mb-2">Não foi possível iniciar</h2>
+          <p className="text-[#999] text-sm mb-6">{erro}</p>
+          <button
+            onClick={() => window.history.back()}
+            className="bg-[#1E1E1E] border border-[#333] text-white px-6 py-2.5 rounded-xl text-sm hover:bg-[#2A2A2A] transition-all"
+          >
+            Voltar
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // ── Grid de vídeos ────────────────────────────────────────────────────
+  const numTiles   = 1 + participantes.size
+  const gridClass  = numTiles <= 1 ? "grid-cols-1 max-w-2xl mx-auto w-full"
+                   : numTiles === 2 ? "grid-cols-1 sm:grid-cols-2"
+                   : numTiles <= 4  ? "grid-cols-2"
+                   : "grid-cols-2 lg:grid-cols-3"
+
   return (
-    <div style={{ fontFamily: "'Outfit', sans-serif" }} className="min-h-screen bg-[#0A0A0A] text-[#F0F0F0] flex flex-col">
+    <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col" style={{ fontFamily: "'Outfit', sans-serif" }}>
 
-      {/* ──────────────── LOBBY ──────────────── */}
-      {tela === "lobby" && (
-        <div className="flex-1 flex items-center justify-center p-5">
-          <div className="bg-[#141414] border border-[#222] rounded-2xl p-10 w-full max-w-md">
+      {/* ──────── Header ──────── */}
+      <div className="h-14 bg-[#141414] border-b border-[#222] flex items-center justify-between px-5 shrink-0">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 bg-red-900/30 border border-red-700/40 px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-[11px] font-bold text-red-400">AO VIVO</span>
+          </div>
+          <span className="font-bold text-sm">{nomeSala}</span>
+          <span className="font-mono text-xs text-[#FF6B00] bg-[#FF6B0015] border border-[#FF6B0030] px-2 py-0.5 rounded-md hidden sm:inline">
+            {salaCodigo}
+          </span>
+          <span className="text-[#555] text-xs">
+            {participantes.size === 0
+              ? "Aguardando outros participantes…"
+              : `${numTiles} na sala`}
+          </span>
+        </div>
+        <button
+          onClick={() => setMostrarDebug(d => !d)}
+          className="text-[10px] text-[#444] hover:text-[#888] transition-colors"
+          title="Diagnóstico"
+        >
+          {mostrarDebug ? "▲ log" : "▼ log"}
+        </button>
+      </div>
 
-            {/* Logo */}
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-11 h-11 bg-[#FF6B00] rounded-xl flex items-center justify-center shrink-0">
-                <svg width="22" height="22" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24">
-                  <path d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
-                </svg>
-              </div>
-              <div>
-                <div className="text-lg font-extrabold">{nomeSala}</div>
-                <div className="text-[11px] text-[#555] uppercase tracking-wider">Videochamada P2P</div>
-              </div>
-            </div>
+      {/* ──────── Painel de debug ──────── */}
+      {mostrarDebug && (
+        <div className="bg-[#0D0D0D] border-b border-[#1A1A1A] px-4 py-2 h-28 overflow-y-auto shrink-0">
+          {logs.length === 0
+            ? <p className="text-[#333] text-[10px] font-mono">Aguardando eventos...</p>
+            : logs.map((l, i) => (
+                <p key={i} className="text-[#4A9] text-[10px] font-mono leading-relaxed">{l}</p>
+              ))
+          }
+        </div>
+      )}
 
-            {/* Iniciar sala (caller) */}
-            {ehDono && (
+      {/* ──────── Grid de vídeos ──────── */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className={`grid ${gridClass} gap-3`}>
+
+          {/* Vídeo local */}
+          <VideoTile
+            stream={localStream}
+            nome={userName}
+            muted
+            local
+          />
+
+          {/* Vídeos remotos */}
+          {Array.from(participantes.entries()).map(([id, info]) => (
+            <VideoTile
+              key={id}
+              stream={info.stream}
+              nome={info.nome}
+            />
+          ))}
+        </div>
+
+        {/* Dica quando sozinho */}
+        {participantes.size === 0 && (
+          <div className="mt-6 text-center">
+            <p className="text-[#333] text-xs">
+              Compartilhe o link para convidar outros participantes
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ──────── Controles ──────── */}
+      <div className="h-20 bg-[#141414] border-t border-[#222] flex items-center justify-center gap-3 shrink-0">
+
+        {/* Microfone */}
+        <button
+          onClick={toggleMic}
+          title={micOn ? "Mutar microfone" : "Ativar microfone"}
+          className={`w-[52px] h-[52px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+            micOn
+              ? "bg-[#1E1E1E] border-[#333] text-white hover:bg-[#2A2A2A]"
+              : "bg-[#2A1111] border-[#5A2020] text-red-400"
+          }`}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            {micOn ? (
               <>
-                <p className="text-[11px] font-semibold text-[#555] uppercase tracking-wider mb-2">Iniciar como criador</p>
-                <button
-                  onClick={criarSala}
-                  disabled={ocupado}
-                  className="w-full flex items-center justify-center gap-2 bg-[#FF6B00] hover:opacity-85 disabled:opacity-50 text-white font-bold py-3.5 rounded-xl text-sm mb-4 transition-opacity"
-                >
-                  <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                    <path d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
-                  </svg>
-                  {ocupado ? "Iniciando…" : "Iniciar chamada"}
-                </button>
-
-                <div className="flex items-center gap-3 my-4">
-                  <div className="flex-1 h-px bg-[#222]" />
-                  <span className="text-[#555] text-xs">ou entre em uma existente</span>
-                  <div className="flex-1 h-px bg-[#222]" />
-                </div>
+                <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
+                <path d="M19 10v1a7 7 0 01-14 0v-1M12 18v4M8 22h8"/>
+              </>
+            ) : (
+              <>
+                <path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/>
+                <path d="M19 10v1a7 7 0 01-14 0v-1M12 18v4M8 22h8"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
               </>
             )}
+          </svg>
+          <span className="text-[9px] font-semibold text-[#555]">{micOn ? "Mic" : "Mudo"}</span>
+        </button>
 
-            {/* Entrar em sala (callee) */}
-            <p className="text-[11px] font-semibold text-[#555] uppercase tracking-wider mb-2">Entrar com código</p>
-            <input
-              type="text"
-              value={codigoInput}
-              onChange={e => setCodigoInput(e.target.value.toUpperCase())}
-              onKeyDown={e => e.key === "Enter" && !ocupado && entrarSala()}
-              placeholder="Código da sala (ex: ABC123)"
-              maxLength={10}
-              className="w-full bg-[#1E1E1E] border border-[#222] focus:border-[#FF6B00] rounded-xl px-4 py-3 text-sm text-white placeholder-[#555] outline-none transition-colors mb-3 text-center tracking-widest uppercase font-mono"
+        {/* Câmera */}
+        <button
+          onClick={toggleCam}
+          title={camOn ? "Desligar câmera" : "Ligar câmera"}
+          className={`w-[52px] h-[52px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
+            camOn
+              ? "bg-[#1E1E1E] border-[#333] text-white hover:bg-[#2A2A2A]"
+              : "bg-[#2A1111] border-[#5A2020] text-red-400"
+          }`}
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
+          </svg>
+          <span className="text-[9px] font-semibold text-[#555]">{camOn ? "Câmera" : "Cam Off"}</span>
+        </button>
+
+        {/* Encerrar */}
+        <button
+          onClick={hangUp}
+          title="Encerrar chamada"
+          className="w-[52px] h-[52px] bg-red-600 rounded-xl flex flex-col items-center justify-center gap-1 hover:opacity-85 transition-opacity"
+        >
+          <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.19 19.79 19.79 0 01.36 10.55 2 2 0 012 8.38V5.5a2 2 0 011.72-2 12.84 12.84 0 002.81-.7 2 2 0 012.11.45l1.27 1.27a16 16 0 012.6 3.41M1 1l22 22"
             />
-            <button
-              onClick={entrarSala}
-              disabled={ocupado}
-              className="w-full flex items-center justify-center gap-2 bg-transparent border border-[#333] hover:border-[#555] text-white font-bold py-3.5 rounded-xl text-sm mb-2 transition-colors disabled:opacity-50"
-            >
-              <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M10 17l5-5-5-5M15 12H3"/>
-              </svg>
-              {ocupado ? "Verificando…" : "Entrar na sala"}
-            </button>
+          </svg>
+          <span className="text-[9px] font-semibold text-white">Encerrar</span>
+        </button>
 
-            {erroLobby && (
-              <p className="text-red-400 text-xs text-center mt-3">{erroLobby}</p>
+        {/* Convidar (copiar link) */}
+        <button
+          onClick={copiarLink}
+          title="Copiar link de convite"
+          className="w-[52px] h-[52px] bg-[#1E1E1E] border border-[#333] rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-[#2A2A2A] transition-all"
+        >
+          <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            {copiado ? (
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 6L9 17l-5-5"/>
+            ) : (
+              <>
+                <circle cx="18" cy="5" r="3"/>
+                <circle cx="6" cy="12" r="3"/>
+                <circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </>
             )}
-            {erroSala && (
-              <p className="text-red-400 text-xs text-center mt-3">{erroSala}</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ──────────────── SALA ──────────────── */}
-      {tela === "sala" && (
-        <div className="flex-1 flex flex-col">
-
-          {/* Header */}
-          <div className="h-14 bg-[#141414] border-b border-[#222] flex items-center justify-between px-5">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1.5 bg-red-900/30 border border-red-700/40 px-3 py-1 rounded-full">
-                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-[11px] font-bold text-red-400">AO VIVO</span>
-              </div>
-              <span className="font-bold text-sm">{nomeSala}</span>
-              <span className="font-mono text-xs text-[#FF6B00] bg-[#FF6B0015] border border-[#FF6B0030] px-2 py-0.5 rounded-md">
-                {roomCodeRef.current}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  statusTexto === "Conectado" ? "bg-green-400" :
-                  statusTexto === "Desconectado" || statusTexto === "Falha na conexão" ? "bg-red-400" :
-                  "bg-yellow-400 animate-pulse"
-                }`}
-              />
-              <span className="text-[#999]">{statusTexto}</span>
-              {remotoConectado && (
-                <span className="font-bold tabular-nums text-[#F0F0F0]">{timerTexto}</span>
-              )}
-              {/* Toggle debug */}
-              <button
-                onClick={() => setMostrarDebug(d => !d)}
-                className="text-[10px] text-[#444] hover:text-[#888] transition-colors ml-1"
-                title="Diagnóstico"
-              >
-                {mostrarDebug ? "▲ log" : "▼ log"}
-              </button>
-            </div>
-          </div>
-
-          {/* Painel de debug */}
-          {mostrarDebug && (
-            <div className="bg-[#0D0D0D] border-b border-[#1A1A1A] px-4 py-2 h-32 overflow-y-auto">
-              {logs.length === 0 ? (
-                <p className="text-[#333] text-[10px] font-mono">Aguardando eventos...</p>
-              ) : (
-                logs.map((l, i) => (
-                  <p key={i} className="text-[#4A9] text-[10px] font-mono leading-relaxed">{l}</p>
-                ))
-              )}
-            </div>
-          )}
-
-          {/* Área de vídeo */}
-          <div className="flex-1 bg-[#0A0A0A] relative overflow-hidden">
-            {/* Vídeo remoto — ocupa tudo */}
-            <div className="absolute inset-0">
-              {!remotoConectado && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-10">
-                  <div className="w-20 h-20 bg-[#1A1A1A] rounded-full flex items-center justify-center">
-                    <svg width="32" height="32" fill="none" stroke="#555" strokeWidth="1.5" viewBox="0 0 24 24">
-                      <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"/>
-                    </svg>
-                  </div>
-                  <p className="text-[#555] text-sm">Aguardando outro participante…</p>
-                  <p className="text-[#333] text-xs">Compartilhe o código: <span className="text-[#FF6B00] font-mono">{roomCodeRef.current}</span></p>
-                </div>
-              )}
-              <video
-                ref={remoteVideoRef}
-                autoPlay
-                playsInline
-                className={`w-full h-full object-cover ${remotoConectado ? "opacity-100" : "opacity-0"}`}
-              />
-              {remotoConectado && nomeRemoto && (
-                <div className="absolute bottom-24 left-4 bg-black/60 backdrop-blur-sm rounded-full px-3 py-1 z-10">
-                  <span className="text-white text-xs font-semibold">{nomeRemoto}</span>
-                </div>
-              )}
-            </div>
-
-            {/* Self preview */}
-            <div className="absolute bottom-20 right-4 w-40 h-24 rounded-xl overflow-hidden border-2 border-[#FF6B00] bg-[#111] shadow-2xl z-10">
-              <video
-                ref={localVideoRef}
-                autoPlay
-                muted
-                playsInline
-                className="w-full h-full object-cover scale-x-[-1]"
-              />
-              <div className="absolute bottom-1.5 left-2.5 bg-black/60 rounded-full px-2 py-0.5">
-                <span className="text-white text-[10px] font-semibold">Você</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Controles */}
-          <div className="h-20 bg-[#141414] border-t border-[#222] flex items-center justify-center gap-3">
-
-            {/* Mic */}
-            <button
-              onClick={toggleMic}
-              title={micOn ? "Mutar" : "Ativar mic"}
-              className={`w-[52px] h-[52px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
-                micOn ? "bg-[#1E1E1E] border-[#333] text-white hover:bg-[#2A2A2A]"
-                      : "bg-[#2A1111] border-[#5A2020] text-red-400"
-              }`}
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                {micOn
-                  ? <><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 18v4M8 22h8"/></>
-                  : <><path d="M12 2a3 3 0 00-3 3v7a3 3 0 006 0V5a3 3 0 00-3-3z"/><path d="M19 10v1a7 7 0 01-14 0v-1M12 18v4M8 22h8"/><line x1="1" y1="1" x2="23" y2="23"/></>
-                }
-              </svg>
-              <span className="text-[9px] font-semibold text-[#555]">{micOn ? "Mic" : "Mudo"}</span>
-            </button>
-
-            {/* Câmera */}
-            <button
-              onClick={toggleCam}
-              title={camOn ? "Desligar câmera" : "Ligar câmera"}
-              className={`w-[52px] h-[52px] rounded-xl border flex flex-col items-center justify-center gap-1 transition-all ${
-                camOn ? "bg-[#1E1E1E] border-[#333] text-white hover:bg-[#2A2A2A]"
-                      : "bg-[#2A1111] border-[#5A2020] text-red-400"
-              }`}
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M15 10l4.553-2.277A1 1 0 0121 8.723v6.554a1 1 0 01-1.447.894L15 14M3 8a2 2 0 012-2h10a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/>
-              </svg>
-              <span className="text-[9px] font-semibold text-[#555]">{camOn ? "Câmera" : "Cam Off"}</span>
-            </button>
-
-            {/* Encerrar */}
-            <button
-              onClick={hangUp}
-              className="w-[52px] h-[52px] bg-red-600 rounded-xl flex flex-col items-center justify-center gap-1 hover:opacity-85 transition-opacity"
-            >
-              <svg width="20" height="20" fill="none" stroke="#fff" strokeWidth="2.5" viewBox="0 0 24 24">
-                <path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7 2 2 0 011.72 2v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.43 9.19 19.79 19.79 0 01.36 10.55 2 2 0 012 8.38V5.5a2 2 0 011.72-2 12.84 12.84 0 002.81-.7 2 2 0 012.11.45l1.27 1.27a16 16 0 012.6 3.41M1 1l22 22" strokeLinecap="round"/>
-              </svg>
-              <span className="text-[9px] font-semibold text-white">Encerrar</span>
-            </button>
-
-            {/* Copiar código */}
-            <button
-              onClick={copiarCodigo}
-              title="Copiar código"
-              className="w-[52px] h-[52px] bg-[#1E1E1E] border border-[#333] rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-[#2A2A2A] transition-all"
-            >
-              <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
-              </svg>
-              <span className="text-[9px] font-semibold text-[#555]">{copiado ? "Copiado!" : "Código"}</span>
-            </button>
-          </div>
-        </div>
-      )}
+          </svg>
+          <span className="text-[9px] font-semibold text-[#555]">
+            {copiado ? "Copiado!" : "Convidar"}
+          </span>
+        </button>
+      </div>
     </div>
   )
 }
