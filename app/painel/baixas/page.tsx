@@ -1,10 +1,10 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
-import { BaixaTable } from "@/componentes/tabelas/tabela-baixas"
-import { BaixaFormModal } from "@/componentes/formularios/form-baixa"
+import { BaixaTable } from "@/components/tables/tabela-baixas"
+import { BaixaFormModal } from "@/components/forms/form-baixa"
 import { DollarSign, TrendingUp, Clock, AlertCircle } from "lucide-react"
 
 const formatBRL = (val: number) =>

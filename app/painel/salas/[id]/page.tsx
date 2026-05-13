@@ -1,8 +1,8 @@
 import { getServerSession } from "next-auth"
 import { redirect, notFound } from "next/navigation"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
-import { db } from "@/servidor/banco/cliente"
-import { VideoRoom } from "@/componentes/video/sala-video-webrtc"
+import { opcoesAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
+import { VideoRoom } from "@/components/video/sala-video-webrtc"
 
 export const dynamic = "force-dynamic"
 

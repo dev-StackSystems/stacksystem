@@ -9,11 +9,11 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { db }               from "@/servidor/banco/cliente"
+import { db }               from "@/lib/db"
 import { getServerSession } from "next-auth"
 import { redirect }         from "next/navigation"
-import { opcoesAuth }       from "@/servidor/autenticacao/config"
-import { TIPOS_SISTEMA }    from "@/tipos/sistema"
+import { opcoesAuth }       from "@/lib/auth"
+import { TIPOS_SISTEMA }    from "@/types/system"
 import Link                 from "next/link"
 import {
   GraduationCap, BookOpen, Layers, Play,

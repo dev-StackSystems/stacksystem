@@ -1,9 +1,9 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { EmpresaTable } from "@/componentes/tabelas/tabela-empresas"
-import { EmpresaFormModal } from "@/componentes/formularios/form-empresa"
+import { EmpresaTable } from "@/components/tables/tabela-empresas"
+import { EmpresaFormModal } from "@/components/forms/form-empresa"
 import { Plus } from "lucide-react"
 
 export default async function EmpresasPage() {

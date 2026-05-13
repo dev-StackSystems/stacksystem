@@ -15,16 +15,7 @@
     "incremental": true,
     "plugins": [{ "name": "next" }],
     "paths": {
-      /* Camada servidor (autenticação, banco, helpers) */
-      "@/servidor/*":       ["./servidor/*"],
-      /* Componentes React (layout, tabelas, formulários, landing) */
-      "@/componentes/*":    ["./componentes/*"],
-      /* Tipos TypeScript e constantes do sistema */
-      "@/tipos/*":          ["./tipos/*"],
-      /* Componentes shadcn/ui — mantidos em inglês (biblioteca externa) */
-      "@/componentes/ui/*": ["./componentes/ui/*"],
-      /* Atalho genérico para a raiz do projeto */
-      "@/*":                ["./*"]
+      "@/*": ["./*"]
     }
   },
   "include": [

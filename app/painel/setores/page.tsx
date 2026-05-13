@@ -1,9 +1,9 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { SetorTable } from "@/componentes/tabelas/tabela-setores"
-import { SetorFormModal } from "@/componentes/formularios/form-setor"
+import { SetorTable } from "@/components/tables/tabela-setores"
+import { SetorFormModal } from "@/components/forms/form-setor"
 import { Briefcase, Plus } from "lucide-react"
 
 export default async function SetoresPage() {

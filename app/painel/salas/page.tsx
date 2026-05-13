@@ -1,10 +1,10 @@
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
-import { db } from "@/servidor/banco/cliente"
+import { opcoesAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
 import { Video, Plus } from "lucide-react"
-import { SalaCard } from "@/componentes/tabelas/sala-card"
-import { SalaFormModal } from "@/componentes/formularios/form-sala"
+import { SalaCard } from "@/components/tables/sala-card"
+import { SalaFormModal } from "@/components/forms/form-sala"
 
 export const dynamic = "force-dynamic"
 

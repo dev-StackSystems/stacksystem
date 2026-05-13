@@ -4,8 +4,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { exigirSuperAdmin } from "@/servidor/autenticacao/sessao"
-import { db } from "@/servidor/banco/cliente"
+import { exigirSuperAdmin } from "@/lib/auth-helpers"
+import { db } from "@/lib/db"
 
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const auth = await exigirSuperAdmin()

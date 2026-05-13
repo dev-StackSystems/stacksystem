@@ -15,13 +15,13 @@
 
 import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
-import { resolverModulos } from "@/servidor/autenticacao/sessao"
-import { db } from "@/servidor/banco/cliente"
-import { BarraLateral } from "@/componentes/layout/barra-lateral"
-import { BarraTopo } from "@/componentes/layout/barra-topo"
-import { ProvedorSessao } from "@/componentes/layout/provedor-sessao"
-import Mascote from "@/componentes/mascote"
+import { opcoesAuth } from "@/lib/auth"
+import { resolverModulos } from "@/lib/auth-helpers"
+import { db } from "@/lib/db"
+import { BarraLateral } from "@/components/layout/barra-lateral"
+import { BarraTopo } from "@/components/layout/barra-topo"
+import { ProvedorSessao } from "@/components/layout/provedor-sessao"
+import Mascote from "@/components/mascote"
 import { AlertTriangle } from "lucide-react"
 
 export default async function LayoutPainel({ children }: { children: React.ReactNode }) {

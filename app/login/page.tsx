@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { signIn, signOut } from "next-auth/react"
 import { motion, AnimatePresence } from "motion/react"
 import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
-import Mascote from "@/componentes/mascote"
+import Mascote from "@/components/mascote"
 
 // ─────────────────────────────────────────────
 //  BANNERS — edite à vontade

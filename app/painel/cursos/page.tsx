@@ -1,10 +1,10 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
-import { CursoTable } from "@/componentes/tabelas/tabela-cursos"
-import { CursoFormModal } from "@/componentes/formularios/form-curso"
+import { CursoTable } from "@/components/tables/tabela-cursos"
+import { CursoFormModal } from "@/components/forms/form-curso"
 import { Plus } from "lucide-react"
 
 export default async function CursosPage() {

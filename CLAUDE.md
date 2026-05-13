@@ -23,69 +23,90 @@ No test framework is configured.
 
 ## Architecture
 
-**StackSystems** is a Next.js 16 (App Router) system for "cursinho" (Brazilian prep school) management. The UI is in **Portuguese (pt-BR)**.
+**StackSystems** is a Next.js 16 (App Router) multi-tenant system for "cursinho" (Brazilian prep school) management. The UI is in **Portuguese (pt-BR)**.
+
+### Folder Structure
+
+```
+app/            # Next.js pages and API routes
+components/
+  ui/           # shadcn/ui base components
+  layout/       # Sidebar, TopBar, session/toast providers
+  forms/        # CRUD form modals
+  tables/       # Listing table components
+  landing/      # Landing page sections
+  video/        # WebRTC video component
+lib/
+  db.ts         # Prisma singleton — always import db from here
+  auth.ts       # NextAuth config (opcoesAuth)
+  auth-helpers.ts  # getUsuarioAtual, exigirPapel, resolverModulos, resolverPermissao
+  email.ts      # Nodemailer client
+  utils.ts      # cn() — Tailwind class merge
+types/
+  next-auth.d.ts   # Session/JWT type augmentation
+  system.ts        # TIPOS_SISTEMA, MODULOS_DISPONIVEIS constants
+prisma/         # schema.prisma + seed.ts
+```
 
 ### Database
 
 - **PostgreSQL** hosted on **Neon** (serverless)
-- **Prisma v5** ORM — single connection file: `lib/db.ts` (Prisma singleton, all other files import `db` from here, never instantiate PrismaClient directly)
-- Schema: `prisma/schema.prisma` — `User` model with `UserRole` enum (ADMIN, TECH, FACULTY) + NextAuth models
+- **Prisma v5** ORM — single connection file: `lib/db.ts` (never instantiate PrismaClient directly)
+- Schema: `prisma/schema.prisma` — multi-tenant with `empresaId` on all user-facing tables
+- Main enums: `PapelUsuario` (A, T, I, E, F)
 
 ### Authentication
 
 - **NextAuth.js v4** with CredentialsProvider + JWT strategy
-- Config: `lib/auth.ts` — imports `db` from `lib/db.ts`
-- Session includes `user.id` and `user.role` (typed in `types/next-auth.d.ts`)
-- Auth helpers: `lib/auth-helpers.ts` — `getCurrentUser()` and `requireRole([...roles])` for API routes
-- Auth guard: `proxy.ts` uses `getToken` from `next-auth/jwt` to protect `/dashboard/*`
+- Config: `lib/auth.ts` — exports `opcoesAuth`
+- Session includes `id`, `papel`, `superAdmin`, `empresaId`, `grupoId`, `setorId`, `grupoIsAdmin` (typed in `types/next-auth.d.ts`)
+- Auth helpers: `lib/auth-helpers.ts` — `getUsuarioAtual()`, `exigirPapel([...])`, `exigirSuperAdmin()`, `resolverModulos()`, `resolverPermissao()`
+- Auth guard: `proxy.ts` uses `getToken` from `next-auth/jwt` to protect `/painel/*`
 
 ### Next.js 16 Proxy Convention
 
-Next.js 16 uses **`proxy.ts`** (named export `proxy`) instead of `middleware.ts`. The `proxy.ts` file:
-- Guards `/dashboard/*` routes (redirects to `/login` if no JWT)
-- Maps `?pg=X` / `?m=X` query params to routes at root
+Next.js 16 uses **`proxy.ts`** instead of `middleware.ts`. It guards `/painel/*` and `/modulos/*` (redirects to `/login` if no JWT), and maps `?pg=X` / `?m=X` query params to routes.
 
 ### Route Structure
 
-| Route | File | Description |
-|-------|------|-------------|
-| `/` | `app/page.tsx` | Landing page |
-| `/login` | `app/login/page.tsx` | Real auth via NextAuth `signIn("credentials")` |
-| `/dashboard` | `app/dashboard/page.tsx` | Server component — KPIs from DB |
-| `/dashboard/usuarios` | `app/dashboard/usuarios/page.tsx` | Internal user management (ADMIN/TECH) |
-| `/dashboard/configuracoes` | `app/dashboard/configuracoes/page.tsx` | Settings (ADMIN only) |
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page |
+| `/login` | Auth via NextAuth `signIn("credentials")` |
+| `/painel` | Dashboard home — KPIs |
+| `/painel/usuarios` | Internal user management |
+| `/painel/alunos` | Student management |
+| `/painel/cursos` | Course management |
+| `/painel/matriculas` | Enrollment management |
+| `/painel/salas` | Virtual classrooms (WebRTC) |
+| `/painel/empresas` | Company management (superAdmin) |
+| `/painel/configuracoes` | Settings (Admin only) |
 
-All dashboard routes share `app/dashboard/layout.tsx` (Sidebar + TopBar, reads role from session).
+All `/painel/*` routes share `app/painel/layout.tsx` (BarraLateral + BarraTopo, reads session + resolves modules).
 
 ### User Roles
 
-`ADMIN > TECH > FACULTY` — enforced at 3 layers:
-1. `proxy.ts` (Edge) — blocks unauthenticated access
+`superAdmin > A (Admin) > grupoIsAdmin > T (Técnico) / F (Docente)` — enforced at 3 layers:
+1. `proxy.ts` — blocks unauthenticated access
 2. Server components — conditional rendering by role
-3. API routes — `requireRole([...])` before any DB query
+3. API routes — `exigirPapel([...])` or `exigirSuperAdmin()` before any DB query
 
-### Internal User APIs
+Module visibility: `resolverModulos(usuario)` computes which modules are available based on empresa ∩ grupo ∩ setor intersection.
 
-- `GET/POST /api/users` — list / create (ADMIN+TECH for GET, ADMIN-only for POST)
-- `GET/PUT/DELETE /api/users/[id]` — CRUD (DELETE is soft: sets `active=false`)
-- `GET/POST /api/rooms` — WebRTC room management (in-memory, Phase 1)
-- `GET/POST /api/auth/[...nextauth]` — NextAuth handler
+### API Patterns
 
-### Component Organization
-
-- `components/sections/` — landing page sections
-- `components/ui/` — shadcn/ui base components (`button`, `card`, `badge`)
-- `components/dashboard/` — `Sidebar`, `TopBar`, `SessionWrapper`, `SidebarNavLink`, `UserTable`, `UserFormModal`
-- `components/Mascot.tsx` — animated mascot (landing page only)
+- All routes return `{ data, message }` on success or `{ erro }` with HTTP status on error
+- Multi-tenant: non-superAdmin requests are automatically scoped by `empresaId`
+- Soft deletes: `ativo=false` or `status=cancelada` instead of hard deletes
 
 ### WebRTC / Socket.io
 
-`server.ts` runs Socket.io alongside Next.js. Events: `join-room`, `offer`, `answer`, `ice-candidate`, `leave-room`. Room registry is in-memory (Phase 1); migrate to DB table in Phase 2.
+`server.ts` runs Socket.io alongside Next.js on the same HTTP server. Events: `entrar-sala`, `oferta`, `resposta`, `candidato-ice`, `sair-sala`. Topology: mesh P2P. Room registry in `Sala` table; signaling via `SinalSala` table or Socket.io events.
 
 ### Design System
 
 - Colors: Orange primary (`#f97316`) with 11 custom shades in `tailwind.config.ts`
-- Typography: Space Grotesk (headings, `font-serif` class) + Inter (body, `font-sans`)
+- Typography: Space Grotesk (`font-serif`) + Inter (`font-sans`)
 - Animations: Custom Tailwind keyframes + `motion/react` (Framer Motion v12)
 - Path alias: `@/*` → project root
 - Utility: `lib/utils.ts` exports `cn()` (clsx + tailwind-merge)

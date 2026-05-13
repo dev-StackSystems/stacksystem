@@ -10,8 +10,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { exigirSuperAdmin } from "@/servidor/autenticacao/sessao"
-import { db } from "@/servidor/banco/cliente"
+import { exigirSuperAdmin } from "@/lib/auth-helpers"
+import { db } from "@/lib/db"
 
 type Ctx = { params: Promise<{ id: string }> }
 

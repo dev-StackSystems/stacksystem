@@ -16,13 +16,13 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
-import { TabelaUsuarios } from "@/componentes/tabelas/tabela-usuarios"
-import { FormularioUsuario } from "@/componentes/formularios/form-usuario"
+import { TabelaUsuarios } from "@/components/tables/tabela-usuarios"
+import { FormularioUsuario } from "@/components/forms/form-usuario"
 import { UserPlus } from "lucide-react"
 
 // Campos selecionados ao buscar usuários

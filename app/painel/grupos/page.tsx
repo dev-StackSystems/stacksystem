@@ -1,9 +1,9 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { GrupoTable } from "@/componentes/tabelas/tabela-grupos"
-import { GrupoFormModal } from "@/componentes/formularios/form-grupo"
+import { GrupoTable } from "@/components/tables/tabela-grupos"
+import { GrupoFormModal } from "@/components/forms/form-grupo"
 import { UsersRound, Plus } from "lucide-react"
 
 export default async function GruposPage() {

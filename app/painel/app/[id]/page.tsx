@@ -15,8 +15,8 @@
 
 import { getServerSession } from "next-auth"
 import { redirect }         from "next/navigation"
-import { opcoesAuth }       from "@/servidor/autenticacao/config"
-import { db }               from "@/servidor/banco/cliente"
+import { opcoesAuth }       from "@/lib/auth"
+import { db }               from "@/lib/db"
 
 interface Props {
   params: Promise<{ id: string }>

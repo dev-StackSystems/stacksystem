@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
 
 export async function POST(req: NextRequest) {

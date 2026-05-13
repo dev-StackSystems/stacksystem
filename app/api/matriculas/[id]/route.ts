@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { exigirPapel } from "@/servidor/autenticacao/sessao"
+import { db } from "@/lib/db"
+import { exigirPapel } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
 
 type Params = { params: Promise<{ id: string }> }

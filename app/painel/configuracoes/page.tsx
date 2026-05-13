@@ -1,10 +1,10 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Database, Info, KeyRound, ShieldCheck, Users, Building2 } from "lucide-react"
-import { EmpresaConfigForm } from "@/componentes/formularios/form-config-empresa"
+import { EmpresaConfigForm } from "@/components/forms/form-config-empresa"
 
 export default async function ConfiguracoesPage() {
   const session = await getServerSession(opcoesAuth)

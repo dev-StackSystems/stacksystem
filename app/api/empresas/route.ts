@@ -10,9 +10,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { exigirSuperAdmin } from "@/servidor/autenticacao/sessao"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/tipos/sistema"
+import { db } from "@/lib/db"
+import { exigirSuperAdmin } from "@/lib/auth-helpers"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/types/system"
 
 // ── GET /api/empresas ──────────────────────────────────────────────────────
 

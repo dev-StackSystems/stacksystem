@@ -13,8 +13,8 @@
 
 import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
-import { db } from "@/servidor/banco/cliente"
+import { opcoesAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
 import CatalogoModulosCliente from "./catalogo-cliente"
 
 export default async function CatalogoModulosPage() {

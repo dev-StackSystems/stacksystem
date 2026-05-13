@@ -1,2 +1,6 @@
-// Compatibilidade com shadcn/ui — re-exporta cn de tipos/utilitarios
-export { cn } from "@/tipos/utilitarios"
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}

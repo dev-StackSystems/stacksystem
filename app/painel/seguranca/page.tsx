@@ -1,6 +1,6 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
 import { ShieldCheck } from "lucide-react"

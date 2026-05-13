@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { exigirPapel } from "@/servidor/autenticacao/sessao"
+import { db } from "@/lib/db"
+import { exigirPapel } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/tipos/sistema"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/types/system"
 
 const MODULOS_KEYS = MODULOS_DISPONIVEIS.map((m) => m.key)
 

@@ -1,9 +1,9 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { AlunoTable } from "@/componentes/tabelas/tabela-alunos"
-import { AlunoFormModal } from "@/componentes/formularios/form-aluno"
+import { AlunoTable } from "@/components/tables/tabela-alunos"
+import { AlunoFormModal } from "@/components/forms/form-aluno"
 import { UserPlus } from "lucide-react"
 
 export default async function AlunosPage() {

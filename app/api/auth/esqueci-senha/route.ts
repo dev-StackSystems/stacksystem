@@ -17,8 +17,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { enviarEmailRedefinicaoSenha } from "@/servidor/email/cliente"
+import { db } from "@/lib/db"
+import { enviarEmailRedefinicaoSenha } from "@/lib/email"
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {

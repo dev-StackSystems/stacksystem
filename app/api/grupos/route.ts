@@ -12,8 +12,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { getUsuarioAtual } from "@/servidor/autenticacao/sessao"
+import { db } from "@/lib/db"
+import { getUsuarioAtual } from "@/lib/auth-helpers"
 
 // ── GET /api/grupos ────────────────────────────────────────────────────────
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
-import { getUsuarioAtual, exigirPapel } from "@/servidor/autenticacao/sessao"
+import { db } from "@/lib/db"
+import { getUsuarioAtual, exigirPapel } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
 
 // PUT /api/cursos/[id] — ADMIN e TECH

@@ -1,10 +1,10 @@
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
-import { MatriculaTable } from "@/componentes/tabelas/tabela-matriculas"
-import { MatriculaFormModal } from "@/componentes/formularios/form-matricula"
+import { MatriculaTable } from "@/components/tables/tabela-matriculas"
+import { MatriculaFormModal } from "@/components/forms/form-matricula"
 import { BookOpen } from "lucide-react"
 
 export default async function MatriculasPage() {

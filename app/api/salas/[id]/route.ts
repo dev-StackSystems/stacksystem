@@ -14,8 +14,8 @@
 
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
-import { db } from "@/servidor/banco/cliente"
+import { opcoesAuth } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 // ── DELETE /api/salas/[id] ─────────────────────────────────────────────────
 

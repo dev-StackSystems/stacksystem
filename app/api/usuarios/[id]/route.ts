@@ -12,9 +12,9 @@
  */
 
 import { NextRequest, NextResponse } from "next/server"
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { PapelUsuario } from "@prisma/client"
 import bcrypt from "bcryptjs"
 

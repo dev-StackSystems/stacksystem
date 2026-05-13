@@ -1,9 +1,9 @@
 export const dynamic = "force-dynamic"
 
 import { getServerSession } from "next-auth"
-import { opcoesAuth } from "@/servidor/autenticacao/config"
+import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/servidor/banco/cliente"
+import { db } from "@/lib/db"
 import { CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 
 type CheckResult = { ok: boolean; label: string; value?: string; error?: string }
