@@ -1,9 +1,8 @@
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { AlunoFormModal } from "@/components/forms/form-aluno"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Search } from "lucide-react"
-import { useToast } from "@/components/layout/provedor-toast"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface Aluno {
   id: string
@@ -37,42 +36,22 @@ function getInitials(nome: string): string {
 }
 
 export function AlunoTable({ alunos, isAdmin }: Props) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const { loadingId, run } = useRowAction()
   const [search, setSearch] = useState("")
 
-  const toggleAtivo = async (aluno: Aluno) => {
-    setLoadingId(aluno.id)
-    const res = await fetch(`/api/alunos/${aluno.id}`, {
+  const toggleAtivo = (aluno: Aluno) => run(
+    aluno.id,
+    () => fetch(`/api/alunos/${aluno.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome: aluno.nome, email: aluno.email, cpf: aluno.cpf,
-        telefone: aluno.telefone, dataNasc: aluno.dataNasc,
-        ativo: !aluno.ativo,
-      }),
-    })
-    setLoadingId(null)
-    if (res.ok) {
-      toast(aluno.ativo ? "Aluno desativado." : "Aluno ativado.", "info")
-      router.refresh()
-    } else {
-      toast("Erro ao alterar status.", "erro")
-    }
-  }
+      body: JSON.stringify({ nome: aluno.nome, email: aluno.email, cpf: aluno.cpf, telefone: aluno.telefone, dataNasc: aluno.dataNasc, ativo: !aluno.ativo }),
+    }),
+    { success: aluno.ativo ? "Aluno desativado." : "Aluno ativado.", successType: "info", error: "Erro ao alterar status." },
+  )
 
-  const deleteAluno = async (id: string) => {
+  const deleteAluno = (id: string) => {
     if (!confirm("Desativar este aluno permanentemente?")) return
-    setLoadingId(id)
-    const res = await fetch(`/api/alunos/${id}`, { method: "DELETE" })
-    setLoadingId(null)
-    if (res.ok) {
-      toast("Aluno desativado com sucesso.")
-      router.refresh()
-    } else {
-      toast("Erro ao desativar aluno.", "erro")
-    }
+    run(id, () => fetch(`/api/alunos/${id}`, { method: "DELETE" }), { success: "Aluno desativado com sucesso.", error: "Erro ao desativar aluno." })
   }
 
   const filtered = alunos.filter(a => {

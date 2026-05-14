@@ -1,8 +1,7 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Layers } from "lucide-react"
 import { CursoFormModal, type CursoData } from "@/components/forms/form-curso"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface EmpresaOption {
   id: string
@@ -25,32 +24,20 @@ function getInitials(nome: string): string {
 }
 
 export function CursoTable({ cursos, empresas, isAdmin }: Props) {
-  const router = useRouter()
-  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const { loadingId, run } = useRowAction()
 
-  const toggleAtivo = async (curso: CursoData) => {
-    setLoadingId(curso.id)
-    await fetch(`/api/cursos/${curso.id}`, {
+  const toggleAtivo = (curso: CursoData) => run(
+    curso.id,
+    () => fetch(`/api/cursos/${curso.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        empresaId: curso.empresaId,
-        nome: curso.nome,
-        descricao: curso.descricao,
-        cargaHoraria: curso.cargaHoraria,
-        ativo: !curso.ativo,
-      }),
-    })
-    setLoadingId(null)
-    router.refresh()
-  }
+      body: JSON.stringify({ empresaId: curso.empresaId, nome: curso.nome, descricao: curso.descricao, cargaHoraria: curso.cargaHoraria, ativo: !curso.ativo }),
+    }),
+  )
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Desativar este curso? Esta ação não pode ser desfeita.")) return
-    setLoadingId(id)
-    await fetch(`/api/cursos/${id}`, { method: "DELETE" })
-    setLoadingId(null)
-    router.refresh()
+    run(id, () => fetch(`/api/cursos/${id}`, { method: "DELETE" }))
   }
 
   if (cursos.length === 0) {

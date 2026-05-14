@@ -1,7 +1,6 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Building2, Puzzle } from "lucide-react"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 import { EmpresaFormModal, type EmpresaData } from "@/components/forms/form-empresa"
 import { EmpresaModulosModal } from "@/components/forms/modal-modulos-empresa"
 import { TIPOS_SISTEMA } from "@/types/system"
@@ -16,37 +15,20 @@ interface Props {
 }
 
 export function EmpresaTable({ empresas, isAdmin }: Props) {
-  const router = useRouter()
-  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const { loadingId, run } = useRowAction()
 
-  const toggleAtiva = async (empresa: EmpresaRow) => {
-    setLoadingId(empresa.id)
-    await fetch(`/api/empresas/${empresa.id}`, {
+  const toggleAtiva = (empresa: EmpresaRow) => run(
+    empresa.id,
+    () => fetch(`/api/empresas/${empresa.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome: empresa.nome,
-        cnpj: empresa.cnpj,
-        email: empresa.email,
-        telefone: empresa.telefone,
-        ativa: !empresa.ativa,
-        cor: empresa.cor,
-        logo: empresa.logo,
-        banner: empresa.banner,
-        tipoSistema: empresa.tipoSistema,
-        descricao: empresa.descricao,
-      }),
-    })
-    setLoadingId(null)
-    router.refresh()
-  }
+      body: JSON.stringify({ nome: empresa.nome, cnpj: empresa.cnpj, email: empresa.email, telefone: empresa.telefone, ativa: !empresa.ativa, cor: empresa.cor, logo: empresa.logo, banner: empresa.banner, tipoSistema: empresa.tipoSistema, descricao: empresa.descricao }),
+    }),
+  )
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Desativar esta empresa? Esta ação não pode ser desfeita.")) return
-    setLoadingId(id)
-    await fetch(`/api/empresas/${id}`, { method: "DELETE" })
-    setLoadingId(null)
-    router.refresh()
+    run(id, () => fetch(`/api/empresas/${id}`, { method: "DELETE" }))
   }
 
   if (empresas.length === 0) {
@@ -133,7 +115,7 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                   <td className="px-6 py-4 hidden lg:table-cell">
                     {tipoInfo ? (
                       <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
-                        {tipoInfo.emoji} {tipoInfo.label}
+                        {tipoInfo.label}
                       </span>
                     ) : (
                       <span className="text-slate-300 text-xs">—</span>

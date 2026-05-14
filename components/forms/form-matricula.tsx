@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { X, Loader2 } from "lucide-react"
+import { useFormModal } from "@/lib/hooks/use-form-modal"
 
 type Mode = "create" | "edit"
 
@@ -50,10 +50,7 @@ const selectClass =
   "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
 
 export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }: Props) {
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
 
   const emptyForm = {
     alunoId: "",
@@ -116,8 +113,7 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
         return
       }
 
-      setOpen(false)
-      router.refresh()
+      closeAndRefresh()
     } catch {
       setError("Erro de conexão. Tente novamente.")
     } finally {
@@ -131,7 +127,7 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={close} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -139,7 +135,7 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
                 {mode === "create" ? "Nova Matrícula" : "Editar Matrícula"}
               </h2>
               <button
-                onClick={() => setOpen(false)}
+                onClick={close}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
                 <X size={16} />
@@ -246,7 +242,7 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setOpen(false)}
+                  onClick={close}
                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar

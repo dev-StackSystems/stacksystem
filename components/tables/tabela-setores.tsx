@@ -1,8 +1,7 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { SetorFormModal } from "@/components/forms/form-setor"
 import { Pencil, Trash2, Users, ShieldCheck } from "lucide-react"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface Setor {
   id: string
@@ -23,15 +22,11 @@ interface Props {
 }
 
 export function SetorTable({ setores, canManage, isAdmin, empresas }: Props) {
-  const router = useRouter()
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const { loadingId: deleting, run } = useRowAction()
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Remover este setor?")) return
-    setDeleting(id)
-    await fetch(`/api/setores/${id}`, { method: "DELETE" })
-    setDeleting(null)
-    router.refresh()
+    run(id, () => fetch(`/api/setores/${id}`, { method: "DELETE" }))
   }
 
   if (setores.length === 0) {

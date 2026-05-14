@@ -1,8 +1,8 @@
 "use client"
 import { useState, ReactNode } from "react"
-import { useRouter } from "next/navigation"
 import { MODULOS_DISPONIVEIS } from "@/types/system"
 import { X, Loader2 } from "lucide-react"
+import { useFormModal } from "@/lib/hooks/use-form-modal"
 
 interface GrupoData {
   id: string
@@ -24,9 +24,7 @@ interface Props {
 }
 
 export function GrupoFormModal({ trigger, mode = "create", grupo, empresas, isAdmin, empresaId }: Props) {
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const { open, setOpen, loading, setLoading, close, closeAndRefresh } = useFormModal()
   const [nome, setNome] = useState(grupo?.nome ?? "")
   const [descricao, setDescricao] = useState(grupo?.descricao ?? "")
   const [empId, setEmpId] = useState(grupo?.empresaId ?? empresaId ?? "")
@@ -47,8 +45,7 @@ export function GrupoFormModal({ trigger, mode = "create", grupo, empresas, isAd
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ nome, descricao, empresaId: empId, isAdmin: grupoIsAdmin, modulos }),
       })
-      setOpen(false)
-      router.refresh()
+      closeAndRefresh()
     } finally {
       setLoading(false)
     }
@@ -65,13 +62,13 @@ export function GrupoFormModal({ trigger, mode = "create", grupo, empresas, isAd
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/40" onClick={close} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h2 className="font-serif font-bold text-slate-900">
                 {mode === "edit" ? "Editar Grupo" : "Novo Grupo"}
               </h2>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button onClick={close} className="text-slate-400 hover:text-slate-600">
                 <X size={18} />
               </button>
             </div>

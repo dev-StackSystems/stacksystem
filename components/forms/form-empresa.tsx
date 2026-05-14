@@ -1,8 +1,8 @@
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { X, Loader2 } from "lucide-react"
 import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/types/system"
+import { useFormModal } from "@/lib/hooks/use-form-modal"
 
 type Mode = "create" | "edit"
 
@@ -56,10 +56,7 @@ const UF_LIST = [
 ]
 
 export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
-  const router = useRouter()
-  const [open, setOpen] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
   const [form, setForm] = useState(EMPTY_FORM)
 
   useEffect(() => {
@@ -143,8 +140,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error ?? "Erro ao salvar empresa."); return }
-      setOpen(false)
-      router.refresh()
+      closeAndRefresh()
     } catch {
       setError("Erro de conexão. Tente novamente.")
     } finally {
@@ -162,13 +158,13 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={close} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white z-10">
               <h2 className="font-serif text-base font-bold text-slate-900">
                 {mode === "create" ? "Nova Empresa / Prefeitura" : "Editar Empresa"}
               </h2>
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
+              <button onClick={close} className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100">
                 <X size={16} />
               </button>
             </div>
@@ -308,7 +304,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                       className={`${inputClass} ${!form.tipoSistema ? "border-amber-300 bg-amber-50/50" : ""}`}
                     >
                       <option value="">-- Selecionar (obrigatório) --</option>
-                      {TIPOS_SISTEMA.map(t => <option key={t.key} value={t.key}>{t.emoji} {t.label}</option>)}
+                      {TIPOS_SISTEMA.map(t => <option key={t.key} value={t.key}>{t.label}</option>)}
                     </select>
                     {!form.tipoSistema && (
                       <p className="text-[10px] text-amber-600 mt-1">Selecione o tipo antes de salvar.</p>
@@ -317,7 +313,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                   {tipoAtual && (
                     <div className="col-span-2 rounded-xl border border-slate-100 bg-slate-50 p-3">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-2">
-                        {tipoAtual.emoji} {tipoAtual.label} — módulos habilitados automaticamente
+                        {tipoAtual.label} — módulos habilitados automaticamente
                       </p>
                       {tipoAtual.key === "personalizado" ? (
                         <p className="text-xs text-slate-500">Configure os módulos manualmente após criar.</p>
@@ -359,7 +355,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
               )}
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => setOpen(false)} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition-all">
+                <button type="button" onClick={close} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition-all">
                   Cancelar
                 </button>
                 <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">

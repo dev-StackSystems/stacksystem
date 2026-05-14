@@ -1,8 +1,7 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Pencil, Trash2, Loader2 } from "lucide-react"
 import { MatriculaFormModal, MatriculaData } from "@/components/forms/form-matricula"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface CursoData {
   id: string
@@ -40,18 +39,11 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 }
 
 export function MatriculaTable({ matriculas, alunos, cursos, isAdmin, canEdit }: Props) {
-  const router = useRouter()
-  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const { loadingId, run } = useRowAction()
 
-  const cancelarMatricula = async (id: string) => {
+  const cancelarMatricula = (id: string) => {
     if (!confirm("Cancelar esta matrícula?")) return
-    setLoadingId(id)
-    try {
-      await fetch(`/api/matriculas/${id}`, { method: "DELETE" })
-      router.refresh()
-    } finally {
-      setLoadingId(null)
-    }
+    run(id, () => fetch(`/api/matriculas/${id}`, { method: "DELETE" }))
   }
 
   if (matriculas.length === 0) {

@@ -74,7 +74,7 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
                   : "bg-orange-50 text-orange-600 border-orange-200"
               }`}
             >
-              {tipoAtual.emoji} {tipoAtual.label}
+              {tipoAtual.label}
             </span>
           </div>
           {tipoAtual.key !== "personalizado" && (

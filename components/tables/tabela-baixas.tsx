@@ -1,9 +1,8 @@
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Pencil, Trash2, Loader2, Search } from "lucide-react"
 import { BaixaFormModal, BaixaData, MatriculaSimples } from "@/components/forms/form-baixa"
-import { useToast } from "@/components/layout/provedor-toast"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface Props {
   baixas: BaixaData[]
@@ -35,26 +34,13 @@ const STATUS_FILTERS = ["todos", "pago", "pendente", "cancelado"] as const
 type StatusFilter = typeof STATUS_FILTERS[number]
 
 export function BaixaTable({ baixas, matriculas, isAdmin, canEdit }: Props) {
-  const router = useRouter()
-  const { toast } = useToast()
-  const [loadingId, setLoadingId] = useState<string | null>(null)
+  const { loadingId, run } = useRowAction()
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos")
 
-  const deletarBaixa = async (id: string) => {
+  const deletarBaixa = (id: string) => {
     if (!confirm("Excluir esta baixa permanentemente?")) return
-    setLoadingId(id)
-    try {
-      const res = await fetch(`/api/baixas/${id}`, { method: "DELETE" })
-      if (res.ok) {
-        toast("Baixa excluída com sucesso.")
-        router.refresh()
-      } else {
-        toast("Erro ao excluir baixa.", "erro")
-      }
-    } finally {
-      setLoadingId(null)
-    }
+    run(id, () => fetch(`/api/baixas/${id}`, { method: "DELETE" }), { success: "Baixa excluída com sucesso.", error: "Erro ao excluir baixa." })
   }
 
   const filtered = baixas.filter(b => {

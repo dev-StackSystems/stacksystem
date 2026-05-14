@@ -20,8 +20,8 @@
 
 "use client"
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { X, Loader2 } from "lucide-react"
+import { useFormModal } from "@/lib/hooks/use-form-modal"
 
 // Tipo de modo do formulário
 type Modo = "criar" | "editar"
@@ -84,10 +84,7 @@ export function FormularioUsuario({
   grupos = [],
   isAdminSistema = false,
 }: Props) {
-  const router   = useRouter()
-  const [aberto, setAberto]    = useState(false)
-  const [salvando, setSalvando] = useState(false)
-  const [erro, setErro]        = useState("")
+  const { open: aberto, setOpen: setAberto, loading: salvando, setLoading: setSalvando, error: erro, setError: setErro, close: fechar, closeAndRefresh } = useFormModal()
 
   // Estado do formulário
   const [form, setForm] = useState({
@@ -173,8 +170,7 @@ export function FormularioUsuario({
         return
       }
 
-      setAberto(false)
-      router.refresh() // Revalida os dados na página
+      closeAndRefresh()
     } catch {
       setErro("Erro de conexão. Tente novamente.")
     } finally {
@@ -202,7 +198,7 @@ export function FormularioUsuario({
           {/* Overlay escurecido */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setAberto(false)}
+            onClick={fechar}
           />
 
           {/* Conteúdo do modal */}
@@ -213,7 +209,7 @@ export function FormularioUsuario({
                 {modo === "criar" ? "Novo Usuário" : "Editar Usuário"}
               </h2>
               <button
-                onClick={() => setAberto(false)}
+                onClick={fechar}
                 className="text-slate-400 hover:text-slate-700 transition-colors p-1 rounded-lg hover:bg-slate-100"
               >
                 <X size={16} />
@@ -397,7 +393,7 @@ export function FormularioUsuario({
               <div className="flex gap-3 pt-1">
                 <button
                   type="button"
-                  onClick={() => setAberto(false)}
+                  onClick={fechar}
                   className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg text-sm transition-all"
                 >
                   Cancelar

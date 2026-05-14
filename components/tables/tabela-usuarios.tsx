@@ -16,10 +16,9 @@
 
 "use client"
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { FormularioUsuario } from "@/components/forms/form-usuario"
 import { Pencil, Trash2, ToggleLeft, ToggleRight, Loader2, Search } from "lucide-react"
-import { useToast } from "@/components/layout/provedor-toast"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 // ── Tipos ──────────────────────────────────────────────────────────────────
 
@@ -79,46 +78,22 @@ export function TabelaUsuarios({
   grupos = [],
 }: Props) {
   const podeEditar = podeGerenciar ?? isAdmin
-  const router = useRouter()
-  const { toast } = useToast()
-
-  // ID do usuário com operação em andamento (exibe spinner)
-  const [carregandoId, setCarregandoId] = useState<string | null>(null)
-
-  // Texto de busca
+  const { loadingId: carregandoId, run } = useRowAction()
   const [busca, setBusca] = useState("")
 
-  /** Alterna o status ativo/inativo de um usuário */
-  const alternarAtivo = async (usuario: Usuario) => {
-    setCarregandoId(usuario.id)
-    const resposta = await fetch(`/api/usuarios/${usuario.id}`, {
-      method:  "PUT",
+  const alternarAtivo = (usuario: Usuario) => run(
+    usuario.id,
+    () => fetch(`/api/usuarios/${usuario.id}`, {
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ ...usuario, ativo: !usuario.ativo }),
-    })
-    setCarregandoId(null)
+      body: JSON.stringify({ ...usuario, ativo: !usuario.ativo }),
+    }),
+    { success: usuario.ativo ? "Usuário desativado." : "Usuário ativado.", successType: "info", error: "Erro ao alterar status." },
+  )
 
-    if (resposta.ok) {
-      toast(usuario.ativo ? "Usuário desativado." : "Usuário ativado.", "info")
-      router.refresh()
-    } else {
-      toast("Erro ao alterar status.", "erro")
-    }
-  }
-
-  /** Desativa um usuário permanentemente (soft delete) */
-  const desativarUsuario = async (id: string) => {
+  const desativarUsuario = (id: string) => {
     if (!confirm("Desativar este usuário permanentemente?")) return
-    setCarregandoId(id)
-    const resposta = await fetch(`/api/usuarios/${id}`, { method: "DELETE" })
-    setCarregandoId(null)
-
-    if (resposta.ok) {
-      toast("Usuário desativado.")
-      router.refresh()
-    } else {
-      toast("Erro ao desativar usuário.", "erro")
-    }
+    run(id, () => fetch(`/api/usuarios/${id}`, { method: "DELETE" }), { success: "Usuário desativado.", error: "Erro ao desativar usuário." })
   }
 
   // Filtra usuários pela busca

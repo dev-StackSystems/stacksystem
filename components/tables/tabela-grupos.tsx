@@ -1,8 +1,7 @@
 "use client"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { GrupoFormModal } from "@/components/forms/form-grupo"
 import { Pencil, Trash2, Users, ShieldCheck, Crown } from "lucide-react"
+import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface Grupo {
   id: string
@@ -24,15 +23,11 @@ interface Props {
 }
 
 export function GrupoTable({ grupos, canManage, isAdmin, empresas }: Props) {
-  const router = useRouter()
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const { loadingId: deleting, run } = useRowAction()
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm("Remover este grupo?")) return
-    setDeleting(id)
-    await fetch(`/api/grupos/${id}`, { method: "DELETE" })
-    setDeleting(null)
-    router.refresh()
+    run(id, () => fetch(`/api/grupos/${id}`, { method: "DELETE" }))
   }
 
   if (grupos.length === 0) {
