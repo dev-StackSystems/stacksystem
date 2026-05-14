@@ -61,7 +61,12 @@
       "Bash(grep -li \"react\\\\|next.js\\\\|nextjs\\\\|typescript\\\\|tailwind\\\\|prisma\\\\|vercel\" \"/c/i3/public_html/processos/modules/prototipos/Utilidades IA/contextos/\"*)",
       "Bash(grep -v node_modules echo \"---\" ls \"/c/i3/public_html/processos/modules/prototipos/Utilidades IA/contextos/\")",
       "Bash(py -3 -c \":*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(cp servidor/banco/cliente.ts lib/db.ts)",
+      "Bash(cp servidor/autenticacao/config.ts lib/auth.ts)",
+      "Bash(cp servidor/autenticacao/sessao.ts lib/auth-helpers.ts)",
+      "Bash(cp servidor/email/cliente.ts lib/email.ts)",
+      "Bash(cp tipos/autenticacao.d.ts types/next-auth.d.ts)"
     ]
   }
 }

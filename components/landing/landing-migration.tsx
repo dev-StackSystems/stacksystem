@@ -1,23 +1,38 @@
 "use client"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
+import {
+  Timer, LayoutGrid, BarChart2, DollarSign, Monitor, Wrench,
+  Zap, Link2, TrendingUp, Scissors, Sparkles, Shield,
+  Search, ClipboardList, RefreshCw, GraduationCap,
+} from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
-const pains = [
-  { icon: "🐌", text: "Sistema lento que trrava na hora errada" },
-  { icon: "🧩", text: "Setores que não se comunicam entre si" },
-  { icon: "📊", text: "Relatórios difíceis de entender ou inexistentes" },
-  { icon: "💸", text: "Pagando caro por funcionalidades que não usa" },
-  { icon: "🖥️", text: "Interface ultrapassada que a equipe odeia usar" },
-  { icon: "🔧", text: "Suporte técnico demorado ou caro demais" },
+interface Item { icon: LucideIcon; text: string }
+
+const pains: Item[] = [
+  { icon: Timer,       text: "Sistema lento que trava na hora errada" },
+  { icon: LayoutGrid,  text: "Setores que não se comunicam entre si" },
+  { icon: BarChart2,   text: "Relatórios difíceis de entender ou inexistentes" },
+  { icon: DollarSign,  text: "Pagando caro por funcionalidades que não usa" },
+  { icon: Monitor,     text: "Interface ultrapassada que a equipe odeia usar" },
+  { icon: Wrench,      text: "Suporte técnico demorado ou caro demais" },
 ]
 
-const gains = [
-  { icon: "⚡", text: "Sistema rápido, estável e pensado para escalar" },
-  { icon: "🔗", text: "Todos os setores integrados em uma única plataforma" },
-  { icon: "📈", text: "Dashboards claros com os dados que você realmente precisa" },
-  { icon: "✂️", text: "Somente o que o seu negócio usa — sem cobranças extras" },
-  { icon: "✨", text: "Interface moderna que a equipe adota em dias" },
-  { icon: "🛡️", text: "Suporte direto e ágil com quem conhece o sistema" },
+const gains: Item[] = [
+  { icon: Zap,         text: "Sistema rápido, estável e pensado para escalar" },
+  { icon: Link2,       text: "Todos os setores integrados em uma única plataforma" },
+  { icon: TrendingUp,  text: "Dashboards claros com os dados que você realmente precisa" },
+  { icon: Scissors,    text: "Somente o que o seu negócio usa — sem cobranças extras" },
+  { icon: Sparkles,    text: "Interface moderna que a equipe adota em dias" },
+  { icon: Shield,      text: "Suporte direto e ágil com quem conhece o sistema" },
+]
+
+const processSteps: { icon: LucideIcon; label: string }[] = [
+  { icon: Search,        label: "Diagnóstico do sistema atual" },
+  { icon: ClipboardList, label: "Mapeamento de melhorias" },
+  { icon: RefreshCw,     label: "Migração segura dos dados" },
+  { icon: GraduationCap, label: "Treinamento da equipe" },
 ]
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -25,13 +40,11 @@ const ease = [0.22, 1, 0.36, 1] as const
 export default function Migration() {
   return (
     <section className="py-28 px-[5%] bg-slate-50 relative overflow-hidden">
-      {/* Grid texture */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(226,232,240,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(226,232,240,0.5)_1px,transparent_1px)] bg-[size:60px_60px] pointer-events-none" />
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[radial-gradient(ellipse,rgba(249,115,22,0.05)_0%,transparent_70%)] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto relative">
 
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -51,10 +64,8 @@ export default function Migration() {
           </p>
         </motion.div>
 
-        {/* Comparison grid */}
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] gap-6 items-start">
 
-          {/* LEFT — dores */}
           <motion.div
             initial={{ opacity: 0, x: -40 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -73,32 +84,34 @@ export default function Migration() {
               </span>
             </div>
             <div className="p-6 flex flex-col gap-3">
-              {pains.map((p, i) => (
-                <motion.div
-                  key={p.text}
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.4, delay: i * 0.06, ease }}
-                  className="flex items-start gap-3 group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-base shrink-0 mt-0.5">
-                    {p.icon}
-                  </div>
-                  <div className="flex items-start gap-2 flex-1 pt-1.5">
-                    <div className="w-4 h-4 rounded-full border-2 border-red-300 shrink-0 mt-0.5 flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              {pains.map((p, i) => {
+                const Icon = p.icon
+                return (
+                  <motion.div
+                    key={p.text}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.4, delay: i * 0.06, ease }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon size={14} className="text-red-400" />
                     </div>
-                    <p className="text-sm text-slate-500 leading-snug line-through decoration-red-300/60">
-                      {p.text}
-                    </p>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="flex items-start gap-2 flex-1 pt-1.5">
+                      <div className="w-4 h-4 rounded-full border-2 border-red-300 shrink-0 mt-0.5 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                      </div>
+                      <p className="text-sm text-slate-500 leading-snug line-through decoration-red-300/60">
+                        {p.text}
+                      </p>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
           </motion.div>
 
-          {/* CENTER — arrow */}
           <motion.div
             initial={{ opacity: 0, scale: 0.5 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -114,7 +127,6 @@ export default function Migration() {
             </div>
           </motion.div>
 
-          {/* RIGHT — ganhos */}
           <motion.div
             initial={{ opacity: 0, x: 40 }}
             whileInView={{ opacity: 1, x: 0 }}
@@ -133,33 +145,35 @@ export default function Migration() {
               </span>
             </div>
             <div className="p-6 flex flex-col gap-3">
-              {gains.map((g, i) => (
-                <motion.div
-                  key={g.text}
-                  initial={{ opacity: 0, x: 20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.4, delay: i * 0.06, ease }}
-                  className="flex items-start gap-3 group"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center text-base shrink-0 mt-0.5">
-                    {g.icon}
-                  </div>
-                  <div className="flex items-start gap-2 flex-1 pt-1.5">
-                    <div className="w-4 h-4 rounded-full bg-orange-500 shrink-0 mt-0.5 flex items-center justify-center">
-                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
+              {gains.map((g, i) => {
+                const Icon = g.icon
+                return (
+                  <motion.div
+                    key={g.text}
+                    initial={{ opacity: 0, x: 20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.4, delay: i * 0.06, ease }}
+                    className="flex items-start gap-3"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0 mt-0.5">
+                      <Icon size={14} className="text-orange-500" />
                     </div>
-                    <p className="text-sm text-slate-700 font-medium leading-snug">{g.text}</p>
-                  </div>
-                </motion.div>
-              ))}
+                    <div className="flex items-start gap-2 flex-1 pt-1.5">
+                      <div className="w-4 h-4 rounded-full bg-orange-500 shrink-0 mt-0.5 flex items-center justify-center">
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <p className="text-sm text-slate-700 font-medium leading-snug">{g.text}</p>
+                    </div>
+                  </motion.div>
+                )
+              })}
             </div>
           </motion.div>
         </div>
 
-        {/* Process strip */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -168,15 +182,10 @@ export default function Migration() {
           className="mt-10 bg-white border border-slate-200 rounded-2xl px-8 py-6 flex flex-col sm:flex-row items-center justify-between gap-6"
         >
           <div className="flex items-center gap-4 flex-wrap justify-center sm:justify-start">
-            {[
-              ["🔍", "Diagnóstico do sistema atual"],
-              ["📋", "Mapeamento de melhorias"],
-              ["🔄", "Migração segura dos dados"],
-              ["🎓", "Treinamento da equipe"],
-            ].map(([icon, label], i) => (
+            {processSteps.map(({ icon: Icon, label }, i) => (
               <div key={label} className="flex items-center gap-5">
                 <div className="flex items-center gap-2 text-sm text-slate-600 font-medium">
-                  <span>{icon}</span>
+                  <Icon size={14} className="text-orange-500 shrink-0" />
                   {label}
                 </div>
                 {i < 3 && (

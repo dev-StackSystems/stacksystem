@@ -3,7 +3,8 @@ import { Suspense, useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { signIn, signOut } from "next-auth/react"
 import { motion, AnimatePresence } from "motion/react"
-import { Eye, EyeOff, ArrowLeft, Loader2 } from "lucide-react"
+import { Eye, EyeOff, ArrowLeft, Loader2, Users, DollarSign, Package, BarChart2, Bell, Settings } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import Mascote from "@/components/mascote"
 
 // ─────────────────────────────────────────────
@@ -15,13 +16,13 @@ const STATS = [
   { val: "24h",   label: "Suporte técnico"    },
 ]
 
-const MODULOS = [
-  { icon: "👥", texto: "Clientes"           },
-  { icon: "💰", texto: "Financeiro"         },
-  { icon: "📦", texto: "Produtos"           },
-  { icon: "📊", texto: "Relatórios"         },
-  { icon: "🔔", texto: "Notificações"       },
-  { icon: "⚙️", texto: "Configurações"      },
+const MODULOS: { icon: LucideIcon; texto: string }[] = [
+  { icon: Users,       texto: "Clientes"      },
+  { icon: DollarSign,  texto: "Financeiro"    },
+  { icon: Package,     texto: "Produtos"      },
+  { icon: BarChart2,   texto: "Relatórios"    },
+  { icon: Bell,        texto: "Notificações"  },
+  { icon: Settings,    texto: "Configurações" },
 ]
 
 const BARRAS = [42, 65, 50, 78, 58, 90, 72, 100]
@@ -219,7 +220,7 @@ function LoginConteudo() {
                 transition={{ duration: 0.4, delay: 0.55 + i * 0.06, ease }}
                 className="flex items-center gap-2 bg-white/[0.04] border border-white/[0.06] rounded-xl px-3 py-2 hover:bg-orange-500/10 hover:border-orange-500/20 transition-all duration-200 group"
               >
-                <span className="text-base leading-none">{m.icon}</span>
+                <m.icon size={13} className="text-slate-500 group-hover:text-orange-400 transition-colors shrink-0" />
                 <span className="text-[10px] text-slate-400 group-hover:text-white transition-colors font-medium leading-tight">
                   {m.texto}
                 </span>

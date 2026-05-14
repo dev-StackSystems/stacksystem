@@ -279,7 +279,7 @@ export default async function PaginaPainel() {
                     <h1 className="font-serif text-xl font-bold text-white drop-shadow">{nomeExibido}</h1>
                     {tipoInfo && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/20 text-white border border-white/30 backdrop-blur-sm">
-                        {tipoInfo.emoji} {tipoInfo.label}
+                        {tipoInfo.label}
                       </span>
                     )}
                   </div>
@@ -328,7 +328,7 @@ export default async function PaginaPainel() {
                       className="text-[10px] font-bold px-2.5 py-0.5 rounded-full border"
                       style={{ background: `${corEmpresa}18`, color: corEmpresa, borderColor: `${corEmpresa}44` }}
                     >
-                      {tipoInfo.emoji} {tipoInfo.label}
+                      {tipoInfo.label}
                     </span>
                   )}
                 </div>

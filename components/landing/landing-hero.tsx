@@ -1,6 +1,7 @@
 "use client"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
+import { Zap, Target, Users } from "lucide-react"
 
 const scrollTo = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
@@ -16,9 +17,9 @@ const bars = [38, 60, 48, 75, 55, 88, 70, 100]
 const ease = [0.22, 1, 0.36, 1] as const
 
 const pills = [
-  { icon: "⚡", label: "Entrega Ágil" },
-  { icon: "🎯", label: "100% Personalizado" },
-  { icon: "🤝", label: "Atendimento Direto" },
+  { icon: Zap,    label: "Entrega Ágil" },
+  { icon: Target, label: "100% Personalizado" },
+  { icon: Users,  label: "Atendimento Direto" },
 ]
 
 export default function Hero() {
@@ -27,18 +28,14 @@ export default function Hero() {
       id="inicio"
       className="relative min-h-screen flex items-center pt-28 pb-20 px-[5%] overflow-hidden bg-white"
     >
-      {/* Dot grid */}
       <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:28px_28px] opacity-60 pointer-events-none" />
-      {/* Orange glow */}
       <div className="absolute -top-32 -right-32 w-[750px] h-[750px] rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.09)_0%,transparent_65%)] pointer-events-none" />
       <div className="absolute bottom-0 -left-40 w-[600px] h-[600px] rounded-full bg-[radial-gradient(circle,rgba(99,102,241,0.04)_0%,transparent_65%)] pointer-events-none" />
-      {/* Rings */}
       <div className="absolute top-[14%] right-[5%] w-[280px] h-[280px] border border-dashed border-orange-200/70 rounded-full animate-spin-slow pointer-events-none hidden lg:block" />
       <div className="absolute top-[14%] right-[5%] w-[200px] h-[200px] border border-dashed border-orange-100 rounded-full animate-spin-slow [animation-direction:reverse] [animation-duration:20s] pointer-events-none hidden lg:block" style={{ top: 'calc(14% + 40px)', right: 'calc(5% + 40px)' }} />
 
       <div className="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
 
-        {/* LEFT */}
         <div className="flex flex-col items-center lg:items-start text-center lg:text-left">
 
           <motion.div
@@ -46,7 +43,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
           >
-            <Badge>💼 Sistemas para Empresas</Badge>
+            <Badge>Sistemas para Empresas</Badge>
           </motion.div>
 
           <motion.h1
@@ -75,19 +72,18 @@ export default function Hero() {
             <span className="text-slate-700 font-medium">Do planejamento à entrega.</span>
           </motion.p>
 
-          {/* Diferenciais pills */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.28, ease }}
             className="flex flex-wrap gap-2 mb-8 justify-center lg:justify-start"
           >
-            {pills.map(({ icon, label }) => (
+            {pills.map(({ icon: Icon, label }) => (
               <div
                 key={label}
-                className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600"
+                className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600"
               >
-                <span>{icon}</span>
+                <Icon size={12} className="text-orange-500 shrink-0" />
                 {label}
               </div>
             ))}
@@ -101,9 +97,9 @@ export default function Hero() {
           >
             <button
               onClick={() => scrollTo("contato")}
-              className="group relative bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold px-8 py-3.5 rounded-xl text-sm uppercase tracking-[0.1em] transition-all animate-pulse-glow overflow-hidden"
+              className="group relative bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold px-8 py-3.5 rounded-xl text-sm uppercase tracking-[0.1em] transition-all animate-pulse-glow"
             >
-              <span className="relative z-10">Solicitar Proposta →</span>
+              Solicitar Proposta →
             </button>
             <button
               onClick={() => scrollTo("solucoes")}
@@ -114,7 +110,6 @@ export default function Hero() {
           </motion.div>
         </div>
 
-        {/* RIGHT – dashboard mockup */}
         <motion.div
           initial={{ opacity: 0, x: 60 }}
           animate={{ opacity: 1, x: 0 }}
@@ -173,7 +168,9 @@ export default function Hero() {
           </div>
 
           <div className="absolute -bottom-5 -left-5 bg-white border border-orange-100 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-2xl shadow-orange-100/60">
-            <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-xl">⚡</div>
+            <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+              <Zap size={16} className="text-orange-500" />
+            </div>
             <div>
               <div className="text-[10px] text-orange-500 font-bold uppercase tracking-wider">Sistema online</div>
               <div className="text-sm font-bold text-slate-800">Deploy concluído</div>

@@ -10,7 +10,7 @@
 import { useState } from "react"
 import {
   Plus, Pencil, Trash2, Building2, ToggleLeft, ToggleRight,
-  ExternalLink, Layout, Globe, Monitor,
+  ExternalLink, Layout, Globe, Monitor, Package,
 } from "lucide-react"
 
 type Modulo = {
@@ -179,7 +179,9 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
       {/* Lista de módulos */}
       {modulos.length === 0 ? (
         <div className="bg-white border border-slate-100 rounded-2xl p-16 text-center">
-          <div className="text-4xl mb-4">📦</div>
+          <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <Package size={24} className="text-slate-400" />
+          </div>
           <p className="font-semibold text-slate-700 mb-1">Nenhum módulo criado</p>
           <p className="text-sm text-slate-500 mb-6">
             Crie o primeiro módulo para começar a expandir o sistema.

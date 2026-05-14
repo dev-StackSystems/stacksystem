@@ -1,4 +1,5 @@
 "use client"
+import { Instagram, Linkedin, MessageCircle } from "lucide-react"
 
 const NAV_ITEMS = ["Início", "Soluções", "Sobre", "Resultados", "Contato"]
 const sectionMap: Record<string, string> = {
@@ -9,13 +10,18 @@ const sectionMap: Record<string, string> = {
   "Contato":    "contato",
 }
 
+const social = [
+  { label: "Instagram", icon: Instagram  },
+  { label: "LinkedIn",  icon: Linkedin   },
+  { label: "WhatsApp",  icon: MessageCircle },
+]
+
 export default function Footer() {
   const scrollTo = (id: string) =>
     document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
 
   return (
     <footer className="bg-slate-950 px-[5%] pt-16 pb-8 relative overflow-hidden">
-      {/* Top shimmer */}
       <div className="absolute top-0 left-0 right-0 h-px overflow-hidden">
         <div className="shimmer-border h-full" />
       </div>
@@ -24,7 +30,6 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto relative">
         <div className="flex flex-col items-center text-center mb-12">
 
-          {/* Logo */}
           <button
             onClick={() => scrollTo("inicio")}
             className="flex items-center gap-3 mb-6 group"
@@ -41,7 +46,6 @@ export default function Footer() {
             Desenvolvendo sistemas e soluções corporativas para empresas de todos os segmentos.
           </p>
 
-          {/* Nav */}
           <div className="flex gap-6 flex-wrap justify-center mb-10">
             {NAV_ITEMS.map(item => (
               <button
@@ -54,19 +58,14 @@ export default function Footer() {
             ))}
           </div>
 
-          {/* Social */}
           <div className="flex gap-4 mb-10">
-            {[
-              { label: "Instagram", icon: "📸" },
-              { label: "LinkedIn",  icon: "💼" },
-              { label: "WhatsApp",  icon: "💬" },
-            ].map(({ label, icon }) => (
+            {social.map(({ label, icon: Icon }) => (
               <div
                 key={label}
-                className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-orange-500/40 hover:bg-orange-500/10 flex items-center justify-center text-base transition-all cursor-pointer"
+                className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:border-orange-500/40 hover:bg-orange-500/10 flex items-center justify-center transition-all cursor-pointer"
                 title={label}
               >
-                {icon}
+                <Icon size={16} className="text-slate-400 hover:text-orange-400 transition-colors" />
               </div>
             ))}
           </div>

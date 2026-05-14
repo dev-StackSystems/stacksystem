@@ -1,7 +1,8 @@
 "use client"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { CheckCircle2 } from "lucide-react"
+import { CheckCircle2, Settings, Monitor, Link2, Shield, Award } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 const values = [
   "Sistemas entregues no prazo e dentro do escopo",
@@ -10,11 +11,11 @@ const values = [
   "Metodologia ágil com total transparência",
 ]
 
-const pillars = [
-  { n: "Gestão",       d: "Processos claros e eficientes",  icon: "⚙️" },
-  { n: "Tecnologia",   d: "Stack moderno e escalável",      icon: "💻" },
-  { n: "Integração",   d: "Sistemas conectados",            icon: "🔗" },
-  { n: "Suporte",      d: "Atendimento especializado",      icon: "🛡️" },
+const pillars: { n: string; d: string; icon: LucideIcon }[] = [
+  { n: "Gestão",     d: "Processos claros e eficientes", icon: Settings },
+  { n: "Tecnologia", d: "Stack moderno e escalável",     icon: Monitor  },
+  { n: "Integração", d: "Sistemas conectados",           icon: Link2    },
+  { n: "Suporte",    d: "Atendimento especializado",     icon: Shield   },
 ]
 
 const ease = [0.22, 1, 0.36, 1] as const
@@ -26,7 +27,6 @@ export default function About() {
 
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
 
-        {/* LEFT – card */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -58,7 +58,6 @@ export default function About() {
             </div>
           </div>
 
-          {/* Badge top-right */}
           <div className="absolute -top-5 -right-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl px-6 py-4 shadow-2xl shadow-orange-200/60">
             <div className="font-serif text-4xl font-bold text-white leading-none">10+</div>
             <div className="text-[11px] text-orange-100/80 mt-1 font-semibold leading-tight">
@@ -66,9 +65,10 @@ export default function About() {
             </div>
           </div>
 
-          {/* Badge bottom-right */}
           <div className="absolute -bottom-5 -right-5 bg-white border border-slate-100 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
-            <div className="text-xl">🏆</div>
+            <div className="w-8 h-8 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+              <Award size={16} className="text-orange-500" />
+            </div>
             <div>
               <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Reconhecida como</div>
               <div className="text-sm font-bold text-slate-900">Referência em Sistemas</div>
@@ -76,7 +76,6 @@ export default function About() {
           </div>
         </motion.div>
 
-        {/* RIGHT */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -97,8 +96,7 @@ export default function About() {
 
           <p className="text-slate-500 text-[15px] leading-relaxed mb-4 max-w-md">
             Somos uma software house especializada em sistemas corporativos. Atendemos
-            empresas de todos os segmentos — varejo, indústria, serviços, saúde e
-            logística.
+            empresas de todos os segmentos — varejo, indústria, serviços, saúde e logística.
           </p>
           <p className="text-slate-500 text-[15px] leading-relaxed mb-10 max-w-md">
             Nossa equipe de desenvolvedores, analistas e consultores trabalha lado a
@@ -106,9 +104,8 @@ export default function About() {
             com suporte técnico de verdade.
           </p>
 
-          {/* Pillars */}
           <div className="grid grid-cols-2 gap-4 w-full max-w-sm">
-            {pillars.map(({ n, d, icon }, i) => (
+            {pillars.map(({ n, d, icon: Icon }, i) => (
               <motion.div
                 key={n}
                 initial={{ opacity: 0, y: 20 }}
@@ -117,7 +114,9 @@ export default function About() {
                 transition={{ duration: 0.45, delay: i * 0.07, ease }}
                 className="group bg-slate-50 border border-slate-200 hover:border-orange-300 hover:bg-orange-50/60 rounded-2xl p-5 transition-all duration-200 cursor-default text-center lg:text-left"
               >
-                <div className="text-xl mb-2">{icon}</div>
+                <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center mb-3 group-hover:border-orange-200 transition-colors">
+                  <Icon size={15} className="text-orange-500" />
+                </div>
                 <div className="font-serif text-base font-semibold text-slate-900 mb-1 group-hover:text-orange-600 transition-colors">{n}</div>
                 <div className="text-xs text-slate-500 leading-relaxed">{d}</div>
               </motion.div>

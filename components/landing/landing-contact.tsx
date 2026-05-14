@@ -2,9 +2,15 @@
 import { useState } from "react"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { Mail, User, MessageSquare, Send, CheckCircle, Building2 } from "lucide-react"
+import { Mail, User, MessageSquare, Send, CheckCircle, Building2, Shield, Zap, FileCheck } from "lucide-react"
 
 const ease = [0.22, 1, 0.36, 1] as const
+
+const trustItems = [
+  { icon: Shield,    label: "Dados protegidos"   },
+  { icon: Zap,       label: "Resposta rápida"    },
+  { icon: FileCheck, label: "Proposta sem custo" },
+]
 
 export default function Contact() {
   const [form, setForm] = useState({ nome: "", empresa: "", email: "", mensagem: "" })
@@ -22,7 +28,6 @@ export default function Contact() {
 
       <div className="max-w-2xl mx-auto relative">
 
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -57,7 +62,6 @@ export default function Contact() {
             className="bg-white border border-slate-200/80 rounded-3xl p-8 md:p-10 shadow-2xl shadow-slate-100"
           >
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-              {/* Nome */}
               <div className="flex flex-col gap-2">
                 <label className="text-[11px] text-slate-500 uppercase tracking-[0.14em] font-bold flex items-center gap-2">
                   <User size={11} /> Nome
@@ -71,7 +75,6 @@ export default function Contact() {
                 />
               </div>
 
-              {/* Empresa */}
               <div className="flex flex-col gap-2">
                 <label className="text-[11px] text-slate-500 uppercase tracking-[0.14em] font-bold flex items-center gap-2">
                   <Building2 size={11} /> Empresa
@@ -85,7 +88,6 @@ export default function Contact() {
               </div>
             </div>
 
-            {/* Email */}
             <div className="flex flex-col gap-2 mb-5">
               <label className="text-[11px] text-slate-500 uppercase tracking-[0.14em] font-bold flex items-center gap-2">
                 <Mail size={11} /> E-mail corporativo
@@ -100,7 +102,6 @@ export default function Contact() {
               />
             </div>
 
-            {/* Mensagem */}
             <div className="flex flex-col gap-2 mb-7">
               <label className="text-[11px] text-slate-500 uppercase tracking-[0.14em] font-bold flex items-center gap-2">
                 <MessageSquare size={11} /> Descreva o projeto
@@ -115,7 +116,6 @@ export default function Contact() {
               />
             </div>
 
-            {/* Footer */}
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -153,7 +153,6 @@ export default function Contact() {
           </motion.div>
         )}
 
-        {/* Trust */}
         {!sent && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -162,13 +161,9 @@ export default function Contact() {
             transition={{ duration: 0.5, delay: 0.3 }}
             className="flex items-center justify-center gap-8 mt-8 flex-wrap"
           >
-            {[
-              ["🔒", "Dados protegidos"],
-              ["⚡", "Resposta rápida"],
-              ["📋", "Proposta sem custo"],
-            ].map(([icon, label]) => (
+            {trustItems.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-                <span>{icon}</span>
+                <Icon size={13} className="text-slate-400 shrink-0" />
                 {label}
               </div>
             ))}
