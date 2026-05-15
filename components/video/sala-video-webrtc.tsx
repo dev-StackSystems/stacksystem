@@ -17,6 +17,7 @@
 "use client"
 import { useEffect, useRef, useState, useCallback } from "react"
 import { io, Socket } from "socket.io-client"
+import { Send, MessageSquare, X } from "lucide-react"
 
 // ── Props ─────────────────────────────────────────────────────────────────
 
@@ -111,6 +112,13 @@ interface ParticipanteInfo {
   stream: MediaStream | null
 }
 
+interface MensagemChat {
+  texto: string
+  nome:  string
+  ts:    number
+  de:    string
+}
+
 export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
 
   // ── Refs estáveis ─────────────────────────────────────────────────────
@@ -130,6 +138,11 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
   const [carregando,     setCarregando]     = useState(true)
   const [logs,           setLogs]           = useState<string[]>([])
   const [mostrarDebug,   setMostrarDebug]   = useState(false)
+  const [chatAberto,     setChatAberto]     = useState(false)
+  const [mensagens,      setMensagens]      = useState<MensagemChat[]>([])
+  const [inputMsg,       setInputMsg]       = useState("")
+  const [naoLidas,       setNaoLidas]       = useState(0)
+  const chatBottomRef = useRef<HTMLDivElement>(null)
 
   // ── Log ───────────────────────────────────────────────────────────────
   const log = useCallback((msg: string) => {
@@ -250,6 +263,19 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
     localStreamRef.current.getVideoTracks().forEach(t => { t.enabled = novo })
     setCamOn(novo)
   }, [camOn])
+
+  const enviarMensagem = useCallback(() => {
+    const texto = inputMsg.trim()
+    if (!texto || !socketRef.current?.connected) return
+    socketRef.current.emit("chat-mensagem", { idSala: salaId, texto })
+    setInputMsg("")
+  }, [inputMsg, salaId])
+
+  const abrirChat = useCallback(() => {
+    setChatAberto(true)
+    setNaoLidas(0)
+    setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "instant" }), 50)
+  }, [])
 
   const copiarLink = useCallback(() => {
     const url = `${window.location.origin}/painel/salas/${salaId}`
@@ -423,6 +449,17 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
         log(`${nome} saiu da sala`)
         removerParticipante(id)
       })
+
+      // ── Mensagem de chat recebida ─────────────────────────────────────
+      socket.on("chat-mensagem", (msg: MensagemChat) => {
+        if (!mounted) return
+        setMensagens(prev => [...prev, msg])
+        setChatAberto(aberto => {
+          if (!aberto) setNaoLidas(n => n + 1)
+          return aberto
+        })
+        setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50)
+      })
     }
 
     init()
@@ -487,6 +524,57 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] text-white flex flex-col" style={{ fontFamily: "'Outfit', sans-serif" }}>
+
+      {/* ──────── Painel de chat ──────── */}
+      {chatAberto && (
+        <div className="fixed right-0 top-0 h-full w-72 bg-[#111] border-l border-[#222] flex flex-col z-50">
+          <div className="h-14 flex items-center justify-between px-4 border-b border-[#222] shrink-0">
+            <span className="font-bold text-sm">Chat da sala</span>
+            <button onClick={() => setChatAberto(false)} className="text-[#555] hover:text-white transition-colors">
+              <X size={18} />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-3 py-3 flex flex-col gap-2">
+            {mensagens.length === 0 && (
+              <p className="text-[#444] text-xs text-center mt-8">Nenhuma mensagem ainda.<br/>Seja o primeiro a escrever!</p>
+            )}
+            {mensagens.map((m, i) => (
+              <div key={i} className={`flex flex-col gap-0.5 ${m.de === socketRef.current?.id ? "items-end" : "items-start"}`}>
+                <span className="text-[10px] text-[#555] px-1">{m.nome}</span>
+                <div className={`px-3 py-2 rounded-2xl text-sm max-w-[90%] break-words leading-snug ${
+                  m.de === socketRef.current?.id
+                    ? "bg-[#FF6B00] text-white rounded-br-sm"
+                    : "bg-[#1E1E1E] text-[#DDD] rounded-bl-sm"
+                }`}>
+                  {m.texto}
+                </div>
+              </div>
+            ))}
+            <div ref={chatBottomRef} />
+          </div>
+
+          <div className="p-3 border-t border-[#222] shrink-0">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={inputMsg}
+                onChange={e => setInputMsg(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && !e.shiftKey && enviarMensagem()}
+                placeholder="Digite uma mensagem..."
+                className="flex-1 bg-[#1A1A1A] border border-[#2A2A2A] rounded-xl px-3 py-2 text-sm text-white placeholder-[#444] outline-none focus:border-[#FF6B00] transition-colors"
+              />
+              <button
+                onClick={enviarMensagem}
+                disabled={!inputMsg.trim()}
+                className="w-9 h-9 bg-[#FF6B00] rounded-xl flex items-center justify-center hover:opacity-85 transition-opacity disabled:opacity-30"
+              >
+                <Send size={15} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ──────── Header ──────── */}
       <div className="h-14 bg-[#141414] border-b border-[#222] flex items-center justify-between px-5 shrink-0">
@@ -617,6 +705,21 @@ export function VideoRoom({ salaId, salaCodigo, nomeSala, userName }: Props) {
             />
           </svg>
           <span className="text-[9px] font-semibold text-white">Encerrar</span>
+        </button>
+
+        {/* Chat */}
+        <button
+          onClick={abrirChat}
+          title="Abrir chat"
+          className="relative w-[52px] h-[52px] bg-[#1E1E1E] border border-[#333] rounded-xl flex flex-col items-center justify-center gap-1 hover:bg-[#2A2A2A] transition-all"
+        >
+          <MessageSquare size={20} />
+          {naoLidas > 0 && (
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#FF6B00] rounded-full text-[9px] font-bold flex items-center justify-center">
+              {naoLidas > 9 ? "9+" : naoLidas}
+            </span>
+          )}
+          <span className="text-[9px] font-semibold text-[#555]">Chat</span>
         </button>
 
         {/* Convidar (copiar link) */}

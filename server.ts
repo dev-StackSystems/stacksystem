@@ -25,6 +25,7 @@ import next from "next"
 import { Server as ServidorSocketIO } from "socket.io"
 import { getToken } from "next-auth/jwt"
 import type { IncomingMessage } from "http"
+import { db } from "@/lib/db"
 
 const modoDev = process.env.NODE_ENV !== "production"
 const porta   = parseInt(process.env.PORT ?? "3000", 10)
@@ -122,6 +123,19 @@ app.prepare().then(() => {
     // Compartilhar candidato ICE — sempre unicast
     socket.on("candidato-ice", ({ idSala, candidato, para }: { idSala: string; candidato: RTCIceCandidateInit; para: string }) => {
       io.to(para).emit("candidato-ice", { candidato, de: socket.id })
+    })
+
+    // Mensagem de chat — broadcast para a sala + persiste no banco
+    socket.on("chat-mensagem", async ({ idSala, texto }: { idSala: string; texto: string }) => {
+      const nome      = socket.data.nomeUsuario ?? "Participante"
+      const usuarioId = socket.data.usuarioId as string
+      const ts        = Date.now()
+
+      io.to(idSala).emit("chat-mensagem", { texto, nome, ts, de: socket.id })
+
+      try {
+        await db.mensagemSala.create({ data: { salaId: idSala, usuarioId, nome, texto } })
+      } catch { /* não bloqueia o chat por falha de persistência */ }
     })
 
     // Sair de uma sala

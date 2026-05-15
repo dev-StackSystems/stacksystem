@@ -73,6 +73,7 @@ model Usuario {
   salasCreadas     Sala[]
   permissoes       PermissaoUsuario[]
   tokensRedefinicao TokenRedefinicaoSenha[]
+  mensagensSala    MensagemSala[]
 
   @@map("usuarios")
 }
@@ -340,9 +341,10 @@ model Sala {
   ativa            Boolean  @default(true)
   criadoEm         DateTime @default(now())
 
-  empresa   Empresa?    @relation(fields: [empresaId], references: [id])
-  criadoPor Usuario     @relation(fields: [criadoPorId], references: [id])
+  empresa   Empresa?     @relation(fields: [empresaId], references: [id])
+  criadoPor Usuario      @relation(fields: [criadoPorId], references: [id])
   sinal     SinalSala?
+  mensagens MensagemSala[]
 
   @@map("salas")
 }
@@ -556,4 +558,22 @@ model SegurancaUsuario {
   usuario Usuario @relation(fields: [usuarioId], references: [id])
 
   @@map("seguranca_usuario")
+}
+
+// ===========================================================================
+// CHAT DAS SALAS VIRTUAIS — Mensagens de texto durante videoaulas
+// ===========================================================================
+model MensagemSala {
+  id        String   @id @default(cuid())
+  salaId    String
+  usuarioId String
+  nome      String
+  texto     String   @db.Text
+  criadaEm  DateTime @default(now())
+
+  sala    Sala    @relation(fields: [salaId],    references: [id], onDelete: Cascade)
+  usuario Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@index([salaId, criadaEm])
+  @@map("mensagens_sala")
 }
