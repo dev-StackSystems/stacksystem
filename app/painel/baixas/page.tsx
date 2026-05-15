@@ -96,7 +96,7 @@ export default async function BaixasPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 flex items-center gap-2">
             <DollarSign size={22} className="text-orange-500" />

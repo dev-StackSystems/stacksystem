@@ -38,7 +38,7 @@ export default async function AlunosPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-slate-900">Alunos</h1>
           <p className="text-sm text-slate-400 mt-0.5">Cadastro e gestão de alunos matriculados</p>
