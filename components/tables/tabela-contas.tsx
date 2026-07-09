@@ -20,10 +20,8 @@ const tipoConfig: Record<string, { label: string; icon: typeof Wallet; className
 export function ContasTable({ contas, isAdmin, canEdit }: Props) {
   const { loadingId, run } = useRowAction()
 
-  const excluir = (id: string) => {
-    if (!confirm("Excluir esta conta? Se houver lançamentos vinculados, ela será apenas desativada.")) return
-    run(id, () => fetch(`/api/financeiro/contas/${id}`, { method: "DELETE" }), { success: "Conta removida.", error: "Erro ao remover conta." })
-  }
+  const excluir = (id: string) =>
+    run(id, () => fetch(`/api/financeiro/contas/${id}`, { method: "DELETE" }), { confirmar: "Excluir esta conta? Se houver lançamentos vinculados, ela será apenas desativada.", perigo: true, success: "Conta removida.", error: "Erro ao remover conta." })
 
   if (contas.length === 0) {
     return (

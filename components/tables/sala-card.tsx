@@ -2,6 +2,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Video, Users, Trash2, LogIn, Loader2, Copy, Check } from "lucide-react"
+import { useConfirm } from "@/components/layout/provedor-confirmacao"
+import { useToast } from "@/components/layout/provedor-toast"
 
 interface SalaData {
   id: string
@@ -24,25 +26,33 @@ interface Props {
 
 export function SalaCard({ sala, userId, isAdmin }: Props) {
   const router = useRouter()
+  const confirmar = useConfirm()
+  const { toast } = useToast()
   const [deleting, setDeleting] = useState(false)
   const [copied, setCopied] = useState(false)
 
   const canDelete = isAdmin || sala.criadoPorId === userId
 
   async function handleDelete() {
-    if (!confirm(`Excluir a sala "${sala.nome}"? Esta ação não pode ser desfeita.`)) return
+    const ok = await confirmar({
+      mensagem: `Excluir a sala "${sala.nome}"? Esta ação não pode ser desfeita.`,
+      confirmar: "Excluir sala",
+      perigo: true,
+    })
+    if (!ok) return
 
     setDeleting(true)
     try {
       const res = await fetch(`/api/salas/${sala.id}`, { method: "DELETE" })
       if (res.ok) {
+        toast("Sala excluída.", "sucesso")
         router.refresh()
       } else {
         const data = await res.json()
-        alert(data.error ?? "Erro ao excluir sala.")
+        toast(data.error ?? "Erro ao excluir sala.", "erro")
       }
     } catch {
-      alert("Erro de conexão. Tente novamente.")
+      toast("Erro de conexão. Tente novamente.", "erro")
     } finally {
       setDeleting(false)
     }

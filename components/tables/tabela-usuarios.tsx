@@ -91,10 +91,8 @@ export function TabelaUsuarios({
     { success: usuario.ativo ? "Usuário desativado." : "Usuário ativado.", successType: "info", error: "Erro ao alterar status." },
   )
 
-  const desativarUsuario = (id: string) => {
-    if (!confirm("Desativar este usuário permanentemente?")) return
-    run(id, () => fetch(`/api/usuarios/${id}`, { method: "DELETE" }), { success: "Usuário desativado.", error: "Erro ao desativar usuário." })
-  }
+  const desativarUsuario = (id: string) =>
+    run(id, () => fetch(`/api/usuarios/${id}`, { method: "DELETE" }), { confirmar: "Desativar este usuário permanentemente?", perigo: true, success: "Usuário desativado.", error: "Erro ao desativar usuário." })
 
   // Filtra usuários pela busca
   const usuariosFiltrados = usuarios.filter(u => {

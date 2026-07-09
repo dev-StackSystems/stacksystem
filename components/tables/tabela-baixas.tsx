@@ -38,10 +38,8 @@ export function BaixaTable({ baixas, matriculas, isAdmin, canEdit }: Props) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos")
 
-  const deletarBaixa = (id: string) => {
-    if (!confirm("Excluir esta baixa permanentemente?")) return
-    run(id, () => fetch(`/api/baixas/${id}`, { method: "DELETE" }), { success: "Baixa excluída com sucesso.", error: "Erro ao excluir baixa." })
-  }
+  const deletarBaixa = (id: string) =>
+    run(id, () => fetch(`/api/baixas/${id}`, { method: "DELETE" }), { confirmar: "Excluir esta baixa permanentemente?", perigo: true, success: "Baixa excluída com sucesso.", error: "Erro ao excluir baixa." })
 
   const filtered = baixas.filter(b => {
     const matchStatus = statusFilter === "todos" || b.status === statusFilter

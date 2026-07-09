@@ -8,10 +8,8 @@ interface Props { centros: CentroCustoData[]; isAdmin: boolean; canEdit: boolean
 export function CentrosTable({ centros, isAdmin, canEdit }: Props) {
   const { loadingId, run } = useRowAction()
 
-  const excluir = (id: string) => {
-    if (!confirm("Excluir este centro de custo? Se houver lançamentos vinculados, ele será apenas desativado.")) return
-    run(id, () => fetch(`/api/financeiro/centros-custo/${id}`, { method: "DELETE" }), { success: "Centro de custo removido.", error: "Erro ao remover." })
-  }
+  const excluir = (id: string) =>
+    run(id, () => fetch(`/api/financeiro/centros-custo/${id}`, { method: "DELETE" }), { confirmar: "Excluir este centro de custo? Se houver lançamentos vinculados, ele será apenas desativado.", perigo: true, success: "Centro de custo removido.", error: "Erro ao remover." })
 
   if (centros.length === 0) {
     return <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-12 text-center"><p className="text-slate-400 text-sm">Nenhum centro de custo cadastrado.</p></div>

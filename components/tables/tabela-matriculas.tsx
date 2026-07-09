@@ -41,10 +41,8 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 export function MatriculaTable({ matriculas, alunos, cursos, isAdmin, canEdit }: Props) {
   const { loadingId, run } = useRowAction()
 
-  const cancelarMatricula = (id: string) => {
-    if (!confirm("Cancelar esta matrícula?")) return
-    run(id, () => fetch(`/api/matriculas/${id}`, { method: "DELETE" }))
-  }
+  const cancelarMatricula = (id: string) =>
+    run(id, () => fetch(`/api/matriculas/${id}`, { method: "DELETE" }), { confirmar: "Cancelar esta matrícula?", confirmTitulo: "Cancelar matrícula", confirmLabel: "Cancelar matrícula", perigo: true, success: "Matrícula cancelada.", error: "Erro ao cancelar matrícula." })
 
   if (matriculas.length === 0) {
     return (

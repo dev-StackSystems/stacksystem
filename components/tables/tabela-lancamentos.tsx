@@ -5,6 +5,7 @@ import {
   LancamentoFormModal, LancamentoData, OpcaoSimples, OpcaoCategoria,
 } from "@/components/forms/form-lancamento"
 import { useRowAction } from "@/lib/hooks/use-row-action"
+import { useConfirm } from "@/components/layout/provedor-confirmacao"
 
 interface Props {
   lancamentos: LancamentoData[]
@@ -32,17 +33,24 @@ type FiltroStatus = typeof FILTROS_STATUS[number]
 
 export function LancamentosTable({ lancamentos, contatos, contas, categorias, centros, isAdmin, canEdit }: Props) {
   const { loadingId, run } = useRowAction()
+  const confirmar = useConfirm()
   const [search, setSearch] = useState("")
   const [fTipo, setFTipo] = useState<FiltroTipo>("todos")
   const [fStatus, setFStatus] = useState<FiltroStatus>("todos")
 
-  const excluir = (l: LancamentoData) => {
+  const excluir = async (l: LancamentoData) => {
     let escopo = ""
     if (l.grupoRecorrenciaId) {
-      const serie = confirm("Este lançamento faz parte de uma série (recorrência/parcelas).\n\nOK = excluir TODA a série · Cancelar = excluir só este.")
-      escopo = serie ? "?escopo=serie" : ""
-      if (!serie && !confirm("Excluir apenas este lançamento?")) return
-    } else if (!confirm("Excluir este lançamento?")) return
+      const serie = await confirmar({
+        titulo: "Excluir série",
+        mensagem: "Este lançamento faz parte de uma série (recorrência/parcelas). Deseja excluir TODA a série?",
+        confirmar: "Excluir toda a série",
+        cancelar: "Escolher só este",
+        perigo: true,
+      })
+      if (serie) escopo = "?escopo=serie"
+      else if (!(await confirmar({ mensagem: "Excluir apenas este lançamento?", confirmar: "Excluir este", perigo: true }))) return
+    } else if (!(await confirmar({ mensagem: "Excluir este lançamento?", perigo: true }))) return
     run(l.id, () => fetch(`/api/financeiro/lancamentos/${l.id}${escopo}`, { method: "DELETE" }), { success: "Lançamento excluído.", error: "Erro ao excluir." })
   }
 

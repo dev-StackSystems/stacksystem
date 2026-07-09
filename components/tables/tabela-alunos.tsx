@@ -49,10 +49,8 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
     { success: aluno.ativo ? "Aluno desativado." : "Aluno ativado.", successType: "info", error: "Erro ao alterar status." },
   )
 
-  const deleteAluno = (id: string) => {
-    if (!confirm("Desativar este aluno permanentemente?")) return
-    run(id, () => fetch(`/api/alunos/${id}`, { method: "DELETE" }), { success: "Aluno desativado com sucesso.", error: "Erro ao desativar aluno." })
-  }
+  const deleteAluno = (id: string) =>
+    run(id, () => fetch(`/api/alunos/${id}`, { method: "DELETE" }), { confirmar: "Desativar este aluno permanentemente?", perigo: true, success: "Aluno desativado com sucesso.", error: "Erro ao desativar aluno." })
 
   const filtered = alunos.filter(a => {
     const term = search.toLowerCase()

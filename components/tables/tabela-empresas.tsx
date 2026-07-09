@@ -26,10 +26,8 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
     }),
   )
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Desativar esta empresa? Esta ação não pode ser desfeita.")) return
-    run(id, () => fetch(`/api/empresas/${id}`, { method: "DELETE" }))
-  }
+  const handleDelete = (id: string) =>
+    run(id, () => fetch(`/api/empresas/${id}`, { method: "DELETE" }), { confirmar: "Desativar esta empresa? Esta ação não pode ser desfeita.", perigo: true, success: "Empresa desativada.", error: "Erro ao desativar empresa." })
 
   if (empresas.length === 0) {
     return (

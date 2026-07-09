@@ -13,10 +13,8 @@ export function CategoriasTable({ categorias, isAdmin, canEdit }: Props) {
   const { loadingId, run } = useRowAction()
   const [filtro, setFiltro] = useState<Filtro>("todas")
 
-  const excluir = (id: string) => {
-    if (!confirm("Excluir esta categoria? Se houver lançamentos vinculados, ela será apenas desativada.")) return
-    run(id, () => fetch(`/api/financeiro/categorias/${id}`, { method: "DELETE" }), { success: "Categoria removida.", error: "Erro ao remover categoria." })
-  }
+  const excluir = (id: string) =>
+    run(id, () => fetch(`/api/financeiro/categorias/${id}`, { method: "DELETE" }), { confirmar: "Excluir esta categoria? Se houver lançamentos vinculados, ela será apenas desativada.", perigo: true, success: "Categoria removida.", error: "Erro ao remover categoria." })
 
   const filtered = categorias.filter((c) => filtro === "todas" || c.natureza === filtro)
 

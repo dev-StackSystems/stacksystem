@@ -12,6 +12,8 @@ import {
   Plus, Pencil, Trash2, Building2, ToggleLeft, ToggleRight,
   ExternalLink, Layout, Globe, Monitor, Package,
 } from "lucide-react"
+import { useConfirm } from "@/components/layout/provedor-confirmacao"
+import { useToast } from "@/components/layout/provedor-toast"
 
 type Modulo = {
   id:           string
@@ -58,6 +60,8 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
     chave: "", rotulo: "", href: "", icone: "📦", descricao: "", tipo: "iframe",
   })
   const [erro, setErro] = useState("")
+  const confirmar = useConfirm()
+  const { toast } = useToast()
 
   function abrirCriar() {
     setEditando(null)
@@ -111,9 +115,11 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir este módulo? As empresas que o usam perderão acesso.")) return
+    const ok = await confirmar({ mensagem: "Excluir este módulo? As empresas que o usam perderão acesso.", confirmar: "Excluir módulo", perigo: true })
+    if (!ok) return
     const res = await fetch(`/api/admin/modulos/${id}`, { method: "DELETE" })
-    if (res.ok) setModulos(prev => prev.filter(m => m.id !== id))
+    if (res.ok) { setModulos(prev => prev.filter(m => m.id !== id)); toast("Módulo excluído.", "sucesso") }
+    else toast("Erro ao excluir módulo.", "erro")
   }
 
   async function toggleAtivo(m: Modulo) {

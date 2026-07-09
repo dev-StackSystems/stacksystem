@@ -25,10 +25,8 @@ export function ContatosTable({ contatos, isAdmin, canEdit }: Props) {
   const [search, setSearch] = useState("")
   const [filtro, setFiltro] = useState<Filtro>("todos")
 
-  const excluir = (id: string) => {
-    if (!confirm("Excluir este contato? Se houver lançamentos vinculados, ele será apenas desativado.")) return
-    run(id, () => fetch(`/api/financeiro/contatos/${id}`, { method: "DELETE" }), { success: "Contato removido.", error: "Erro ao remover contato." })
-  }
+  const excluir = (id: string) =>
+    run(id, () => fetch(`/api/financeiro/contatos/${id}`, { method: "DELETE" }), { confirmar: "Excluir este contato? Se houver lançamentos vinculados, ele será apenas desativado.", perigo: true, success: "Contato removido.", error: "Erro ao remover contato." })
 
   const filtered = contatos.filter((c) => {
     const mf = filtro === "todos" || c.tipoPessoa === filtro

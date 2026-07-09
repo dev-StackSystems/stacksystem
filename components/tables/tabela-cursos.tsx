@@ -35,10 +35,8 @@ export function CursoTable({ cursos, empresas, isAdmin }: Props) {
     }),
   )
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Desativar este curso? Esta ação não pode ser desfeita.")) return
-    run(id, () => fetch(`/api/cursos/${id}`, { method: "DELETE" }))
-  }
+  const handleDelete = (id: string) =>
+    run(id, () => fetch(`/api/cursos/${id}`, { method: "DELETE" }), { confirmar: "Desativar este curso? Esta ação não pode ser desfeita.", perigo: true, success: "Curso desativado.", error: "Erro ao desativar curso." })
 
   if (cursos.length === 0) {
     return (

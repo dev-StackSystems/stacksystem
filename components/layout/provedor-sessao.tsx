@@ -13,18 +13,21 @@
 import { SessionProvider } from "next-auth/react"
 import type { Session } from "next-auth"
 import { ToastProvedor } from "./provedor-toast"
+import { ConfirmProvedor } from "./provedor-confirmacao"
 
 interface Props {
   children: React.ReactNode
   sessao:   Session | null
 }
 
-/** Provedor combinado de sessão + toast para o painel */
+/** Provedor combinado de sessão + toast + confirmação para o painel */
 export function ProvedorSessao({ children, sessao }: Props) {
   return (
     <SessionProvider session={sessao}>
       <ToastProvedor>
-        {children}
+        <ConfirmProvedor>
+          {children}
+        </ConfirmProvedor>
       </ToastProvedor>
     </SessionProvider>
   )

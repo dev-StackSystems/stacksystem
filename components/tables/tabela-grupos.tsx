@@ -25,10 +25,8 @@ interface Props {
 export function GrupoTable({ grupos, canManage, isAdmin, empresas }: Props) {
   const { loadingId: deleting, run } = useRowAction()
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Remover este grupo?")) return
-    run(id, () => fetch(`/api/grupos/${id}`, { method: "DELETE" }))
-  }
+  const handleDelete = (id: string) =>
+    run(id, () => fetch(`/api/grupos/${id}`, { method: "DELETE" }), { confirmar: "Remover este grupo?", perigo: true, success: "Grupo removido.", error: "Erro ao remover grupo." })
 
   if (grupos.length === 0) {
     return (

@@ -24,10 +24,8 @@ interface Props {
 export function SetorTable({ setores, canManage, isAdmin, empresas }: Props) {
   const { loadingId: deleting, run } = useRowAction()
 
-  const handleDelete = (id: string) => {
-    if (!confirm("Remover este setor?")) return
-    run(id, () => fetch(`/api/setores/${id}`, { method: "DELETE" }))
-  }
+  const handleDelete = (id: string) =>
+    run(id, () => fetch(`/api/setores/${id}`, { method: "DELETE" }), { confirmar: "Remover este setor?", perigo: true, success: "Setor removido.", error: "Erro ao remover setor." })
 
   if (setores.length === 0) {
     return (
