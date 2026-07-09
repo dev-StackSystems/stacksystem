@@ -40,7 +40,8 @@ export default function LoginPage() {
 function LoginConteudo() {
   const router       = useRouter()
   const searchParams = useSearchParams()
-  const [form, setForm]         = useState({ email: "", senha: "" })
+  const [form, setForm]         = useState({ email: "", senha: "", codigo: "" })
+  const [mfaRequerido, setMfaRequerido] = useState(false)
   const [showPass, setShowPass] = useState(false)
   const [remember, setRemember] = useState(false)
   const [loading, setLoading]   = useState(false)
@@ -66,12 +67,23 @@ function LoginConteudo() {
       email:   form.email,
       senha:   form.senha,
       lembrar: remember ? "true" : "false",
+      codigo:  form.codigo,
       redirect: false,
     })
 
     setLoading(false)
 
     if (result?.error) {
+      if (result.error === "MFA_REQUERIDO") {
+        setMfaRequerido(true)
+        setError("Informe o código de 6 dígitos do seu app autenticador.")
+        return
+      }
+      if (result.error === "MFA_INVALIDO") {
+        setMfaRequerido(true)
+        setError("Código de verificação inválido. Tente novamente.")
+        return
+      }
       const errorMessages: Record<string, string> = {
         USUARIO_NAO_ENCONTRADO: "Nenhuma conta encontrada com este e-mail.",
         SENHA_INCORRETA:        "Senha incorreta. Tente novamente.",
@@ -335,6 +347,24 @@ function LoginConteudo() {
                 </button>
               </div>
             </div>
+
+            {/* Código 2FA — exibido quando o usuário tem 2FA ativado */}
+            {mfaRequerido && (
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.12em]">
+                  Código de verificação (2FA)
+                </label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  placeholder="000000"
+                  value={form.codigo}
+                  onChange={e => setForm({ ...form, codigo: e.target.value })}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all tracking-[0.3em] text-center font-mono"
+                />
+              </div>
+            )}
 
             {/* Remember + Forgot */}
             <div className="flex items-center justify-between">

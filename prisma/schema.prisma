@@ -57,6 +57,8 @@ model Usuario {
   telefone     String?
   avatar       String?
   ativo        Boolean     @default(true)
+  mfaAtivo     Boolean     @default(false) // 2FA (TOTP) habilitado pelo usuário
+  mfaSecret    String?                     // segredo TOTP (base32)
   empresaId    String?
   setorId      String?
   grupoId      String?

@@ -14,7 +14,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Settings, LogOut, User, Eye, EyeOff } from "lucide-react"
+import { Settings, LogOut, User, Eye, EyeOff, ShieldCheck } from "lucide-react"
 
 // Rótulos legíveis para cada papel
 const ROTULOS_PAPEL: Record<string, string> = {
@@ -122,12 +122,12 @@ export function BarraTopo() {
               </Link>
 
               <Link
-                href="/painel/usuarios"
+                href="/painel/conta"
                 onClick={() => setAberto(false)}
                 className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-700 hover:bg-slate-50 transition-colors"
               >
-                <User size={15} className="text-slate-400" />
-                Meu Perfil
+                <ShieldCheck size={15} className="text-slate-400" />
+                Segurança da conta
               </Link>
             </div>
 

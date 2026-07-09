@@ -23,6 +23,7 @@ import { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 import { db } from "@/lib/db"
 import bcrypt from "bcryptjs"
+import { authenticator } from "otplib"
 
 export const opcoesAuth: NextAuthOptions = {
   // Estratégia JWT: sessão fica no cookie, não no banco
@@ -39,6 +40,7 @@ export const opcoesAuth: NextAuthOptions = {
         email:   { label: "E-mail",        type: "email"    },
         senha:   { label: "Senha",         type: "password" },
         lembrar: { label: "Lembrar de mim", type: "text"    },
+        codigo:  { label: "Código 2FA",    type: "text"    },
       },
 
       /**
@@ -70,6 +72,13 @@ export const opcoesAuth: NextAuthOptions = {
         // Verifica a senha com bcrypt
         const senhaCorreta = await bcrypt.compare(credenciais.senha, usuario.senha)
         if (!senhaCorreta)  throw new Error("SENHA_INCORRETA")
+
+        // 2FA (TOTP) — exigido somente se o usuário ativou o 2FA
+        if (usuario.mfaAtivo && usuario.mfaSecret) {
+          const codigo = String(credenciais?.codigo ?? "").replace(/\s/g, "")
+          if (!codigo) throw new Error("MFA_REQUERIDO")
+          if (!authenticator.verify({ token: codigo, secret: usuario.mfaSecret })) throw new Error("MFA_INVALIDO")
+        }
 
         // Registra o login no log de auditoria (assíncrono, não bloqueia o login)
         const ip =
