@@ -6,7 +6,9 @@ import Link from "next/link"
 import { PapelUsuario } from "@prisma/client"
 import {
   Wallet, TrendingUp, TrendingDown, Clock, AlertCircle, ArrowRight, CalendarClock,
+  ArrowUpCircle, ArrowDownCircle,
 } from "lucide-react"
+import { LancamentoFormModal } from "@/components/forms/form-lancamento"
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 const num = (v: { toString(): string } | null | undefined) => Number(v ?? 0)
@@ -20,6 +22,8 @@ export default async function FinanceiroDashboard() {
   const { superAdmin } = session.user
   const empresaId = session.user.empresaId ?? undefined
   const escopo = superAdmin ? {} : { empresaId }
+  const escopoAtivo = superAdmin ? { ativo: true } : { empresaId, ativo: true }
+  const canEdit = superAdmin || session.user.papel === PapelUsuario.A || session.user.papel === PapelUsuario.T || session.user.grupoIsAdmin
 
   const hoje = new Date()
   const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
@@ -27,6 +31,7 @@ export default async function FinanceiroDashboard() {
 
   const [
     contasAgg, recPagas, despPagas, recMes, despMes, aReceber, aPagar, qtdAtraso, proximos,
+    contatos, contas, categorias, centros,
   ] = await Promise.all([
     db.contaFinanceira.aggregate({ _sum: { saldoInicial: true }, where: escopo }),
     db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, tipo: "receita", status: "pago" } }),
@@ -42,6 +47,10 @@ export default async function FinanceiroDashboard() {
       take: 6,
       include: { contato: { select: { nome: true } }, categoria: { select: { nome: true } } },
     }),
+    db.contatoFinanceiro.findMany({ where: escopoAtivo, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+    db.contaFinanceira.findMany({ where: escopoAtivo, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+    db.categoriaFinanceira.findMany({ where: escopoAtivo, orderBy: { nome: "asc" }, select: { id: true, nome: true, natureza: true } }),
+    db.centroCusto.findMany({ where: escopoAtivo, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
   ])
 
   const saldoTotal = num(contasAgg._sum.saldoInicial) + num(recPagas._sum.valor) - num(despPagas._sum.valor)
@@ -64,9 +73,21 @@ export default async function FinanceiroDashboard() {
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">Visão geral do fluxo de caixa</p>
         </div>
-        <Link href="/painel/financeiro/lancamentos" className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
-          Ver Lançamentos <ArrowRight size={16} />
-        </Link>
+        <div className="flex flex-wrap gap-2">
+          {canEdit && (
+            <>
+              <LancamentoFormModal mode="create" tipoInicial="receita" contatos={contatos} contas={contas} categorias={categorias} centros={centros} trigger={
+                <button className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-emerald-200"><ArrowUpCircle size={16} /> Receita</button>
+              } />
+              <LancamentoFormModal mode="create" tipoInicial="despesa" contatos={contatos} contas={contas} categorias={categorias} centros={centros} trigger={
+                <button className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-red-200"><ArrowDownCircle size={16} /> Despesa</button>
+              } />
+            </>
+          )}
+          <Link href="/painel/financeiro/lancamentos" className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm transition-all">
+            Ver Lançamentos <ArrowRight size={16} />
+          </Link>
+        </div>
       </div>
 
       {/* KPIs */}
