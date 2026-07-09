@@ -29,7 +29,7 @@ export async function PUT(
     email, telefone, fax, site,
     endereco, bairro, cep, municipio, uf, latitude, longitude,
     cor, cor2, logo, brasao, banner,
-    nomeSistema, tipoSistema, mascara, descricao, ativa,
+    nomeSistema, tipoSistema, gestaoFinanceira, mascara, descricao, ativa,
   } = body
 
   if (!nome || typeof nome !== "string" || nome.trim() === "") {
@@ -73,6 +73,10 @@ export async function PUT(
       nomeSistema: nomeSistema?.trim() || null,
       mascara: mascara?.trim() || null,
       descricao: descricao?.trim() || null,
+      // Modelo de gestão financeira (PF/PJ) — editável pelo admin da empresa
+      ...(gestaoFinanceira !== undefined && {
+        gestaoFinanceira: gestaoFinanceira === "PF" ? "PF" : "PJ",
+      }),
       // Apenas super admin pode mudar tipo de sistema e status de ativação
       ...(isSuperAdmin && {
         ativa: typeof ativa === "boolean" ? ativa : existing.ativa,

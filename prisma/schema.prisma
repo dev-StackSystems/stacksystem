@@ -157,7 +157,8 @@ model Empresa {
 
   // Configuração do sistema
   nomeSistema String?  // Ex: "Portal SEMEDUC"
-  tipoSistema String?  // escola | treinamento | consultoria | clinica | personalizado
+  tipoSistema String?  // escola | treinamento | consultoria | clinica | financeiro | personalizado
+  gestaoFinanceira String? @default("PJ") // PF (CPF/pessoal) | PJ (CNPJ/empresarial) — usado no tipo financeiro
   mascara     String?  // Máscara de numeração ex: ###/AAAA
   descricao   String?
   anuncios    String?  // JSON: [{titulo, texto, cor}]

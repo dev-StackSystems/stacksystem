@@ -17,8 +17,8 @@ import { TIPOS_SISTEMA }    from "@/types/system"
 import Link                 from "next/link"
 import {
   GraduationCap, BookOpen, Layers, Play,
-  DollarSign, Award, Users, TrendingUp,
-  CheckCircle2, Clock, XCircle,
+  DollarSign, Award, Users, TrendingUp, TrendingDown,
+  CheckCircle2, Clock, XCircle, Wallet, ArrowUpCircle, ArrowDownCircle,
   Globe, Phone, MapPin, Video, Building2,
 } from "lucide-react"
 
@@ -52,7 +52,8 @@ const CONFIG_MODULO: Record<string, { rotulo: string; icone: typeof GraduationCa
   cursos:       { rotulo: "Cursos",        icone: Layers,        href: "/painel/cursos",       desc: "Cursos e módulos" },
   aulas:        { rotulo: "Aulas",         icone: Play,          href: "/painel/aulas",        desc: "Conteúdo das aulas" },
   salas:        { rotulo: "Salas de Aula", icone: Video,         href: "/painel/salas",        desc: "Videoaulas ao vivo" },
-  baixas:       { rotulo: "Financeiro",    icone: DollarSign,    href: "/painel/baixas",       desc: "Controle financeiro" },
+  financeiro:   { rotulo: "Financeiro",    icone: Wallet,        href: "/painel/financeiro",   desc: "Gestão financeira" },
+  baixas:       { rotulo: "Mensalidades",  icone: DollarSign,    href: "/painel/baixas",       desc: "Cobranças e baixas" },
   certificados: { rotulo: "Certificados",  icone: Award,         href: "/painel/certificados", desc: "Emissão de certificados" },
 }
 
@@ -135,122 +136,91 @@ export default async function PaginaPainel() {
     catch { listaAnuncios = [] }
   }
 
-  // ── KPIs — filtrados pela empresa do usuário ──────────────────────────────
-  const inicioMes      = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  const filtroCurso    = !isAdmin && empresaId ? { empresaId }                       : undefined
-  const filtroAluno    = !isAdmin && empresaId ? { empresaId }                       : undefined
-  const filtroMatric   = !isAdmin && empresaId ? { curso: { empresaId } }            : undefined
-  const filtroBaixa    = !isAdmin && empresaId ? { matricula: filtroMatric }         : undefined
+  // ── KPIs — condicionais aos módulos ativos da empresa ─────────────────────
+  const mostrar = (m: string) => isAdmin || modulosAtivos.includes(m)
+  const temAlunos       = mostrar("alunos")
+  const temMatriculas   = mostrar("matriculas")
+  const temCursos       = mostrar("cursos")
+  const temBaixas       = mostrar("baixas")
+  const temCertificados = mostrar("certificados")
+  const temFinanceiro   = mostrar("financeiro")
+
+  const inicioMes    = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  const filtroCurso  = !isAdmin && empresaId ? { empresaId }               : undefined
+  const filtroAluno  = !isAdmin && empresaId ? { empresaId }               : undefined
+  const filtroMatric = !isAdmin && empresaId ? { curso: { empresaId } }    : undefined
+  const filtroBaixa  = !isAdmin && empresaId ? { matricula: filtroMatric } : undefined
+  const escFin       = !isAdmin && empresaId ? { empresaId }               : {}
+
+  const zero = Promise.resolve(0)
+  const soma = (p: Promise<{ _sum: { valor: unknown } }>) => p.then(r => Number(r._sum.valor ?? 0))
 
   const [
-    totalAlunos,
-    alunosAtivos,
-    totalMatriculas,
-    matriculasAtivas,
-    totalCursos,
-    totalCertificados,
-    receitaMes,
+    totalAlunos, alunosAtivos,
+    totalMatriculas, matriculasAtivas,
+    totalCursos, totalCertificados,
+    receitaValor,
+    finRec, finDesp, finRecMes, finDespMes, finAReceber, finAPagar, finSaldoContas,
     totalUsuarios,
-    ultimasMatriculas,
-    ultimasBaixas,
+    ultimasMatriculas, ultimasBaixas, ultimosLancamentos,
   ] = await Promise.all([
-    db.aluno.count({ where: filtroAluno }),
-    db.aluno.count({ where: { ativo: true, ...filtroAluno } }),
-    db.matricula.count({ where: filtroMatric }),
-    db.matricula.count({ where: { ...filtroMatric, status: "ativa" } }),
-    db.cursoDaEmpresa.count({ where: { ...filtroCurso, ativo: true } }),
-    db.certificado.count({ where: filtroCurso ? { curso: filtroCurso } : undefined }),
-    db.baixa.aggregate({
-      _sum:  { valor: true },
-      where: {
-        status:        "pago",
-        dataPagamento: { gte: inicioMes },
-        ...(filtroBaixa ?? {}),
-      },
-    }),
-    db.usuario.count({
-      where: { ativo: true, ...(empresaId && !isAdmin ? { empresaId } : {}) },
-    }),
-    db.matricula.findMany({
-      take:    6,
-      orderBy: { criadoEm: "desc" },
-      where:   filtroMatric,
-      select:  {
-        id: true, status: true, valor: true, criadoEm: true,
-        aluno: { select: { nome: true, email: true } },
-        curso: { select: { nome: true } },
-      },
-    }),
-    db.baixa.findMany({
-      take:    6,
-      orderBy: { criadoEm: "desc" },
-      where:   filtroBaixa,
-      select:  {
-        id: true, descricao: true, valor: true, tipo: true,
-        status: true, dataPagamento: true, criadoEm: true,
-        matricula: { select: { aluno: { select: { nome: true } } } },
-      },
-    }),
+    temAlunos ? db.aluno.count({ where: filtroAluno }) : zero,
+    temAlunos ? db.aluno.count({ where: { ativo: true, ...filtroAluno } }) : zero,
+    temMatriculas ? db.matricula.count({ where: filtroMatric }) : zero,
+    temMatriculas ? db.matricula.count({ where: { ...filtroMatric, status: "ativa" } }) : zero,
+    temCursos ? db.cursoDaEmpresa.count({ where: { ...filtroCurso, ativo: true } }) : zero,
+    temCertificados ? db.certificado.count({ where: filtroCurso ? { curso: filtroCurso } : undefined }) : zero,
+    temBaixas ? soma(db.baixa.aggregate({ _sum: { valor: true }, where: { status: "pago", dataPagamento: { gte: inicioMes }, ...(filtroBaixa ?? {}) } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "receita", status: "pago" } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "despesa", status: "pago" } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "receita", status: "pago", dataCompetencia: { gte: inicioMes } } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "despesa", status: "pago", dataCompetencia: { gte: inicioMes } } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "receita", status: "pendente" } })) : zero,
+    temFinanceiro ? soma(db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escFin, tipo: "despesa", status: "pendente" } })) : zero,
+    temFinanceiro ? db.contaFinanceira.aggregate({ _sum: { saldoInicial: true }, where: escFin }).then(r => Number(r._sum.saldoInicial ?? 0)) : zero,
+    db.usuario.count({ where: { ativo: true, ...(empresaId && !isAdmin ? { empresaId } : {}) } }),
+    temMatriculas ? db.matricula.findMany({ take: 6, orderBy: { criadoEm: "desc" }, where: filtroMatric, select: { id: true, status: true, valor: true, criadoEm: true, aluno: { select: { nome: true, email: true } }, curso: { select: { nome: true } } } }) : Promise.resolve([]),
+    temBaixas ? db.baixa.findMany({ take: 6, orderBy: { criadoEm: "desc" }, where: filtroBaixa, select: { id: true, descricao: true, valor: true, tipo: true, status: true, dataPagamento: true, criadoEm: true, matricula: { select: { aluno: { select: { nome: true } } } } } }) : Promise.resolve([]),
+    temFinanceiro ? db.lancamentoFinanceiro.findMany({ take: 6, orderBy: { criadoEm: "desc" }, where: escFin, select: { id: true, descricao: true, valor: true, tipo: true, status: true, criadoEm: true, contato: { select: { nome: true } } } }) : Promise.resolve([]),
   ])
 
-  const receitaValor = Number(receitaMes._sum.valor ?? 0)
-  const corEmpresa   = empresa?.cor ?? "#f97316"
-  const nomeExibido  = empresa?.nomeSistema || empresa?.nome || "StackSystems"
+  const corEmpresa  = empresa?.cor ?? "#f97316"
+  const nomeExibido = empresa?.nomeSistema || empresa?.nome || "StackSystems"
+  const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 
-  // ── Cards de KPI ──────────────────────────────────────────────────────────
-  const kpis = [
-    {
-      icone: GraduationCap,
-      rotulo: "Alunos Ativos",
-      valor:  alunosAtivos.toString(),
-      sub:    `${totalAlunos} cadastrados`,
-      cor:    "bg-blue-50 text-blue-600 border-blue-100",
-    },
-    {
-      icone:  BookOpen,
-      rotulo: "Matrículas Ativas",
-      valor:  matriculasAtivas.toString(),
-      sub:    `${totalMatriculas} no total`,
-      cor:    "bg-emerald-50 text-emerald-600 border-emerald-100",
-    },
-    {
-      icone:  Layers,
-      rotulo: "Cursos Ativos",
-      valor:  totalCursos.toString(),
-      sub:    "disponíveis",
-      cor:    "bg-purple-50 text-purple-600 border-purple-100",
-    },
-    {
-      icone:  DollarSign,
-      rotulo: "Receita do Mês",
-      valor:  receitaValor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      sub:    "baixas pagas",
-      cor:    "bg-teal-50 text-teal-600 border-teal-100",
-    },
-    {
-      icone:  Award,
-      rotulo: "Certificados",
-      valor:  totalCertificados.toString(),
-      sub:    "emitidos",
-      cor:    "bg-amber-50 text-amber-600 border-amber-100",
-    },
-    {
-      icone:  TrendingUp,
-      rotulo: "Taxa de Conclusão",
-      valor:  totalMatriculas > 0
-        ? `${Math.round(((totalMatriculas - matriculasAtivas) / totalMatriculas) * 100)}%`
-        : "—",
-      sub:    "finalizadas",
-      cor:    "bg-brand-50 text-brand-600 border-brand-100",
-    },
-    {
-      icone:  Users,
-      rotulo: "Usuários Internos",
-      valor:  totalUsuarios.toString(),
-      sub:    "com acesso ativo",
-      cor:    "bg-slate-100 text-slate-600 border-slate-200",
-    },
-  ]
+  // ── Cards de KPI (montados conforme os módulos ativos) ────────────────────
+  type Kpi = { icone: typeof GraduationCap; rotulo: string; valor: string; sub: string; cor: string }
+  const kpis: Kpi[] = []
+
+  if (temFinanceiro) {
+    const saldo = finSaldoContas + finRec - finDesp
+    kpis.push(
+      { icone: Wallet,       rotulo: "Saldo",           valor: brl(saldo),       sub: "consolidado", cor: saldo < 0 ? "bg-red-50 text-red-600 border-red-100" : "bg-brand-50 text-brand-600 border-brand-100" },
+      { icone: TrendingUp,   rotulo: "Receitas do Mês", valor: brl(finRecMes),   sub: "recebidas",   cor: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+      { icone: TrendingDown, rotulo: "Despesas do Mês", valor: brl(finDespMes),  sub: "pagas",       cor: "bg-red-50 text-red-600 border-red-100" },
+      { icone: Clock,        rotulo: "A Receber",       valor: brl(finAReceber), sub: "em aberto",   cor: "bg-blue-50 text-blue-600 border-blue-100" },
+      { icone: Clock,        rotulo: "A Pagar",         valor: brl(finAPagar),   sub: "em aberto",   cor: "bg-amber-50 text-amber-600 border-amber-100" },
+    )
+  }
+  if (temAlunos) {
+    kpis.push({ icone: GraduationCap, rotulo: "Alunos Ativos", valor: alunosAtivos.toString(), sub: `${totalAlunos} cadastrados`, cor: "bg-blue-50 text-blue-600 border-blue-100" })
+  }
+  if (temMatriculas) {
+    kpis.push(
+      { icone: BookOpen,   rotulo: "Matrículas Ativas", valor: matriculasAtivas.toString(), sub: `${totalMatriculas} no total`, cor: "bg-emerald-50 text-emerald-600 border-emerald-100" },
+      { icone: TrendingUp, rotulo: "Taxa de Conclusão", valor: totalMatriculas > 0 ? `${Math.round(((totalMatriculas - matriculasAtivas) / totalMatriculas) * 100)}%` : "—", sub: "finalizadas", cor: "bg-brand-50 text-brand-600 border-brand-100" },
+    )
+  }
+  if (temCursos) {
+    kpis.push({ icone: Layers, rotulo: "Cursos Ativos", valor: totalCursos.toString(), sub: "disponíveis", cor: "bg-purple-50 text-purple-600 border-purple-100" })
+  }
+  if (temBaixas) {
+    kpis.push({ icone: DollarSign, rotulo: "Mensalidades do Mês", valor: brl(receitaValor), sub: "baixas pagas", cor: "bg-teal-50 text-teal-600 border-teal-100" })
+  }
+  if (temCertificados) {
+    kpis.push({ icone: Award, rotulo: "Certificados", valor: totalCertificados.toString(), sub: "emitidos", cor: "bg-amber-50 text-amber-600 border-amber-100" })
+  }
+  kpis.push({ icone: Users, rotulo: "Usuários Internos", valor: totalUsuarios.toString(), sub: "com acesso ativo", cor: "bg-slate-100 text-slate-600 border-slate-200" })
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -484,9 +454,52 @@ export default async function PaginaPainel() {
       </div>
 
       {/* ── Atividade recente ── */}
+      {(temFinanceiro || temMatriculas || temBaixas) && (
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
+        {/* Últimos Lançamentos (Financeiro) */}
+        {temFinanceiro && (
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+            <div>
+              <h2 className="font-serif font-bold text-slate-800 text-base">Últimos Lançamentos</h2>
+              <p className="text-xs text-slate-400 mt-0.5">Receitas e despesas recentes</p>
+            </div>
+            <Wallet size={16} className="text-slate-300" />
+          </div>
+          <div className="divide-y divide-slate-50">
+            {ultimosLancamentos.length === 0 ? (
+              <p className="px-6 py-8 text-center text-sm text-slate-400">Nenhum lançamento ainda.</p>
+            ) : (
+              ultimosLancamentos.map(l => {
+                const receita = l.tipo === "receita"
+                return (
+                  <div key={l.id} className="px-6 py-3.5 flex items-center gap-4 hover:bg-slate-50/60 transition-colors">
+                    <div className={`shrink-0 ${receita ? "text-emerald-500" : "text-red-500"}`}>
+                      {receita ? <ArrowUpCircle size={18} /> : <ArrowDownCircle size={18} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-800 truncate">{l.descricao}</p>
+                      <p className="text-xs text-slate-400 truncate">{l.contato?.nome ?? (receita ? "Receita" : "Despesa")}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-bold ${receita ? "text-emerald-600" : "text-red-500"}`}>
+                        {receita ? "+" : "−"} {brl(Number(l.valor))}
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        {new Date(l.criadoEm).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })
+            )}
+          </div>
+        </div>
+        )}
+
         {/* Últimas Matrículas */}
+        {temMatriculas && (
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
@@ -527,8 +540,10 @@ export default async function PaginaPainel() {
             )}
           </div>
         </div>
+        )}
 
         {/* Últimas Baixas */}
+        {temBaixas && (
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
             <div>
@@ -567,7 +582,9 @@ export default async function PaginaPainel() {
             )}
           </div>
         </div>
+        )}
       </div>
+      )}
     </div>
   )
 }

@@ -70,3 +70,27 @@ export const MODULOS_DISPONIVEIS = [
 
 // Tipo utilitário para as chaves de módulo
 export type ChaveModulo = typeof MODULOS_DISPONIVEIS[number]["key"]
+
+/**
+ * Modelos de gestão do sistema Financeiro.
+ * Uma empresa do tipo "financeiro" escolhe entre gestão empresarial (CNPJ/PJ)
+ * ou pessoal (CPF/PF) — cada um com estrutura própria no módulo financeiro.
+ */
+export const GESTOES_FINANCEIRAS = [
+  {
+    key:       "PJ",
+    label:     "Empresarial (CNPJ)",
+    curto:     "CNPJ",
+    icone:     "Building2",
+    descricao: "Clientes, fornecedores, centros de custo e DRE — para empresas.",
+  },
+  {
+    key:       "PF",
+    label:     "Pessoal (CPF)",
+    curto:     "CPF",
+    icone:     "User",
+    descricao: "Receitas, despesas e categorias do dia a dia — para pessoa física.",
+  },
+] as const
+
+export type GestaoFinanceira = typeof GESTOES_FINANCEIRAS[number]["key"]

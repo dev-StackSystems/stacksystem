@@ -28,7 +28,7 @@ export default async function ConfiguracoesPage() {
         endereco: true, bairro: true, cep: true, municipio: true, uf: true,
         latitude: true, longitude: true,
         cor: true, cor2: true, logo: true, brasao: true, banner: true,
-        nomeSistema: true, mascara: true, descricao: true, tipoSistema: true,
+        nomeSistema: true, mascara: true, descricao: true, tipoSistema: true, gestaoFinanceira: true,
       },
     })
 

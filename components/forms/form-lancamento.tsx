@@ -220,13 +220,15 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
                     {categoriasFiltradas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
                   </select>
                 </div>
-                <div>
-                  <label className={labelClass}>Centro de Custo</label>
-                  <select value={form.centroCustoId} onChange={(e) => f("centroCustoId", e.target.value)} className={selectClass}>
-                    <option value="">— Nenhum —</option>
-                    {centros.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                </div>
+                {centros.length > 0 && (
+                  <div>
+                    <label className={labelClass}>Centro de Custo</label>
+                    <select value={form.centroCustoId} onChange={(e) => f("centroCustoId", e.target.value)} className={selectClass}>
+                      <option value="">— Nenhum —</option>
+                      {centros.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <div>

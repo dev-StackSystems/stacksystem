@@ -1,7 +1,7 @@
 "use client"
 import { useState, useEffect } from "react"
-import { X, Loader2 } from "lucide-react"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/types/system"
+import { X, Loader2, Building2, User } from "lucide-react"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS, GESTOES_FINANCEIRAS } from "@/types/system"
 import { useFormModal } from "@/lib/hooks/use-form-modal"
 
 type Mode = "create" | "edit"
@@ -30,6 +30,7 @@ export interface EmpresaData {
   banner?: string | null
   nomeSistema?: string | null
   tipoSistema?: string | null
+  gestaoFinanceira?: string | null
   mascara?: string | null
   descricao?: string | null
 }
@@ -47,7 +48,7 @@ const EMPTY_FORM = {
   ativa: true,
   cor: "#f97316", cor2: "#1e293b",
   logo: "", brasao: "", banner: "",
-  nomeSistema: "", tipoSistema: "", mascara: "", descricao: "",
+  nomeSistema: "", tipoSistema: "", gestaoFinanceira: "PJ", mascara: "", descricao: "",
 }
 
 const UF_LIST = [
@@ -85,6 +86,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
           banner: empresa.banner ?? "",
           nomeSistema: empresa.nomeSistema ?? "",
           tipoSistema: empresa.tipoSistema ?? "",
+          gestaoFinanceira: empresa.gestaoFinanceira ?? "PJ",
           mascara: empresa.mascara ?? "",
           descricao: empresa.descricao ?? "",
         })
@@ -134,6 +136,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
           banner: form.banner.trim() || null,
           nomeSistema: form.nomeSistema.trim() || null,
           tipoSistema: form.tipoSistema.trim() || null,
+          gestaoFinanceira: form.gestaoFinanceira,
           mascara: form.mascara.trim() || null,
           descricao: form.descricao.trim() || null,
         }),
@@ -329,6 +332,31 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                           })}
                         </div>
                       )}
+                    </div>
+                  )}
+                  {form.tipoSistema === "financeiro" && (
+                    <div className="col-span-2">
+                      <label className={labelClass}>Modelo de Gestão Financeira <span className="text-red-400">*</span></label>
+                      <div className="grid grid-cols-2 gap-3 mt-1">
+                        {GESTOES_FINANCEIRAS.map(g => {
+                          const ativo = form.gestaoFinanceira === g.key
+                          const Icon = g.key === "PJ" ? Building2 : User
+                          return (
+                            <button
+                              type="button"
+                              key={g.key}
+                              onClick={() => f("gestaoFinanceira", g.key)}
+                              className={`text-left p-3 rounded-xl border transition-all ${ativo ? "border-brand-400 bg-brand-50/60 ring-2 ring-brand-100" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <Icon size={16} className={ativo ? "text-brand-500" : "text-slate-400"} />
+                                <span className="text-sm font-bold text-slate-800">{g.label}</span>
+                              </div>
+                              <p className="text-[11px] text-slate-500 leading-snug">{g.descricao}</p>
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
                   )}
                   <div className="col-span-2">

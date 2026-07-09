@@ -1,7 +1,8 @@
 "use client"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Save } from "lucide-react"
+import { Loader2, Save, Building2, User } from "lucide-react"
+import { GESTOES_FINANCEIRAS } from "@/types/system"
 
 interface EmpresaData {
   id: string
@@ -25,6 +26,8 @@ interface EmpresaData {
   brasao?: string | null
   banner?: string | null
   nomeSistema?: string | null
+  tipoSistema?: string | null
+  gestaoFinanceira?: string | null
   mascara?: string | null
   descricao?: string | null
 }
@@ -68,6 +71,7 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
     brasao: empresa.brasao ?? "",
     banner: empresa.banner ?? "",
     nomeSistema: empresa.nomeSistema ?? "",
+    gestaoFinanceira: empresa.gestaoFinanceira ?? "PJ",
     mascara: empresa.mascara ?? "",
     descricao: empresa.descricao ?? "",
   })
@@ -106,6 +110,7 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
           brasao: form.brasao.trim() || null,
           banner: form.banner.trim() || null,
           nomeSistema: form.nomeSistema.trim() || null,
+          gestaoFinanceira: form.gestaoFinanceira,
           mascara: form.mascara.trim() || null,
           descricao: form.descricao.trim() || null,
         }),
@@ -169,6 +174,33 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
           />
         </div>
       </div>
+
+      {/* Modelo de gestão financeira (somente sistema financeiro) */}
+      {empresa.tipoSistema === "financeiro" && (
+        <div className={sectionClass}>
+          <p className={sectionTitleClass}>Modelo de Gestão Financeira</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {GESTOES_FINANCEIRAS.map(g => {
+              const ativo = form.gestaoFinanceira === g.key
+              const Icon = g.key === "PJ" ? Building2 : User
+              return (
+                <button
+                  type="button"
+                  key={g.key}
+                  onClick={() => setForm(f => ({ ...f, gestaoFinanceira: g.key }))}
+                  className={`text-left p-4 rounded-xl border transition-all ${ativo ? "border-brand-400 bg-brand-50/60 ring-2 ring-brand-100" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <Icon size={18} className={ativo ? "text-brand-500" : "text-slate-400"} />
+                    <span className="text-sm font-bold text-slate-800">{g.label}</span>
+                  </div>
+                  <p className="text-xs text-slate-500 leading-snug">{g.descricao}</p>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Contato */}
       <div className={sectionClass}>

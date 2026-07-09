@@ -58,7 +58,7 @@ export default async function LayoutPainel({ children }: { children: React.React
     sessao.user.empresaId
       ? db.empresa.findUnique({
           where:  { id: sessao.user.empresaId },
-          select: { cor: true, logo: true, nome: true, nomeSistema: true, tipoSistema: true },
+          select: { cor: true, logo: true, nome: true, nomeSistema: true, tipoSistema: true, gestaoFinanceira: true },
         })
       : null,
   ])
@@ -94,6 +94,7 @@ export default async function LayoutPainel({ children }: { children: React.React
           modulos={modulosAtivos}
           modulosCustom={modulosCustom}
           marca={empresa ?? null}
+          gestao={empresa?.gestaoFinanceira ?? null}
         />
 
         {/* Conteúdo principal */}

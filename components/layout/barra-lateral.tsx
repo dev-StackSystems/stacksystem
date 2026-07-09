@@ -101,16 +101,19 @@ const GRUPOS_SUPER_ADMIN: GrupoNav[] = [
 
 // ── Função que monta os grupos filtrados para usuários normais ─────────────
 
-function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: string[]): GrupoNav[] {
+function montarGruposFiltrados(papel: string, grupoIsAdmin: boolean, modulos: string[], gestao: string | null): GrupoNav[] {
   const resultado: GrupoNav[] = []
 
   for (const grupo of GRUPOS_MODULOS) {
     // Grupo sem título (ex: Painel) sempre incluído
     if (grupo.titulo === null) { resultado.push(grupo); continue }
 
-    // Filtra itens sem módulo (sempre visíveis) ou com módulo ativo
+    // Filtra itens sem módulo (sempre visíveis) ou com módulo ativo.
+    // Centros de custo é conceito empresarial (PJ) — oculto na gestão pessoal (PF).
     const itensFiltrados = grupo.itens.filter(
-      item => !item.modulo || modulos.includes(item.modulo)
+      item =>
+        (!item.modulo || modulos.includes(item.modulo)) &&
+        !(gestao === "PF" && item.href === "/painel/financeiro/centros-custo")
     )
     if (itensFiltrados.length > 0) {
       resultado.push({ titulo: grupo.titulo, itens: itensFiltrados })
@@ -156,16 +159,17 @@ interface Props {
   modulos:       string[]          // Chaves dos módulos builtin ativos
   modulosCustom: ModuloCustom[]    // Módulos do catálogo atribuídos à empresa
   marca?:        MarcaEmpresa | null
+  gestao?:       string | null     // Modelo de gestão financeira: "PF" | "PJ"
 }
 
 // ── Componente principal ───────────────────────────────────────────────────
 
-export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, modulosCustom, marca }: Props) {
+export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, modulosCustom, marca, gestao }: Props) {
   const [aberta, setAberta] = useState(false)
 
   const grupos = superAdmin
     ? GRUPOS_SUPER_ADMIN
-    : montarGruposFiltrados(papel, grupoIsAdmin, modulos)
+    : montarGruposFiltrados(papel, grupoIsAdmin, modulos, gestao ?? null)
 
   const corMarca = marca?.cor || "#f97316"
   const semMarca = !marca
