@@ -4,7 +4,7 @@ import { opcoesAuth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { PapelUsuario } from "@prisma/client"
 import { RelatorioFiltros } from "@/components/financeiro/relatorio-filtros"
-import { FileBarChart, TrendingUp, TrendingDown, Scale } from "lucide-react"
+import { FileBarChart, TrendingUp, TrendingDown, Scale, LineChart, Wallet } from "lucide-react"
 
 const brl = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
 const num = (v: { toString(): string } | null | undefined) => Number(v ?? 0)
@@ -27,18 +27,49 @@ export default async function RelatoriosPage({ searchParams }: Props) {
   const ate = sp.ate || iso(hoje)
   const periodo = { dataCompetencia: { gte: new Date(de), lte: new Date(ate + "T23:59:59") } }
 
-  const [recPagas, despPagas, aReceber, aPagar, grupos, categorias] = await Promise.all([
+  // Janela de projeção do fluxo de caixa: 12 meses a partir do mês atual
+  const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1)
+  const fimProjecao    = new Date(hoje.getFullYear(), hoje.getMonth() + 12, 0, 23, 59, 59)
+
+  const [recPagas, despPagas, aReceber, aPagar, grupos, categorias, contaAgg, recTotal, despTotal, pendentesFuturos] = await Promise.all([
     db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, ...periodo, tipo: "receita", status: "pago" } }),
     db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, ...periodo, tipo: "despesa", status: "pago" } }),
     db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, ...periodo, tipo: "receita", status: "pendente" } }),
     db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, ...periodo, tipo: "despesa", status: "pendente" } }),
     db.lancamentoFinanceiro.groupBy({ by: ["categoriaId", "tipo"], _sum: { valor: true }, where: { ...escopo, ...periodo, status: "pago" } }),
     db.categoriaFinanceira.findMany({ where: escopo, select: { id: true, nome: true, cor: true } }),
+    db.contaFinanceira.aggregate({ _sum: { saldoInicial: true }, where: escopo }),
+    db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, tipo: "receita", status: "pago" } }),
+    db.lancamentoFinanceiro.aggregate({ _sum: { valor: true }, where: { ...escopo, tipo: "despesa", status: "pago" } }),
+    db.lancamentoFinanceiro.findMany({ where: { ...escopo, status: "pendente", dataVencimento: { gte: inicioMesAtual, lte: fimProjecao } }, select: { tipo: true, valor: true, dataVencimento: true } }),
   ])
 
   const receitas = num(recPagas._sum.valor)
   const despesas = num(despPagas._sum.valor)
   const saldo = receitas - despesas
+
+  // ── Fluxo de caixa projetado (saldo atual + pendentes por mês de vencimento) ──
+  const saldoAtual = num(contaAgg._sum.saldoInicial) + num(recTotal._sum.valor) - num(despTotal._sum.valor)
+  const meses = Array.from({ length: 12 }, (_, i) => {
+    const d = new Date(hoje.getFullYear(), hoje.getMonth() + i, 1)
+    return { rotulo: d.toLocaleDateString("pt-BR", { month: "short", year: "2-digit" }), entradas: 0, saidas: 0 }
+  })
+  for (const l of pendentesFuturos) {
+    if (!l.dataVencimento) continue
+    const dv = new Date(l.dataVencimento)
+    const idx = (dv.getFullYear() - hoje.getFullYear()) * 12 + (dv.getMonth() - hoje.getMonth())
+    if (idx < 0 || idx > 11) continue
+    if (l.tipo === "receita") meses[idx].entradas += num(l.valor)
+    else meses[idx].saidas += num(l.valor)
+  }
+  let saldoRun = saldoAtual
+  const projecao = meses.map((m) => { saldoRun += m.entradas - m.saidas; return { ...m, saldo: saldoRun } })
+  const marcos = [
+    { label: "Saldo hoje",  valor: saldoAtual },
+    { label: "Em 3 meses",  valor: projecao[2]?.saldo ?? saldoAtual },
+    { label: "Em 6 meses",  valor: projecao[5]?.saldo ?? saldoAtual },
+    { label: "Em 12 meses", valor: projecao[11]?.saldo ?? saldoAtual },
+  ]
   const nomeCat = (id: string | null) => (id ? categorias.find((c) => c.id === id)?.nome ?? "Sem categoria" : "Sem categoria")
   const corCat = (id: string | null) => (id ? categorias.find((c) => c.id === id)?.cor ?? "#94a3b8" : "#94a3b8")
 
@@ -57,7 +88,7 @@ export default async function RelatoriosPage({ searchParams }: Props) {
         <h1 className="font-serif text-2xl font-bold text-slate-900 flex items-center gap-2">
           <FileBarChart size={22} className="text-brand-500" /> Relatórios
         </h1>
-        <p className="text-sm text-slate-400 mt-0.5">Fluxo de caixa e DRE simplificado por período</p>
+        <p className="text-sm text-slate-400 mt-0.5">DRE gerencial, fluxo de caixa e projeção de saldo</p>
       </div>
 
       <RelatorioFiltros de={de} ate={ate} />
@@ -78,6 +109,48 @@ export default async function RelatoriosPage({ searchParams }: Props) {
       </div>
 
       <p className="text-xs text-slate-400 mb-4">A receber no período: <span className="font-semibold text-slate-600">{brl(num(aReceber._sum.valor))}</span> · A pagar: <span className="font-semibold text-slate-600">{brl(num(aPagar._sum.valor))}</span></p>
+
+      {/* ── Fluxo de Caixa Projetado ── */}
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-3">
+          <LineChart size={18} className="text-brand-500" />
+          <h2 className="font-serif text-base font-bold text-slate-900">Fluxo de Caixa Projetado</h2>
+          <span className="text-xs text-slate-400 hidden sm:inline">— saldo atual + contas a pagar/receber por vencimento</span>
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          {marcos.map((m) => (
+            <div key={m.label} className="bg-white border border-slate-100 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-medium text-slate-500">{m.label}</span>
+                <Wallet size={14} className="text-slate-300" />
+              </div>
+              <div className={`font-serif text-xl font-bold ${m.valor < 0 ? "text-red-500" : "text-slate-900"}`}>{brl(m.valor)}</div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="text-left px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Mês</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Entradas previstas</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Saídas previstas</th>
+                <th className="text-right px-6 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo projetado</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-50">
+              {projecao.map((m, i) => (
+                <tr key={i} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-2.5 font-medium text-slate-700 capitalize">{m.rotulo}</td>
+                  <td className="px-6 py-2.5 text-right text-emerald-600">{m.entradas ? brl(m.entradas) : "—"}</td>
+                  <td className="px-6 py-2.5 text-right text-red-500">{m.saidas ? brl(m.saidas) : "—"}</td>
+                  <td className={`px-6 py-2.5 text-right font-semibold ${m.saldo < 0 ? "text-red-500" : "text-slate-800"}`}>{brl(m.saldo)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <BlocoCategoria titulo="Receitas por categoria" linhas={linhasReceita} total={receitas} vazio="Sem receitas no período." />
