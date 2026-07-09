@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { X, Loader2, Repeat, Split, Plus, Trash2 } from "lucide-react"
 import { useFormModal } from "@/lib/hooks/use-form-modal"
+import { useToast } from "@/components/layout/provedor-toast"
 import { STATUS_LANCAMENTO, FREQUENCIAS } from "@/lib/financeiro"
 
 type Mode = "create" | "edit"
@@ -59,6 +60,7 @@ function toDate(v?: string | Date | null): string {
 
 export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, contas, categorias, centros, trigger }: Props) {
   const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
+  const { toast } = useToast()
 
   const vazio = {
     tipo: (tipoInicial ?? "despesa") as string,
@@ -148,9 +150,19 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
         body: JSON.stringify(payload),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? "Erro ao salvar lançamento."); return }
+      if (!res.ok) {
+        const msg = data.error ?? "Erro ao salvar lançamento."
+        setError(msg); toast(msg, "erro"); return
+      }
+      const tituloTipo = form.tipo === "receita" ? "Receita" : "Despesa"
+      toast(
+        mode === "create"
+          ? (data.criados ? `${data.criados} lançamentos criados!` : `${tituloTipo} salva com sucesso!`)
+          : "Lançamento atualizado!",
+        "sucesso",
+      )
       closeAndRefresh()
-    } catch { setError("Erro de conexão. Tente novamente.") } finally { setLoading(false) }
+    } catch { const msg = "Erro de conexão. Tente novamente."; setError(msg); toast(msg, "erro") } finally { setLoading(false) }
   }
 
   const categoriasFiltradas = categorias.filter((c) => c.natureza === form.tipo)

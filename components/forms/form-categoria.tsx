@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import { useFormModal } from "@/lib/hooks/use-form-modal"
+import { useToast } from "@/components/layout/provedor-toast"
 import { NATUREZAS, CLASSES_CATEGORIA } from "@/lib/financeiro"
 
 type Mode = "create" | "edit"
@@ -26,6 +27,7 @@ const EMPTY = { nome: "", natureza: "despesa", classe: "essencial", cor: "#64748
 
 export function CategoriaFormModal({ mode, categoria, trigger }: Props) {
   const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
+  const { toast } = useToast()
   const [form, setForm] = useState(EMPTY)
   const [ativo, setAtivo] = useState(true)
 
@@ -53,9 +55,10 @@ export function CategoriaFormModal({ mode, categoria, trigger }: Props) {
         body: JSON.stringify({ ...form, ...(mode === "edit" ? { ativo } : {}) }),
       })
       const data = await res.json()
-      if (!res.ok) { setError(data.error ?? "Erro ao salvar categoria."); return }
+      if (!res.ok) { const msg = data.error ?? "Erro ao salvar categoria."; setError(msg); toast(msg, "erro"); return }
+      toast(mode === "create" ? "Categoria criada!" : "Categoria atualizada!", "sucesso")
       closeAndRefresh()
-    } catch { setError("Erro de conexão. Tente novamente.") } finally { setLoading(false) }
+    } catch { const msg = "Erro de conexão. Tente novamente."; setError(msg); toast(msg, "erro") } finally { setLoading(false) }
   }
 
   return (

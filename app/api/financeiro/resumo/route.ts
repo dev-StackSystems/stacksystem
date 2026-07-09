@@ -40,7 +40,12 @@ export async function GET(requisicao: NextRequest) {
   const [lancs, recAnt, despAnt] = await Promise.all([
     db.lancamentoFinanceiro.findMany({
       where: { ...escopo, status: { not: "cancelado" }, dataCompetencia: { gte: inicio, lte: fim } },
-      select: { tipo: true, valor: true, categoria: { select: { nome: true, classe: true } } },
+      orderBy: { valor: "desc" },
+      select: {
+        tipo: true, valor: true, descricao: true, dataCompetencia: true,
+        categoria: { select: { nome: true, classe: true } },
+        contato: { select: { nome: true } },
+      },
     }),
     db.lancamentoFinanceiro.aggregate({
       _sum: { valor: true },
@@ -61,6 +66,19 @@ export async function GET(requisicao: NextRequest) {
 
   const stats = resumoPessoal(entrada)
 
+  // Lançamentos crus para a IA analisar item a item (já vêm por valor desc; limita p/ token budget)
+  const LIMITE_TRANSACOES = 200
+  const transacoes = lancs.slice(0, LIMITE_TRANSACOES).map((l) => ({
+    data: new Date(l.dataCompetencia).toISOString().slice(0, 10),
+    tipo: l.tipo,
+    descricao: l.descricao,
+    valor: Number(l.valor),
+    categoria: l.categoria?.nome ?? null,
+    classe: l.categoria?.classe ?? null,
+    contato: l.contato?.nome ?? null,
+  }))
+  const transacoesOmitidas = Math.max(0, lancs.length - LIMITE_TRANSACOES)
+
   const despAntNum = Number(despAnt._sum.valor ?? 0)
   const recAntNum = Number(recAnt._sum.valor ?? 0)
   const mesAnterior = despAntNum + recAntNum > 0 ? { despesas: despAntNum, sobra: recAntNum - despAntNum } : null
@@ -77,6 +95,8 @@ export async function GET(requisicao: NextRequest) {
     porClasse: stats.porClasse,
     topCategorias: stats.topCategorias,
     mesAnterior,
+    transacoes,
+    transacoesOmitidas,
   })
 
   return NextResponse.json({
