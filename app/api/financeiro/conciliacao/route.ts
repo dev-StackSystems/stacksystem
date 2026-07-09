@@ -20,6 +20,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { exigirPapel } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
+import { registrarAuditoria, ipDaRequisicao } from "@/lib/auditoria"
 
 type Transacao = { fitId: string | null; data: Date; valor: number; memo: string }
 
@@ -154,5 +155,6 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  await registrarAuditoria(user.id, "financeiro.conciliacao", `conta=${contaId} · ${conciliados} conciliados · ${criados} criados`, ipDaRequisicao(request))
   return NextResponse.json({ ok: true, total: transacoes.length, conciliados, criados, semMatch })
 }

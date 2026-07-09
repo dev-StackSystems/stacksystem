@@ -65,7 +65,7 @@ export function ContasTable({ contas, isAdmin, canEdit }: Props) {
             <div className="flex items-end justify-between">
               <div>
                 <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Saldo Atual</p>
-                <p className={`font-serif text-xl font-bold ${c.saldoAtual < 0 ? "text-red-500" : "text-slate-900"}`}>{brl(c.saldoAtual)}</p>
+                <p className={`valor-sensivel font-serif text-xl font-bold ${c.saldoAtual < 0 ? "text-red-500" : "text-slate-900"}`}>{brl(c.saldoAtual)}</p>
               </div>
               <div className="text-right">
                 <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">Inicial</p>

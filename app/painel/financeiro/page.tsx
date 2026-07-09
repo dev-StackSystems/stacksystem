@@ -100,7 +100,7 @@ export default async function FinanceiroDashboard() {
                 <span className="text-xs font-medium text-slate-500">{k.label}</span>
                 <div className={`w-8 h-8 rounded-xl border flex items-center justify-center ${k.color}`}><Icon size={16} /></div>
               </div>
-              <div className="font-serif text-lg font-bold text-slate-900 truncate">{k.value}</div>
+              <div className="valor-sensivel font-serif text-lg font-bold text-slate-900 truncate">{k.value}</div>
             </div>
           )
         })}
@@ -124,7 +124,7 @@ export default async function FinanceiroDashboard() {
                   <p className="text-xs text-slate-400">{l.contato?.nome ?? l.categoria?.nome ?? "—"}</p>
                 </div>
                 <span className="text-xs text-slate-400 hidden sm:block">{dataBR(l.dataVencimento)}</span>
-                <span className={`font-semibold text-sm ${l.tipo === "receita" ? "text-emerald-600" : "text-red-500"}`}>{brl(num(l.valor))}</span>
+                <span className={`valor-sensivel font-semibold text-sm ${l.tipo === "receita" ? "text-emerald-600" : "text-red-500"}`}>{brl(num(l.valor))}</span>
               </div>
             ))}
           </div>

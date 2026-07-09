@@ -611,7 +611,7 @@ function CardKpi({
           <Icone size={16} />
         </div>
       </div>
-      <div className="font-serif text-2xl font-bold text-slate-900 mb-0.5 truncate">{valor}</div>
+      <div className="valor-sensivel font-serif text-2xl font-bold text-slate-900 mb-0.5 truncate">{valor}</div>
       <div className="text-xs text-slate-400">{sub}</div>
     </div>
   )

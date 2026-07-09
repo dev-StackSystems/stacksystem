@@ -14,7 +14,7 @@
 import { useSession, signOut } from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
-import { Settings, LogOut, User } from "lucide-react"
+import { Settings, LogOut, User, Eye, EyeOff } from "lucide-react"
 
 // Rótulos legíveis para cada papel
 const ROTULOS_PAPEL: Record<string, string> = {
@@ -37,6 +37,22 @@ export function BarraTopo() {
   const [aberto, setAberto] = useState(false)
   const refDropdown = useRef<HTMLDivElement>(null)
 
+  // Data masking — ocultar valores sensíveis (persistido em localStorage)
+  const [ocultar, setOcultar] = useState(false)
+  useEffect(() => {
+    const salvo = localStorage.getItem("ocultarValores") === "1"
+    setOcultar(salvo)
+    document.body.classList.toggle("ocultar-valores", salvo)
+  }, [])
+  const alternarOcultar = () => {
+    setOcultar((v) => {
+      const novo = !v
+      document.body.classList.toggle("ocultar-valores", novo)
+      localStorage.setItem("ocultarValores", novo ? "1" : "0")
+      return novo
+    })
+  }
+
   // Fecha o dropdown ao clicar fora dele
   useEffect(() => {
     const fecharAoClicarFora = (e: MouseEvent) => {
@@ -57,6 +73,15 @@ export function BarraTopo() {
       <div className="flex-1">
         <p className="text-xs text-slate-400">Bem-vindo à plataforma StackSystems</p>
       </div>
+
+      {/* Ocultar valores sensíveis (data masking) */}
+      <button
+        onClick={alternarOcultar}
+        title={ocultar ? "Mostrar valores" : "Ocultar valores"}
+        className="w-9 h-9 flex items-center justify-center rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-50 transition-colors"
+      >
+        {ocultar ? <EyeOff size={18} /> : <Eye size={18} />}
+      </button>
 
       {/* Perfil com dropdown */}
       <div className="relative" ref={refDropdown}>

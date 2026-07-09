@@ -8,6 +8,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { exigirPapel } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
+import { registrarAuditoria, ipDaRequisicao } from "@/lib/auditoria"
 
 type Params = { params: Promise<{ id: string }> }
 
@@ -55,6 +56,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
     },
     include: INCLUDE,
   })
+  await registrarAuditoria(user.id, "financeiro.lancamento.editar", `id=${id}`, ipDaRequisicao(request))
   return NextResponse.json(lanc)
 }
 
@@ -74,6 +76,7 @@ export async function DELETE(request: NextRequest, { params }: Params) {
   }
 
   const escopo = request.nextUrl.searchParams.get("escopo")
+  await registrarAuditoria(user.id, "financeiro.lancamento.excluir", `id=${id}${escopo === "serie" ? " (série)" : ""}`, ipDaRequisicao(request))
   if (escopo === "serie" && atual.grupoRecorrenciaId) {
     const r = await db.lancamentoFinanceiro.deleteMany({
       where: { grupoRecorrenciaId: atual.grupoRecorrenciaId, empresaId: atual.empresaId },

@@ -41,6 +41,17 @@
   to   { background-position:  200% 0; }
 }
 
+/* ── Data masking — ocultar valores sensíveis com um clique ──── */
+body.ocultar-valores .valor-sensivel {
+  filter: blur(7px);
+  transition: filter .15s ease;
+  cursor: pointer;
+  user-select: none;
+}
+body.ocultar-valores .valor-sensivel:hover {
+  filter: none;
+}
+
 /* ── Base ─────────────────────────────────────────────────── */
 @layer base {
   *, *::before, *::after { box-sizing: border-box; }

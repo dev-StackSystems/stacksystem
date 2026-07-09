@@ -20,6 +20,7 @@ import { db } from "@/lib/db"
 import { getUsuarioAtual } from "@/lib/auth-helpers"
 import { PapelUsuario } from "@prisma/client"
 import { proximaData } from "@/lib/financeiro"
+import { registrarAuditoria, ipDaRequisicao } from "@/lib/auditoria"
 
 const INCLUDE = {
   contato:     { select: { nome: true, tipoPessoa: true, documento: true } },
@@ -165,6 +166,7 @@ export async function POST(requisicao: NextRequest) {
       },
       include: INCLUDE,
     })
+    await registrarAuditoria(usuario.id, "financeiro.lancamento.criar", `${tipo} · ${descricao.trim()} · R$ ${total.toFixed(2)}`, ipDaRequisicao(requisicao))
     return NextResponse.json(lanc, { status: 201 })
   }
 
@@ -196,5 +198,6 @@ export async function POST(requisicao: NextRequest) {
   }))
 
   await db.lancamentoFinanceiro.createMany({ data: dados })
+  await registrarAuditoria(usuario.id, "financeiro.lancamento.criar_serie", `${descricao.trim()} · ${n}x · R$ ${total.toFixed(2)}`, ipDaRequisicao(requisicao))
   return NextResponse.json({ ok: true, criados: n, grupoRecorrenciaId }, { status: 201 })
 }
