@@ -94,3 +94,24 @@ export const GESTOES_FINANCEIRAS = [
 ] as const
 
 export type GestaoFinanceira = typeof GESTOES_FINANCEIRAS[number]["key"]
+
+/** Nomes dos meses (índice 0 = Janeiro). */
+export const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+] as const
+
+/**
+ * Categorias padrão semeadas ao criar uma empresa do tipo financeiro,
+ * conforme o modelo de gestão (pessoal PF ou empresarial PJ).
+ */
+export const CATEGORIAS_PADRAO: Record<GestaoFinanceira, { receita: string[]; despesa: string[] }> = {
+  PF: {
+    receita: ["Salário", "Renda Extra", "Investimentos"],
+    despesa: ["Moradia", "Alimentação", "Transporte", "Saúde", "Educação", "Lazer", "Outros"],
+  },
+  PJ: {
+    receita: ["Vendas", "Prestação de Serviços", "Outras Receitas"],
+    despesa: ["Folha de Pagamento", "Impostos e Taxas", "Fornecedores", "Aluguel", "Marketing", "Despesas Administrativas"],
+  },
+}

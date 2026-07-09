@@ -50,6 +50,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
       ...(b.categoriaId !== undefined     && { categoriaId: b.categoriaId || null }),
       ...(b.centroCustoId !== undefined   && { centroCustoId: b.centroCustoId || null }),
       ...(b.observacao !== undefined      && { observacao: b.observacao?.trim() || null }),
+      ...(b.tags !== undefined            && { tags: typeof b.tags === "string" && b.tags.trim() ? b.tags.trim() : null }),
       ...(b.conciliado !== undefined      && { conciliado: Boolean(b.conciliado) }),
     },
     include: INCLUDE,

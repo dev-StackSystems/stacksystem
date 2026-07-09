@@ -23,7 +23,7 @@ import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, DollarSign,
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
-  Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw,
+  Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw, PiggyBank,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 import type { ModuloCustom } from "@/lib/auth-helpers"
@@ -73,6 +73,7 @@ const GRUPOS_MODULOS: GrupoNav[] = [
       { icone: Landmark,       rotulo: "Contas",          href: "/painel/financeiro/contas",        modulo: "financeiro" },
       { icone: Tags,           rotulo: "Categorias",      href: "/painel/financeiro/categorias",    modulo: "financeiro" },
       { icone: Target,         rotulo: "Centros de Custo", href: "/painel/financeiro/centros-custo", modulo: "financeiro" },
+      { icone: PiggyBank,      rotulo: "Orçamento",       href: "/painel/financeiro/orcamento",     modulo: "financeiro" },
       { icone: FileBarChart,   rotulo: "Relatórios",      href: "/painel/financeiro/relatorios",    modulo: "financeiro" },
       { icone: RefreshCw,      rotulo: "Conciliação",     href: "/painel/financeiro/conciliacao",   modulo: "financeiro" },
       { icone: DollarSign,     rotulo: "Mensalidades",    href: "/painel/baixas",                   modulo: "baixas"       },

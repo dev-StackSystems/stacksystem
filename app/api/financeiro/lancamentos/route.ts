@@ -129,10 +129,29 @@ export async function POST(requisicao: NextRequest) {
     centroCustoId: centroCustoId || null,
     documento,
     observacao:    observacao?.trim() || null,
+    tags:          typeof c.tags === "string" && c.tags.trim() ? c.tags.trim() : null,
   }
 
   // ── Lançamento único ──────────────────────────────────────────────────────
   if (n === 1) {
+    // Rateio: divide o lançamento em várias categorias/centros de custo
+    type RateioIn = { categoriaId?: string; centroCustoId?: string; percentual: string | number }
+    const rateiosIn: RateioIn[] = Array.isArray(c.rateios) ? c.rateios : []
+    const rateios = rateiosIn.filter(r => r && (r.categoriaId || r.centroCustoId) && Number(r.percentual) > 0)
+    const usarRateio = rateios.length > 0
+
+    let rateioData: { categoriaId: string | null; centroCustoId: string | null; percentual: number; valor: number }[] = []
+    if (usarRateio) {
+      const totalCent = Math.round(total * 100)
+      let acumulado = 0
+      rateioData = rateios.map((r, i) => {
+        const pct = Number(r.percentual)
+        const cent = i === rateios.length - 1 ? totalCent - acumulado : Math.round((totalCent * pct) / 100)
+        acumulado += cent
+        return { categoriaId: r.categoriaId || null, centroCustoId: r.centroCustoId || null, percentual: pct, valor: cent / 100 }
+      })
+    }
+
     const lanc = await db.lancamentoFinanceiro.create({
       data: {
         ...comum,
@@ -141,6 +160,8 @@ export async function POST(requisicao: NextRequest) {
         dataCompetencia: baseComp,
         dataVencimento:  baseVenc,
         dataPagamento:   dataPagamento ? new Date(dataPagamento) : null,
+        // Quando rateado, a alocação vem dos rateios (não da categoria/centro do lançamento)
+        ...(usarRateio ? { categoriaId: null, centroCustoId: null, rateios: { create: rateioData } } : {}),
       },
       include: INCLUDE,
     })

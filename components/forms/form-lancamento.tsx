@@ -1,6 +1,6 @@
 "use client"
 import { useState, useEffect } from "react"
-import { X, Loader2, Repeat } from "lucide-react"
+import { X, Loader2, Repeat, Split, Plus, Trash2 } from "lucide-react"
 import { useFormModal } from "@/lib/hooks/use-form-modal"
 import { STATUS_LANCAMENTO, FREQUENCIAS } from "@/lib/financeiro"
 
@@ -23,10 +23,12 @@ export interface LancamentoData {
   categoriaId?: string | null
   centroCustoId?: string | null
   observacao?: string | null
+  tags?: string | null
   parcelaNum?: number | null
   parcelaTotal?: number | null
   grupoRecorrenciaId?: string | null
   conciliado?: boolean
+  _count?: { rateios: number }
   contato?: { nome: string; tipoPessoa: string; documento: string | null } | null
   conta?: { nome: string } | null
   categoria?: { nome: string; natureza: string } | null
@@ -62,13 +64,15 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
     descricao: "", valor: "", status: "pendente",
     dataCompetencia: new Date().toISOString().slice(0, 10),
     dataVencimento: "", dataPagamento: "",
-    contatoId: "", contaId: "", categoriaId: "", centroCustoId: "", observacao: "",
+    contatoId: "", contaId: "", categoriaId: "", centroCustoId: "", observacao: "", tags: "",
   }
   const [form, setForm] = useState(vazio)
   const [repetir, setRepetir] = useState(false)
   const [parcelaTotal, setParcelaTotal] = useState("2")
   const [frequencia, setFrequencia] = useState("mensal")
   const [dividirValor, setDividirValor] = useState(false)
+  const [ratear, setRatear] = useState(false)
+  const [rateio, setRateio] = useState<{ categoriaId: string; centroCustoId: string; percentual: string }[]>([{ categoriaId: "", centroCustoId: "", percentual: "100" }])
 
   useEffect(() => {
     if (open && lancamento && mode === "edit") {
@@ -85,16 +89,23 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
         categoriaId: lancamento.categoriaId ?? "",
         centroCustoId: lancamento.centroCustoId ?? "",
         observacao: lancamento.observacao ?? "",
+        tags: lancamento.tags ?? "",
       })
     } else if (open) {
       setForm({ ...vazio, tipo: tipoInicial ?? "despesa" })
       setRepetir(false); setParcelaTotal("2"); setFrequencia("mensal"); setDividirValor(false)
+      setRatear(false); setRateio([{ categoriaId: "", centroCustoId: "", percentual: "100" }])
     }
     setError("")
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const f = (k: keyof typeof form, v: string) => setForm((p) => ({ ...p, [k]: v }))
+  const somaPct = rateio.reduce((s, r) => s + (parseFloat(r.percentual) || 0), 0)
+  const setRateioRow = (i: number, k: "categoriaId" | "centroCustoId" | "percentual", v: string) =>
+    setRateio((rows) => rows.map((row, idx) => (idx === i ? { ...row, [k]: v } : row)))
+  const addRateio = () => setRateio((rows) => [...rows, { categoriaId: "", centroCustoId: "", percentual: "" }])
+  const rmRateio = (i: number) => setRateio((rows) => rows.filter((_, idx) => idx !== i))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -118,11 +129,17 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
         categoriaId: form.categoriaId || null,
         centroCustoId: form.centroCustoId || null,
         observacao: form.observacao || null,
+        tags: form.tags.trim() || null,
       }
       if (mode === "create" && repetir) {
         payload.parcelaTotal = Math.max(2, parseInt(parcelaTotal) || 2)
         payload.frequencia = frequencia
         payload.dividirValor = dividirValor
+      }
+      if (mode === "create" && ratear && !repetir) {
+        payload.rateios = rateio
+          .filter((r) => (r.categoriaId || r.centroCustoId) && parseFloat(r.percentual) > 0)
+          .map((r) => ({ categoriaId: r.categoriaId || null, centroCustoId: r.centroCustoId || null, percentual: parseFloat(r.percentual) }))
       }
       const res = await fetch(url, {
         method: mode === "create" ? "POST" : "PUT",
@@ -231,13 +248,19 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
                 )}
               </div>
 
-              <div>
-                <label className={labelClass}>Observação</label>
-                <input value={form.observacao} onChange={(e) => f("observacao", e.target.value)} className={inputClass} placeholder="Opcional" />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelClass}>Observação</label>
+                  <input value={form.observacao} onChange={(e) => f("observacao", e.target.value)} className={inputClass} placeholder="Opcional" />
+                </div>
+                <div>
+                  <label className={labelClass}>Tags <span className="text-slate-300 font-normal normal-case tracking-normal">(vírgula)</span></label>
+                  <input value={form.tags} onChange={(e) => f("tags", e.target.value)} className={inputClass} placeholder="ex: projeto-x, urgente" />
+                </div>
               </div>
 
               {/* Recorrência / parcelamento (apenas no cadastro) */}
-              {mode === "create" && (
+              {mode === "create" && !ratear && (
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" checked={repetir} onChange={(e) => setRepetir(e.target.checked)} className="accent-brand-500 w-4 h-4" />
@@ -262,6 +285,43 @@ export function LancamentoFormModal({ mode, lancamento, tipoInicial, contatos, c
                         <input type="checkbox" checked={dividirValor} onChange={(e) => setDividirValor(e.target.checked)} className="accent-brand-500 w-4 h-4" />
                         Dividir o valor total entre as parcelas (senão, repete o mesmo valor a cada ocorrência)
                       </label>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Rateio — dividir entre categorias/centros (cadastro, sem parcelamento) */}
+              {mode === "create" && !repetir && (
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={ratear} onChange={(e) => setRatear(e.target.checked)} className="accent-brand-500 w-4 h-4" />
+                    <Split size={14} className="text-brand-500" />
+                    <span className="text-sm font-semibold text-slate-700">Ratear entre categorias / centros de custo</span>
+                  </label>
+                  {ratear && (
+                    <div className="mt-3 flex flex-col gap-2">
+                      {rateio.map((row, i) => (
+                        <div key={i} className="grid grid-cols-[1fr_1fr_64px_22px] gap-2 items-center">
+                          <select value={row.categoriaId} onChange={(e) => setRateioRow(i, "categoriaId", e.target.value)} className={`${selectClass} text-xs`}>
+                            <option value="">Categoria…</option>
+                            {categoriasFiltradas.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                          </select>
+                          <select value={row.centroCustoId} onChange={(e) => setRateioRow(i, "centroCustoId", e.target.value)} className={`${selectClass} text-xs`}>
+                            <option value="">Centro…</option>
+                            {centros.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                          </select>
+                          <div className="relative">
+                            <input type="number" min="0" max="100" value={row.percentual} onChange={(e) => setRateioRow(i, "percentual", e.target.value)} className={`${inputClass} pr-4 text-xs`} placeholder="0" />
+                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400">%</span>
+                          </div>
+                          <button type="button" onClick={() => rmRateio(i)} disabled={rateio.length <= 1} className="text-slate-400 hover:text-red-500 disabled:opacity-30"><Trash2 size={14} /></button>
+                        </div>
+                      ))}
+                      <div className="flex items-center justify-between">
+                        <button type="button" onClick={addRateio} className="text-xs font-semibold text-brand-600 hover:text-brand-700 flex items-center gap-1"><Plus size={13} /> Adicionar linha</button>
+                        <span className={`text-xs font-semibold ${Math.abs(somaPct - 100) < 0.01 ? "text-emerald-600" : "text-amber-600"}`}>Soma: {somaPct}%</span>
+                      </div>
+                      <p className="text-[10px] text-slate-400">Ao ratear, a categoria/centro de custo acima são ignorados.</p>
                     </div>
                   )}
                 </div>

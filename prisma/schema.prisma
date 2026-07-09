@@ -184,6 +184,7 @@ model Empresa {
   categoriasFinanceiras CategoriaFinanceira[]
   centrosCusto          CentroCusto[]
   lancamentos           LancamentoFinanceiro[]
+  orcamentos            Orcamento[]
 
   @@map("empresas")
 }
@@ -647,6 +648,8 @@ model CategoriaFinanceira {
 
   empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   lancamentos LancamentoFinanceiro[]
+  orcamentos  Orcamento[]
+  rateios     RateioLancamento[]
 
   @@index([empresaId])
   @@map("categorias_financeiras")
@@ -664,6 +667,8 @@ model CentroCusto {
 
   empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
   lancamentos LancamentoFinanceiro[]
+  orcamentos  Orcamento[]
+  rateios     RateioLancamento[]
 
   @@index([empresaId])
   @@map("centros_custo")
@@ -688,6 +693,7 @@ model LancamentoFinanceiro {
   documento       String?                       // snapshot CPF/CNPJ do contato
 
   observacao      String?
+  tags            String?                       // etiquetas livres, separadas por vírgula
 
   // Recorrência / parcelamento
   recorrente         Boolean @default(false)
@@ -708,9 +714,49 @@ model LancamentoFinanceiro {
   conta       ContaFinanceira?     @relation(fields: [contaId],       references: [id])
   categoria   CategoriaFinanceira? @relation(fields: [categoriaId],   references: [id])
   centroCusto CentroCusto?         @relation(fields: [centroCustoId], references: [id])
+  rateios     RateioLancamento[]
 
   @@index([empresaId, dataCompetencia])
   @@index([empresaId, status])
   @@index([grupoRecorrenciaId])
   @@map("lancamentos_financeiros")
+}
+
+// Orçamento matricial — limite por categoria e/ou centro de custo, por período
+model Orcamento {
+  id            String   @id @default(cuid())
+  empresaId     String
+  ano           Int
+  mes           Int      @default(0)          // 0 = ano inteiro; 1-12 = mês específico
+  categoriaId   String?
+  centroCustoId String?
+  valor         Decimal  @db.Decimal(12, 2)   // limite orçado
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  empresa     Empresa              @relation(fields: [empresaId],     references: [id], onDelete: Cascade)
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId],   references: [id])
+  centroCusto CentroCusto?         @relation(fields: [centroCustoId], references: [id])
+
+  @@unique([empresaId, ano, mes, categoriaId, centroCustoId])
+  @@index([empresaId, ano])
+  @@map("orcamentos")
+}
+
+// Rateio — divide um lançamento em várias categorias/centros de custo
+model RateioLancamento {
+  id            String   @id @default(cuid())
+  lancamentoId  String
+  categoriaId   String?
+  centroCustoId String?
+  percentual    Decimal  @db.Decimal(5, 2)    // 0-100
+  valor         Decimal  @db.Decimal(12, 2)
+  criadoEm      DateTime @default(now())
+
+  lancamento  LancamentoFinanceiro @relation(fields: [lancamentoId],  references: [id], onDelete: Cascade)
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId],   references: [id])
+  centroCusto CentroCusto?         @relation(fields: [centroCustoId], references: [id])
+
+  @@index([lancamentoId])
+  @@map("rateios_lancamento")
 }

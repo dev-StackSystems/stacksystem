@@ -30,6 +30,7 @@ export default async function LancamentosPage() {
         conta:       { select: { nome: true } },
         categoria:   { select: { nome: true, natureza: true } },
         centroCusto: { select: { nome: true } },
+        _count:      { select: { rateios: true } },
       },
     }),
     db.contatoFinanceiro.findMany({ where: escopoAtivo, orderBy: { nome: "asc" }, select: { id: true, nome: true } }),

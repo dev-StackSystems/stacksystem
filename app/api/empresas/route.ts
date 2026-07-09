@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { exigirSuperAdmin } from "@/lib/auth-helpers"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "@/types/system"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS, CATEGORIAS_PADRAO } from "@/types/system"
 
 // ── GET /api/empresas ──────────────────────────────────────────────────────
 
@@ -104,6 +104,18 @@ export async function POST(requisicao: NextRequest) {
         })),
       })
     }
+  }
+
+  // Empresa do tipo financeiro já nasce com estrutura padrão (categorias + conta)
+  if (tipoSistema === "financeiro") {
+    const padrao = CATEGORIAS_PADRAO[gestaoFinanceira === "PF" ? "PF" : "PJ"]
+    await db.categoriaFinanceira.createMany({
+      data: [
+        ...padrao.receita.map(nome => ({ empresaId: empresa.id, nome, natureza: "receita" })),
+        ...padrao.despesa.map(nome => ({ empresaId: empresa.id, nome, natureza: "despesa" })),
+      ],
+    })
+    await db.contaFinanceira.create({ data: { empresaId: empresa.id, nome: "Caixa", tipo: "caixa" } })
   }
 
   return NextResponse.json(empresa, { status: 201 })

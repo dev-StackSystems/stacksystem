@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import { Pencil, Trash2, Loader2, Search, ArrowUpCircle, ArrowDownCircle, Repeat } from "lucide-react"
+import { Pencil, Trash2, Loader2, Search, ArrowUpCircle, ArrowDownCircle, Repeat, Split } from "lucide-react"
 import {
   LancamentoFormModal, LancamentoData, OpcaoSimples, OpcaoCategoria,
 } from "@/components/forms/form-lancamento"
@@ -66,7 +66,7 @@ export function LancamentosTable({ lancamentos, contatos, contas, categorias, ce
     const mt = fTipo === "todos" || l.tipo === fTipo
     const ms = fStatus === "todos" || l.status === fStatus
     const t = search.toLowerCase()
-    const mq = !t || l.descricao.toLowerCase().includes(t) || (l.contato?.nome ?? "").toLowerCase().includes(t) || (l.categoria?.nome ?? "").toLowerCase().includes(t)
+    const mq = !t || l.descricao.toLowerCase().includes(t) || (l.contato?.nome ?? "").toLowerCase().includes(t) || (l.categoria?.nome ?? "").toLowerCase().includes(t) || (l.tags ?? "").toLowerCase().includes(t)
     return mt && ms && mq
   })
 
@@ -123,6 +123,12 @@ export function LancamentosTable({ lancamentos, contatos, contas, categorias, ce
                           <span className="text-[10px] font-bold text-brand-600 bg-brand-50 border border-brand-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Repeat size={9} />{l.parcelaNum}/{l.parcelaTotal}</span>
                         )}
                         {late && <span className="text-[10px] font-bold text-red-500 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">Atrasado</span>}
+                        {(l._count?.rateios ?? 0) > 0 && (
+                          <span className="text-[10px] font-bold text-purple-600 bg-purple-50 border border-purple-200 px-1.5 py-0.5 rounded-full flex items-center gap-0.5"><Split size={9} />Rateado</span>
+                        )}
+                        {(l.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3).map((t) => (
+                          <span key={t} className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">{t}</span>
+                        ))}
                       </div>
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell text-slate-500">{l.contato?.nome ?? "—"}</td>
