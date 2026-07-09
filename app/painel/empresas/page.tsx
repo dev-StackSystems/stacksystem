@@ -13,12 +13,17 @@ export default async function EmpresasPage() {
   // Apenas o super admin (desenvolvedor/i3) gerencia a lista de empresas contratantes
   if (!session.user.superAdmin) redirect("/painel")
 
-  const empresas = await db.empresa.findMany({
+  const empresasRaw = await db.empresa.findMany({
     orderBy: { nome: "asc" },
     include: {
       _count: { select: { cursos: true, usuarios: true } },
     },
   })
+  // Decimal não é serializável para Client Components — converte para number
+  const empresas = empresasRaw.map((e) => ({
+    ...e,
+    aprovacaoMinimo: e.aprovacaoMinimo != null ? Number(e.aprovacaoMinimo) : null,
+  }))
 
   return (
     <div>

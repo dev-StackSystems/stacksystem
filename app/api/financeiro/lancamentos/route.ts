@@ -120,10 +120,16 @@ export async function POST(requisicao: NextRequest) {
   const freq = frequencia || "mensal"
   const n = Math.max(1, Math.min(360, parseInt(parcelaTotal) || 1))
 
+  // Alçada de aprovação: despesa >= limite da empresa entra pendente de aprovação
+  const empresaCfg = await db.empresa.findUnique({ where: { id: empresaId }, select: { aprovacaoMinimo: true } })
+  const limiteAprov = empresaCfg?.aprovacaoMinimo != null ? Number(empresaCfg.aprovacaoMinimo) : null
+  const exigeAprovacao = tipo === "despesa" && limiteAprov != null && total >= limiteAprov
+
   const comum = {
     empresaId,
     tipo,
-    status:        status || "pendente",
+    status:        exigeAprovacao ? "pendente" : (status || "pendente"),
+    aprovacao:     exigeAprovacao ? "pendente" : "nao_requer",
     contatoId:     contatoId     || null,
     contaId:       contaId       || null,
     categoriaId:   categoriaId   || null,

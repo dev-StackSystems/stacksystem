@@ -31,6 +31,7 @@ export interface EmpresaData {
   nomeSistema?: string | null
   tipoSistema?: string | null
   gestaoFinanceira?: string | null
+  aprovacaoMinimo?: number | string | null
   mascara?: string | null
   descricao?: string | null
 }
@@ -48,7 +49,7 @@ const EMPTY_FORM = {
   ativa: true,
   cor: "#f97316", cor2: "#1e293b",
   logo: "", brasao: "", banner: "",
-  nomeSistema: "", tipoSistema: "", gestaoFinanceira: "PJ", mascara: "", descricao: "",
+  nomeSistema: "", tipoSistema: "", gestaoFinanceira: "PJ", aprovacaoMinimo: "", mascara: "", descricao: "",
 }
 
 const UF_LIST = [
@@ -87,6 +88,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
           nomeSistema: empresa.nomeSistema ?? "",
           tipoSistema: empresa.tipoSistema ?? "",
           gestaoFinanceira: empresa.gestaoFinanceira ?? "PJ",
+          aprovacaoMinimo: empresa.aprovacaoMinimo != null ? String(empresa.aprovacaoMinimo) : "",
           mascara: empresa.mascara ?? "",
           descricao: empresa.descricao ?? "",
         })
@@ -137,6 +139,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
           nomeSistema: form.nomeSistema.trim() || null,
           tipoSistema: form.tipoSistema.trim() || null,
           gestaoFinanceira: form.gestaoFinanceira,
+          aprovacaoMinimo: form.aprovacaoMinimo || null,
           mascara: form.mascara.trim() || null,
           descricao: form.descricao.trim() || null,
         }),
@@ -357,6 +360,12 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                           )
                         })}
                       </div>
+                    </div>
+                  )}
+                  {form.tipoSistema === "financeiro" && (
+                    <div className="col-span-2">
+                      <label className={labelClass}>Aprovar despesas a partir de (R$) <span className="text-slate-300 font-normal normal-case tracking-normal">(opcional)</span></label>
+                      <input type="number" step="0.01" min="0" value={form.aprovacaoMinimo} onChange={e => f("aprovacaoMinimo", e.target.value)} className={inputClass} placeholder="Ex: 1000 — despesas acima disso exigem aprovação" />
                     </div>
                   )}
                   <div className="col-span-2">

@@ -129,6 +129,12 @@ export function LancamentosTable({ lancamentos, contatos, contas, categorias, ce
                         {(l.tags ?? "").split(",").map((t) => t.trim()).filter(Boolean).slice(0, 3).map((t) => (
                           <span key={t} className="text-[10px] font-semibold text-slate-500 bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded-full">{t}</span>
                         ))}
+                        {l.aprovacao === "pendente" && (
+                          <span className="text-[10px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">Aguardando aprovação</span>
+                        )}
+                        {l.aprovacao === "reprovado" && (
+                          <span className="text-[10px] font-bold text-red-500 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded-full">Reprovado</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 hidden lg:table-cell text-slate-500">{l.contato?.nome ?? "—"}</td>
@@ -140,7 +146,7 @@ export function LancamentosTable({ lancamentos, contatos, contas, categorias, ce
                       <div className="flex items-center justify-end gap-1.5">
                         {isLoading ? <Loader2 size={16} className="animate-spin text-slate-400" /> : (
                           <>
-                            {canEdit && l.status !== "pago" && (
+                            {canEdit && l.status !== "pago" && l.aprovacao !== "pendente" && (
                               <button onClick={() => marcarPago(l)} className="text-[11px] font-semibold text-emerald-600 hover:bg-emerald-50 px-2 py-1 rounded-lg transition-all" title="Marcar como pago">Pagar</button>
                             )}
                             {canEdit && (

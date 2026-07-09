@@ -43,7 +43,7 @@ export async function POST(requisicao: NextRequest) {
     email, telefone, fax, site,
     endereco, bairro, cep, municipio, uf, latitude, longitude,
     cor, cor2, logo, brasao, banner,
-    nomeSistema, tipoSistema, gestaoFinanceira, mascara, descricao,
+    nomeSistema, tipoSistema, gestaoFinanceira, aprovacaoMinimo, mascara, descricao,
   } = corpo
 
   // Validações obrigatórias
@@ -87,6 +87,7 @@ export async function POST(requisicao: NextRequest) {
       nomeSistema: nomeSistema?.trim() || null,
       tipoSistema: tipoSistema?.trim() || null,
       gestaoFinanceira: tipoSistema === "financeiro" ? (gestaoFinanceira === "PF" ? "PF" : "PJ") : null,
+      aprovacaoMinimo:  tipoSistema === "financeiro" && aprovacaoMinimo ? parseFloat(aprovacaoMinimo) : null,
       mascara:     mascara?.trim()     || null,
       descricao:   descricao?.trim()   || null,
     },

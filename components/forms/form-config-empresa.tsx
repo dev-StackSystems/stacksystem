@@ -28,6 +28,7 @@ interface EmpresaData {
   nomeSistema?: string | null
   tipoSistema?: string | null
   gestaoFinanceira?: string | null
+  aprovacaoMinimo?: number | string | null
   mascara?: string | null
   descricao?: string | null
 }
@@ -72,6 +73,7 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
     banner: empresa.banner ?? "",
     nomeSistema: empresa.nomeSistema ?? "",
     gestaoFinanceira: empresa.gestaoFinanceira ?? "PJ",
+    aprovacaoMinimo: empresa.aprovacaoMinimo != null ? String(empresa.aprovacaoMinimo) : "",
     mascara: empresa.mascara ?? "",
     descricao: empresa.descricao ?? "",
   })
@@ -111,6 +113,7 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
           banner: form.banner.trim() || null,
           nomeSistema: form.nomeSistema.trim() || null,
           gestaoFinanceira: form.gestaoFinanceira,
+          aprovacaoMinimo: form.aprovacaoMinimo || null,
           mascara: form.mascara.trim() || null,
           descricao: form.descricao.trim() || null,
         }),
@@ -198,6 +201,10 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
                 </button>
               )
             })}
+          </div>
+          <div>
+            <label className={labelClass}>Aprovar despesas a partir de (R$)</label>
+            <input type="number" step="0.01" min="0" value={form.aprovacaoMinimo} onChange={set("aprovacaoMinimo")} className={inputClass} placeholder="Ex: 1000 — vazio = sem alçada de aprovação" />
           </div>
         </div>
       )}

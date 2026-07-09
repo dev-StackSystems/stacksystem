@@ -24,6 +24,7 @@ import {
   GraduationCap, BookOpen, Layers, DollarSign,
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
   Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw, PiggyBank,
+  ClipboardCheck, BellRing,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 import type { ModuloCustom } from "@/lib/auth-helpers"
@@ -76,6 +77,8 @@ const GRUPOS_MODULOS: GrupoNav[] = [
       { icone: PiggyBank,      rotulo: "Orçamento",       href: "/painel/financeiro/orcamento",     modulo: "financeiro" },
       { icone: FileBarChart,   rotulo: "Relatórios",      href: "/painel/financeiro/relatorios",    modulo: "financeiro" },
       { icone: RefreshCw,      rotulo: "Conciliação",     href: "/painel/financeiro/conciliacao",   modulo: "financeiro" },
+      { icone: ClipboardCheck, rotulo: "Aprovações",      href: "/painel/financeiro/aprovacoes",    modulo: "financeiro" },
+      { icone: BellRing,       rotulo: "Cobrança",        href: "/painel/financeiro/cobranca",      modulo: "financeiro" },
       { icone: DollarSign,     rotulo: "Mensalidades",    href: "/painel/baixas",                   modulo: "baixas"       },
       { icone: Award,          rotulo: "Certificados",    href: "/painel/certificados",             modulo: "certificados" },
     ],

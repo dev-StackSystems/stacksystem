@@ -28,11 +28,14 @@ export default async function ConfiguracoesPage() {
         endereco: true, bairro: true, cep: true, municipio: true, uf: true,
         latitude: true, longitude: true,
         cor: true, cor2: true, logo: true, brasao: true, banner: true,
-        nomeSistema: true, mascara: true, descricao: true, tipoSistema: true, gestaoFinanceira: true,
+        nomeSistema: true, mascara: true, descricao: true, tipoSistema: true, gestaoFinanceira: true, aprovacaoMinimo: true,
       },
     })
 
     if (!empresa) redirect("/painel")
+
+    // Decimal → number para o Client Component
+    const empresaForm = { ...empresa, aprovacaoMinimo: empresa.aprovacaoMinimo != null ? Number(empresa.aprovacaoMinimo) : null }
 
     return (
       <div>
@@ -59,7 +62,7 @@ export default async function ConfiguracoesPage() {
             <h2 className="font-serif text-base font-bold text-slate-800">Dados da Instituição</h2>
           </div>
           <div className="p-6">
-            <EmpresaConfigForm empresa={empresa} />
+            <EmpresaConfigForm empresa={empresaForm} />
           </div>
         </div>
       </div>

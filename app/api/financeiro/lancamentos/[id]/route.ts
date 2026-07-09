@@ -25,7 +25,7 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const user = auth.usuario
 
   const { id } = await params
-  const atual = await db.lancamentoFinanceiro.findUnique({ where: { id }, select: { empresaId: true } })
+  const atual = await db.lancamentoFinanceiro.findUnique({ where: { id }, select: { empresaId: true, aprovacao: true } })
   if (!atual) return NextResponse.json({ error: "Lançamento não encontrado." }, { status: 404 })
   if (!user.superAdmin && atual.empresaId !== user.empresaId) {
     return NextResponse.json({ error: "Acesso negado" }, { status: 403 })
@@ -34,6 +34,9 @@ export async function PUT(request: NextRequest, { params }: Params) {
   const b = await request.json()
   if (b.tipo !== undefined && b.tipo !== "receita" && b.tipo !== "despesa") {
     return NextResponse.json({ error: "Tipo inválido." }, { status: 400 })
+  }
+  if (b.status === "pago" && atual.aprovacao === "pendente") {
+    return NextResponse.json({ error: "Lançamento pendente de aprovação — não pode ser liquidado." }, { status: 400 })
   }
 
   const lanc = await db.lancamentoFinanceiro.update({

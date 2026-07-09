@@ -161,6 +161,7 @@ model Empresa {
   nomeSistema String?  // Ex: "Portal SEMEDUC"
   tipoSistema String?  // escola | treinamento | consultoria | clinica | financeiro | personalizado
   gestaoFinanceira String? @default("PJ") // PF (CPF/pessoal) | PJ (CNPJ/empresarial) — usado no tipo financeiro
+  aprovacaoMinimo  Decimal? @db.Decimal(12, 2) // despesa >= este valor exige aprovação (null = sem alçada)
   mascara     String?  // Máscara de numeração ex: ###/AAAA
   descricao   String?
   anuncios    String?  // JSON: [{titulo, texto, cor}]
@@ -684,6 +685,9 @@ model LancamentoFinanceiro {
   descricao       String
   valor           Decimal  @db.Decimal(12, 2)
   status          String   @default("pendente") // pago | pendente | cancelado
+  aprovacao       String   @default("nao_requer") // nao_requer | pendente | aprovado | reprovado
+  aprovadoPorId   String?
+  aprovadoEm      DateTime?
   dataCompetencia DateTime @default(now())
   dataVencimento  DateTime?
   dataPagamento   DateTime?

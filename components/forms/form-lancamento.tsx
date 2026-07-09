@@ -28,6 +28,7 @@ export interface LancamentoData {
   parcelaTotal?: number | null
   grupoRecorrenciaId?: string | null
   conciliado?: boolean
+  aprovacao?: string
   _count?: { rateios: number }
   contato?: { nome: string; tipoPessoa: string; documento: string | null } | null
   conta?: { nome: string } | null
