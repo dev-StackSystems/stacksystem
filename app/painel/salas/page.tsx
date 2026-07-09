@@ -45,7 +45,7 @@ export default async function SalasPage() {
         {ehInterno && (
           <SalaFormModal
             trigger={
-              <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all shadow-sm shadow-orange-200">
+              <button className="bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all shadow-sm shadow-brand-200">
                 <Plus size={16} />
                 Nova Sala
               </button>
@@ -67,7 +67,7 @@ export default async function SalasPage() {
           {ehInterno && (
             <SalaFormModal
               trigger={
-                <button className="mt-6 bg-orange-500 hover:bg-orange-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all">
+                <button className="mt-6 bg-brand-500 hover:bg-brand-600 text-white font-bold px-5 py-2.5 rounded-xl text-sm flex items-center gap-2 transition-all">
                   <Plus size={16} />
                   Criar primeira sala
                 </button>

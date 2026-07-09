@@ -170,7 +170,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
         </div>
         <button
           onClick={abrirCriar}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors shadow-sm"
         >
           <Plus size={16} /> Novo Módulo
         </button>
@@ -186,7 +186,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
           <p className="text-sm text-slate-500 mb-6">
             Crie o primeiro módulo para começar a expandir o sistema.
           </p>
-          <button onClick={abrirCriar} className="bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">
+          <button onClick={abrirCriar} className="bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors">
             Criar primeiro módulo
           </button>
         </div>
@@ -195,7 +195,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
           {modulos.map(m => (
             <div key={m.id} className={`bg-white border rounded-2xl p-5 flex items-start gap-4 transition-opacity ${!m.ativo ? "opacity-50" : ""}`}>
               {/* Ícone */}
-              <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-xl flex-shrink-0">
+              <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center text-xl flex-shrink-0">
                 {m.icone}
               </div>
 
@@ -232,7 +232,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                 <button
                   onClick={() => abrirAtribuicaoSimples(m)}
                   title="Atribuir a empresas"
-                  className="p-2 rounded-lg text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors"
+                  className="p-2 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 transition-colors"
                 >
                   <Building2 size={16} />
                 </button>
@@ -286,7 +286,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                     Ícone
                   </label>
                   <input
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-center text-xl focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-center text-xl focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                     value={form.icone}
                     onChange={e => setForm(f => ({ ...f, icone: e.target.value }))}
                     placeholder="📦"
@@ -298,7 +298,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                     Chave única <span className="text-red-400">*</span>
                   </label>
                   <input
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 disabled:bg-slate-50 disabled:text-slate-400 font-mono"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-50 disabled:text-slate-400 font-mono"
                     value={form.chave}
                     onChange={e => setForm(f => ({ ...f, chave: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "") }))}
                     placeholder="ex: barbeiro, petshop"
@@ -314,7 +314,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                   Nome exibido na sidebar <span className="text-red-400">*</span>
                 </label>
                 <input
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                   value={form.rotulo}
                   onChange={e => setForm(f => ({ ...f, rotulo: e.target.value }))}
                   placeholder="ex: BarberPro, PetShop Manager"
@@ -327,7 +327,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                   Caminho / URL <span className="text-red-400">*</span>
                 </label>
                 <input
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-mono focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                   value={form.href}
                   onChange={e => setForm(f => ({ ...f, href: e.target.value }))}
                   placeholder="ex: /painel/modulos/barbeiro ou https://..."
@@ -349,7 +349,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                       onClick={() => setForm(f => ({ ...f, tipo: t.valor }))}
                       className={`flex-1 flex flex-col items-center gap-1 p-3 rounded-xl border text-xs font-semibold transition-all ${
                         form.tipo === t.valor
-                          ? "border-orange-400 bg-orange-50 text-orange-600"
+                          ? "border-brand-400 bg-brand-50 text-brand-600"
                           : "border-slate-200 text-slate-500 hover:border-slate-300"
                       }`}
                     >
@@ -369,7 +369,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                   Descrição <span className="text-slate-300">(opcional)</span>
                 </label>
                 <input
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                   value={form.descricao}
                   onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
                   placeholder="Breve descrição para o catálogo"
@@ -393,7 +393,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
               <button
                 onClick={salvar}
                 disabled={salvando}
-                className="px-5 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
+                className="px-5 py-2.5 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-sm font-semibold transition-colors disabled:opacity-50"
               >
                 {salvando ? "Salvando..." : editando ? "Salvar alterações" : "Criar módulo"}
               </button>
@@ -429,7 +429,7 @@ export default function CatalogoModulosCliente({ modulosIniciais, empresas }: Pr
                           checked={temAcesso}
                           disabled={atribuindo}
                           onChange={() => toggleAtribuicao(atribuicao.moduloId, emp.id, temAcesso)}
-                          className="w-4 h-4 accent-orange-500"
+                          className="w-4 h-4 accent-brand-500"
                         />
                         <span className="text-sm font-medium text-slate-700">{emp.nome}</span>
                         {temAcesso && (

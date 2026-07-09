@@ -33,7 +33,7 @@ export default async function EmpresasPage() {
         <EmpresaFormModal
           mode="create"
           trigger={
-            <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
+            <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
               <Plus size={16} />
               Nova Empresa
             </button>

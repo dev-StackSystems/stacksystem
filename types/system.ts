@@ -19,25 +19,31 @@ export const TIPOS_SISTEMA = [
     key:      "escola",
     label:    "Sistema Escolar",
     descricao: "Gestão de cursinhos, escolas e instituições de ensino",
-    modulos:  ["alunos", "matriculas", "cursos", "aulas", "certificados", "salas", "baixas"],
+    modulos:  ["alunos", "matriculas", "cursos", "aulas", "certificados", "salas", "baixas", "financeiro"],
   },
   {
     key:      "treinamento",
     label:    "Centro de Treinamento",
     descricao: "Academias, centros esportivos e treinamento físico",
-    modulos:  ["alunos", "matriculas", "cursos", "aulas", "salas", "baixas"],
+    modulos:  ["alunos", "matriculas", "cursos", "aulas", "salas", "baixas", "financeiro"],
   },
   {
     key:      "consultoria",
     label:    "Consultoria / Cursos Online",
     descricao: "Consultorias, coaching e cursos online",
-    modulos:  ["alunos", "matriculas", "cursos", "certificados", "baixas", "salas"],
+    modulos:  ["alunos", "matriculas", "cursos", "certificados", "baixas", "salas", "financeiro"],
   },
   {
     key:      "clinica",
     label:    "Clínica / Saúde",
     descricao: "Clínicas, consultórios e serviços de saúde",
-    modulos:  ["alunos", "matriculas", "baixas", "salas", "certificados"],
+    modulos:  ["alunos", "matriculas", "baixas", "salas", "certificados", "financeiro"],
+  },
+  {
+    key:      "financeiro",
+    label:    "Gestão Financeira",
+    descricao: "Controle financeiro para pessoas físicas e jurídicas (CPF/CNPJ)",
+    modulos:  ["financeiro"],
   },
   {
     key:      "personalizado",
@@ -52,12 +58,13 @@ export const TIPOS_SISTEMA = [
  * Usado para renderizar o gerenciador de módulos por empresa.
  */
 export const MODULOS_DISPONIVEIS = [
-  { key: "alunos",       label: "Alunos",        grupo: "Acadêmico"  },
+  { key: "alunos",       label: "Alunos",         grupo: "Acadêmico"  },
   { key: "matriculas",   label: "Matrículas",     grupo: "Acadêmico"  },
   { key: "cursos",       label: "Cursos",         grupo: "Acadêmico"  },
   { key: "aulas",        label: "Aulas",          grupo: "Conteúdo"   },
   { key: "salas",        label: "Salas de Aula",  grupo: "Conteúdo"   },
-  { key: "baixas",       label: "Financeiro",     grupo: "Financeiro" },
+  { key: "financeiro",   label: "Financeiro",     grupo: "Financeiro" },
+  { key: "baixas",       label: "Mensalidades",   grupo: "Financeiro" },
   { key: "certificados", label: "Certificados",   grupo: "Financeiro" },
 ] as const
 

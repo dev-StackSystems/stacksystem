@@ -82,7 +82,7 @@ export function GrupoTable({ grupos, canManage, isAdmin, empresas }: Props) {
                       <span className="text-xs text-slate-400">Nenhum</span>
                     ) : (
                       grupo.modulos.slice(0, 4).map(m => (
-                        <span key={m.modulo} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-100 font-medium">
+                        <span key={m.modulo} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-brand-50 text-brand-600 border border-brand-100 font-medium">
                           <ShieldCheck size={10} />
                           {m.modulo}
                         </span>
@@ -112,7 +112,7 @@ export function GrupoTable({ grupos, canManage, isAdmin, empresas }: Props) {
                       isAdmin={isAdmin}
                       empresaId={grupo.empresaId}
                       trigger={
-                        <button className="p-1.5 rounded-lg text-slate-400 hover:text-orange-500 hover:bg-orange-50 transition-colors">
+                        <button className="p-1.5 rounded-lg text-slate-400 hover:text-brand-500 hover:bg-brand-50 transition-colors">
                           <Pencil size={14} />
                         </button>
                       }

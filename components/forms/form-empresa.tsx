@@ -148,7 +148,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
     }
   }
 
-  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
+  const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100 transition-all"
   const labelClass = "text-[10px] font-bold uppercase tracking-wide text-slate-500"
   const sectionLabel = "text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100 pb-1 mb-3"
 
@@ -322,7 +322,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                           {MODULOS_DISPONIVEIS.map(m => {
                             const ativo = (tipoAtual.modulos as readonly string[]).includes(m.key)
                             return (
-                              <span key={m.key} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${ativo ? "bg-orange-50 text-orange-600 border-orange-200" : "bg-slate-100 text-slate-400 border-slate-200 line-through"}`}>
+                              <span key={m.key} className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${ativo ? "bg-brand-50 text-brand-600 border-brand-200" : "bg-slate-100 text-slate-400 border-slate-200 line-through"}`}>
                                 {m.label}
                               </span>
                             )
@@ -358,7 +358,7 @@ export function EmpresaFormModal({ mode, empresa, trigger }: Props) {
                 <button type="button" onClick={close} className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2.5 rounded-xl text-sm transition-all">
                   Cancelar
                 </button>
-                <button type="submit" disabled={loading} className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
+                <button type="submit" disabled={loading} className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 text-white font-bold py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2">
                   {loading && <Loader2 size={14} className="animate-spin" />}
                   {mode === "create" ? "Criar Empresa" : "Salvar"}
                 </button>

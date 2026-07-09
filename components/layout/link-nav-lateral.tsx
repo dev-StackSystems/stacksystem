@@ -18,15 +18,18 @@ interface Props {
   rotulo:    string       // Texto exibido no link
   icone:     LucideIcon   // Ícone Lucide
   corMarca?: string       // Cor hex da empresa (ex: "#f97316")
+  exato?:    boolean      // Se true, só fica ativo na rota exata (não em subrotas)
 }
 
-export function LinkNavLateral({ href, rotulo, icone: Icone, corMarca }: Props) {
+export function LinkNavLateral({ href, rotulo, icone: Icone, corMarca, exato }: Props) {
   const rotaAtual = usePathname()
   const cor = corMarca || "#f97316"
 
   // Considera ativo se for a rota exata ou se a rota atual começa com href
   // Exceção: /painel nunca é prefixo de outros itens (seria sempre ativo)
-  const ativo = rotaAtual === href || (href !== "/painel" && rotaAtual.startsWith(href))
+  const ativo = exato
+    ? rotaAtual === href
+    : rotaAtual === href || (href !== "/painel" && rotaAtual.startsWith(href))
 
   return (
     <Link

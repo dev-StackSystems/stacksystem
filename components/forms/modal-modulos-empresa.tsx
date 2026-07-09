@@ -46,8 +46,8 @@ export function EmpresaModulosModal({ empresaId, empresaNome, tipoSistema, trigg
           <div className="relative z-10 w-full max-w-lg bg-white rounded-2xl shadow-xl flex flex-col max-h-[90vh]">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100">
-              <div className="w-8 h-8 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
-                <Puzzle size={16} className="text-orange-500" />
+              <div className="w-8 h-8 rounded-lg bg-brand-100 flex items-center justify-center shrink-0">
+                <Puzzle size={16} className="text-brand-500" />
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm font-bold text-slate-800">Módulos da Empresa</h2>
@@ -65,7 +65,7 @@ export function EmpresaModulosModal({ empresaId, empresaNome, tipoSistema, trigg
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {loading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 size={22} className="animate-spin text-orange-400" />
+                  <Loader2 size={22} className="animate-spin text-brand-400" />
                 </div>
               ) : (
                 <EmpresaModulosManager

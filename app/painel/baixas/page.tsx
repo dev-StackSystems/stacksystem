@@ -99,7 +99,7 @@ export default async function BaixasPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <DollarSign size={22} className="text-orange-500" />
+            <DollarSign size={22} className="text-brand-500" />
             Financeiro
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">Controle de pagamentos e baixas</p>
@@ -109,7 +109,7 @@ export default async function BaixasPage() {
             mode="create"
             matriculas={matriculas}
             trigger={
-              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
+              <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
                 <DollarSign size={16} />
                 Nova Baixa
               </button>

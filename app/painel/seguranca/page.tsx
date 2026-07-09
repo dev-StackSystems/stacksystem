@@ -12,7 +12,7 @@ const ROLE_LABELS: Record<string, string> = {
 }
 
 const ROLE_BADGE: Record<string, string> = {
-  A: "bg-orange-50 text-orange-600 border-orange-200",
+  A: "bg-brand-50 text-brand-600 border-brand-200",
   T: "bg-blue-50 text-blue-600 border-blue-200",
   F: "bg-purple-50 text-purple-600 border-purple-200",
 }
@@ -26,7 +26,7 @@ const ACAO_BADGE: Record<string, string> = {
 }
 
 function acaoBadgeClass(acao: string): string {
-  return ACAO_BADGE[acao] ?? "bg-orange-50 text-orange-600 border-orange-200"
+  return ACAO_BADGE[acao] ?? "bg-brand-50 text-brand-600 border-brand-200"
 }
 
 function acaoLabel(acao: string): string {

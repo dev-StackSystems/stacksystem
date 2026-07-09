@@ -9,7 +9,7 @@ interface Props {
 
 const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
 const inputClass =
-  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all placeholder:text-slate-400"
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all placeholder:text-slate-400"
 
 export function SalaFormModal({ trigger }: Props) {
   const { open, setOpen, loading, setLoading, error, setError, close, openModal, closeAndRefresh } = useFormModal()
@@ -77,8 +77,8 @@ export function SalaFormModal({ trigger }: Props) {
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
-                  <Video size={15} className="text-orange-500" />
+                <div className="w-8 h-8 rounded-lg bg-brand-50 border border-brand-100 flex items-center justify-center">
+                  <Video size={15} className="text-brand-500" />
                 </div>
                 <h2 className="font-serif text-base font-bold text-slate-900">Nova Sala</h2>
               </div>
@@ -136,7 +136,7 @@ export function SalaFormModal({ trigger }: Props) {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {loading ? <Loader2 size={14} className="animate-spin" /> : null}
                   Criar Sala

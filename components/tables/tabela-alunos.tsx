@@ -76,7 +76,7 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
             placeholder="Buscar por nome, e-mail, CPF..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+            className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
           />
         </div>
       </div>
@@ -109,7 +109,7 @@ export function AlunoTable({ alunos, isAdmin }: Props) {
                   <tr key={aluno.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0 select-none">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0 select-none">
                           {getInitials(aluno.nome)}
                         </div>
                         <div>

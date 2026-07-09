@@ -65,7 +65,7 @@ export function BarraTopo() {
           className="flex items-center gap-3 rounded-xl px-2 py-1.5 hover:bg-slate-50 transition-colors"
         >
           {/* Avatar circular com inicial do nome */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold select-none shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold select-none shrink-0">
             {inicial}
           </div>
 

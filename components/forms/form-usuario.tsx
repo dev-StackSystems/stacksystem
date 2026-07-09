@@ -59,8 +59,8 @@ interface Props {
 // ── Estilos reutilizáveis ─────────────────────────────────────────────────
 
 const classeLabel  = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
-const classeInput  = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
-const classeSelect = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
+const classeInput  = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
+const classeSelect = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 transition-all"
 
 // Perfis genéricos — disponíveis em qualquer tipo de sistema
 const PAPEIS_BASE = [
@@ -401,7 +401,7 @@ export function FormularioUsuario({
                 <button
                   type="submit"
                   disabled={salvando}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {salvando && <Loader2 size={14} className="animate-spin" />}
                   {modo === "criar" ? "Criar Usuário" : "Salvar"}

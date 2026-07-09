@@ -81,7 +81,7 @@ export function MatriculaTable({ matriculas, alunos, cursos, isAdmin, canEdit }:
                   {/* Aluno */}
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
                         {m.aluno?.nome?.charAt(0).toUpperCase() ?? "?"}
                       </div>
                       <div>

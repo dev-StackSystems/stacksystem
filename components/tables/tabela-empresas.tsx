@@ -114,7 +114,7 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                   {/* Tipo de sistema */}
                   <td className="px-6 py-4 hidden lg:table-cell">
                     {tipoInfo ? (
-                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-200">
                         {tipoInfo.label}
                       </span>
                     ) : (
@@ -171,7 +171,7 @@ export function EmpresaTable({ empresas, isAdmin }: Props) {
                               tipoSistema={empresa.tipoSistema}
                               trigger={
                                 <button
-                                  className="p-1.5 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                                  className="p-1.5 text-slate-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-all"
                                   title="Gerenciar Módulos"
                                 >
                                   <Puzzle size={15} />

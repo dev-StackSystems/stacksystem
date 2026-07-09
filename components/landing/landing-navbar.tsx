@@ -2,12 +2,12 @@
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Menu, X } from "lucide-react"
-
-const NAV_ITEMS = ["Início", "Soluções", "Sobre", "Resultados", "Contato"]
+import { LANDINGS, type LandingConfig } from "@/lib/landings"
 
 const sectionMap: Record<string, string> = {
   "Início":    "inicio",
   "Soluções":  "solucoes",
+  "Recursos":  "solucoes",
   "Sobre":     "sobre",
   "Resultados":"resultados",
   "Contato":   "contato",
@@ -16,7 +16,11 @@ const sectionMap: Record<string, string> = {
 const scrollToSection = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
 
-export default function Navbar() {
+export default function Navbar({ config = LANDINGS.stacksystems }: { config?: LandingConfig }) {
+  const NAV_ITEMS =
+    config.slug === "stacksystems"
+      ? ["Início", "Soluções", "Sobre", "Resultados", "Contato"]
+      : ["Início", "Recursos", "Resultados", "Contato"]
   const [scrolled, setScrolled] = useState(false)
   const [active,   setActive]   = useState("Início")
   const [menuOpen, setMenuOpen] = useState(false)
@@ -50,10 +54,10 @@ export default function Navbar() {
         </div>
         <div className="leading-none">
           <div className="font-serif text-[15px] font-bold tracking-tight text-slate-900">
-            Stack<span className="text-orange-500">Systems</span>
+            {config.marcaNome}<span className="text-orange-500">{config.marcaDestaque}</span>
           </div>
           <div className="text-[9px] text-slate-400 uppercase tracking-[0.15em] font-semibold mt-0.5">
-            Sistemas &amp; Soluções
+            {config.marcaSufixo}
           </div>
         </div>
       </button>

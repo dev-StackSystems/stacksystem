@@ -241,7 +241,7 @@ export default async function PaginaPainel() {
         ? `${Math.round(((totalMatriculas - matriculasAtivas) / totalMatriculas) * 100)}%`
         : "—",
       sub:    "finalizadas",
-      cor:    "bg-orange-50 text-orange-600 border-orange-100",
+      cor:    "bg-brand-50 text-brand-600 border-brand-100",
     },
     {
       icone:  Users,

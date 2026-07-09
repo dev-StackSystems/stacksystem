@@ -17,6 +17,7 @@ import { getServerSession } from "next-auth"
 import { redirect } from "next/navigation"
 import { opcoesAuth } from "@/lib/auth"
 import { resolverModulos } from "@/lib/auth-helpers"
+import { paletaBrand } from "@/lib/tema"
 import { db } from "@/lib/db"
 import { BarraLateral } from "@/components/layout/barra-lateral"
 import { BarraTopo } from "@/components/layout/barra-topo"
@@ -67,8 +68,8 @@ export default async function LayoutPainel({ children }: { children: React.React
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
         <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-10 max-w-md text-center">
-          <div className="w-12 h-12 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center mx-auto mb-4">
-            <AlertTriangle size={22} className="text-orange-500" />
+          <div className="w-12 h-12 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center mx-auto mb-4">
+            <AlertTriangle size={22} className="text-brand-500" />
           </div>
           <h1 className="font-serif text-xl font-bold text-slate-900 mb-2">
             Sistema não configurado
@@ -84,7 +85,7 @@ export default async function LayoutPainel({ children }: { children: React.React
 
   return (
     <ProvedorSessao sessao={sessao}>
-      <div className="min-h-screen flex bg-slate-50 font-sans">
+      <div className="min-h-screen flex bg-slate-50 font-sans" style={paletaBrand(empresa?.cor)}>
         {/* Barra lateral de navegação */}
         <BarraLateral
           papel={sessao.user.papel}

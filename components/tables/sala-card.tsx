@@ -66,8 +66,8 @@ export function SalaCard({ sala, userId, isAdmin }: Props) {
     <div className="bg-white border border-slate-100 rounded-2xl shadow-sm p-6 flex flex-col gap-4 hover:shadow-md transition-shadow">
       {/* Icon + Badge */}
       <div className="flex items-start justify-between">
-        <div className="w-11 h-11 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
-          <Video size={20} className="text-orange-500" />
+        <div className="w-11 h-11 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center shrink-0">
+          <Video size={20} className="text-brand-500" />
         </div>
         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
           Ativa
@@ -111,7 +111,7 @@ export function SalaCard({ sala, userId, isAdmin }: Props) {
         {/* Todos os usuários autenticados podem entrar na sala */}
         <button
           onClick={handleEnter}
-          className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
+          className="flex-1 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2"
         >
           <LogIn size={15} />
           Entrar na Sala

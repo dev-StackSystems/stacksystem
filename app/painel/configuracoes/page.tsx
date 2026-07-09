@@ -38,8 +38,8 @@ export default async function ConfiguracoesPage() {
       <div>
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
-              <Building2 size={20} className="text-orange-500" />
+            <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center">
+              <Building2 size={20} className="text-brand-500" />
             </div>
             <div>
               <h1 className="font-serif text-2xl font-bold text-slate-900">Configurações da Empresa</h1>
@@ -47,7 +47,7 @@ export default async function ConfiguracoesPage() {
             </div>
           </div>
           {empresa.tipoSistema && (
-            <span className="inline-block mt-2 text-xs font-semibold px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100">
+            <span className="inline-block mt-2 text-xs font-semibold px-3 py-1 rounded-full bg-brand-50 text-brand-600 border border-brand-100">
               Sistema: {empresa.tipoSistema}
             </span>
           )}
@@ -135,7 +135,7 @@ export default async function ConfiguracoesPage() {
           </p>
           <Link
             href="/painel/usuarios"
-            className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200 shrink-0"
+            className="inline-flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200 shrink-0"
           >
             <Users size={15} />
             Ir para Usuários

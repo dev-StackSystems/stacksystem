@@ -23,6 +23,7 @@ import {
   LayoutDashboard, Users, Settings, LogOut, X, Menu,
   GraduationCap, BookOpen, Layers, DollarSign,
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
+  Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 import type { ModuloCustom } from "@/lib/auth-helpers"
@@ -33,7 +34,8 @@ type ItemNav = {
   icone:    typeof LayoutDashboard
   rotulo:   string
   href:     string
-  modulo?:  string // se preenchido, o item só aparece se o módulo estiver ativo
+  modulo?:  string  // se preenchido, o item só aparece se o módulo estiver ativo
+  exato?:   boolean // se true, só fica ativo na rota exata (não em subrotas)
 }
 
 type GrupoNav = {
@@ -65,8 +67,16 @@ const GRUPOS_MODULOS: GrupoNav[] = [
   {
     titulo: "Financeiro",
     itens: [
-      { icone: DollarSign, rotulo: "Financeiro",   href: "/painel/baixas",       modulo: "baixas"       },
-      { icone: Award,      rotulo: "Certificados", href: "/painel/certificados", modulo: "certificados" },
+      { icone: Wallet,         rotulo: "Financeiro",      href: "/painel/financeiro",               modulo: "financeiro", exato: true },
+      { icone: ArrowRightLeft, rotulo: "Lançamentos",     href: "/painel/financeiro/lancamentos",   modulo: "financeiro" },
+      { icone: Contact,        rotulo: "Contatos",        href: "/painel/financeiro/contatos",      modulo: "financeiro" },
+      { icone: Landmark,       rotulo: "Contas",          href: "/painel/financeiro/contas",        modulo: "financeiro" },
+      { icone: Tags,           rotulo: "Categorias",      href: "/painel/financeiro/categorias",    modulo: "financeiro" },
+      { icone: Target,         rotulo: "Centros de Custo", href: "/painel/financeiro/centros-custo", modulo: "financeiro" },
+      { icone: FileBarChart,   rotulo: "Relatórios",      href: "/painel/financeiro/relatorios",    modulo: "financeiro" },
+      { icone: RefreshCw,      rotulo: "Conciliação",     href: "/painel/financeiro/conciliacao",   modulo: "financeiro" },
+      { icone: DollarSign,     rotulo: "Mensalidades",    href: "/painel/baixas",                   modulo: "baixas"       },
+      { icone: Award,          rotulo: "Certificados",    href: "/painel/certificados",             modulo: "certificados" },
     ],
   },
 ]
@@ -247,6 +257,7 @@ export function BarraLateral({ papel, superAdmin, grupoIsAdmin, modulos, modulos
                     href={item.href}
                     rotulo={item.rotulo}
                     icone={item.icone}
+                    exato={item.exato}
                     corMarca={superAdmin ? "#f97316" : corMarca}
                   />
                 ))}

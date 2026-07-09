@@ -1,72 +1,13 @@
 "use client"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { LayoutGrid, CreditCard, RefreshCw, BarChart2, Handshake, Link2 } from "lucide-react"
-import type { LucideIcon } from "lucide-react"
-
-interface Service {
-  icon:     LucideIcon
-  iconColor: string
-  title:    string
-  desc:     string
-  hover:    string
-  iconBg:   string
-}
-
-const services: Service[] = [
-  {
-    icon:      LayoutGrid,
-    iconColor: "text-blue-600",
-    title:     "Sistemas de Gestão (ERP)",
-    desc:      "Sistemas integrados que centralizam estoque, financeiro, vendas e RH em um único lugar, dando visibilidade total ao seu negócio.",
-    hover:     "hover:border-blue-300 hover:shadow-blue-100",
-    iconBg:    "bg-blue-50",
-  },
-  {
-    icon:      CreditCard,
-    iconColor: "text-emerald-600",
-    title:     "Controle Financeiro",
-    desc:      "Módulos de fluxo de caixa, contas a pagar/receber, DRE automatizado e relatórios gerenciais em tempo real.",
-    hover:     "hover:border-emerald-300 hover:shadow-emerald-100",
-    iconBg:    "bg-emerald-50",
-  },
-  {
-    icon:      RefreshCw,
-    iconColor: "text-orange-600",
-    title:     "Automação de Processos",
-    desc:      "Eliminamos tarefas manuais e retrabalho integrando seus sistemas com automações que economizam horas por semana.",
-    hover:     "hover:border-orange-300 hover:shadow-orange-100",
-    iconBg:    "bg-orange-50",
-  },
-  {
-    icon:      BarChart2,
-    iconColor: "text-purple-600",
-    title:     "Dashboards & Analytics",
-    desc:      "Painéis inteligentes com KPIs, gráficos interativos e alertas automáticos para decisões baseadas em dados.",
-    hover:     "hover:border-purple-300 hover:shadow-purple-100",
-    iconBg:    "bg-purple-50",
-  },
-  {
-    icon:      Handshake,
-    iconColor: "text-rose-600",
-    title:     "CRM & Relacionamento",
-    desc:      "Gerencie toda a jornada do cliente, do primeiro contato ao pós-venda, com rastreamento completo de oportunidades.",
-    hover:     "hover:border-rose-300 hover:shadow-rose-100",
-    iconBg:    "bg-rose-50",
-  },
-  {
-    icon:      Link2,
-    iconColor: "text-teal-600",
-    title:     "Integrações & APIs",
-    desc:      "Conectamos sistemas legados, plataformas de e-commerce, ERPs e ferramentas externas via APIs robustas.",
-    hover:     "hover:border-teal-300 hover:shadow-teal-100",
-    iconBg:    "bg-teal-50",
-  },
-]
+import { LANDINGS, type LandingConfig } from "@/lib/landings"
+import { iconeLanding } from "@/components/landing/icones"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
-export default function Services() {
+export default function Services({ config = LANDINGS.stacksystems }: { config?: LandingConfig }) {
+  const services = config.servicos
   return (
     <section id="solucoes" className="py-28 px-[5%] bg-slate-50 relative overflow-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] bg-[radial-gradient(ellipse,rgba(249,115,22,0.05)_0%,transparent_70%)] pointer-events-none" />
@@ -81,10 +22,10 @@ export default function Services() {
           transition={{ duration: 0.65, ease }}
           className="flex flex-col items-center text-center mb-16"
         >
-          <Badge>Nossas Soluções</Badge>
+          <Badge>{config.servicosBadge}</Badge>
           <h2 className="font-serif text-[clamp(32px,4.5vw,54px)] font-bold mt-5 mb-5 tracking-tight text-slate-900 leading-[1.08]">
-            Tecnologia feita para{" "}
-            <span className="text-gradient">o seu negócio</span>
+            {config.servicosTitulo}{" "}
+            <span className="text-gradient">{config.servicosDestaque}</span>
           </h2>
           <div className="flex items-center gap-3 mb-5">
             <div className="h-px w-10 bg-orange-200 rounded" />
@@ -92,14 +33,13 @@ export default function Services() {
             <div className="h-px w-10 bg-orange-200 rounded" />
           </div>
           <p className="text-slate-500 text-base max-w-xl leading-relaxed">
-            Desenvolvemos sistemas personalizados para empresas de todos os portes e segmentos —
-            do varejo à indústria, do MEI à multinacional.
+            {config.servicosSub}
           </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {services.map((s, i) => {
-            const Icon = s.icon
+            const Icon = iconeLanding(s.icon)
             return (
               <motion.div
                 key={s.title}

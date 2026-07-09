@@ -26,7 +26,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 const tipoConfig: Record<string, { label: string; className: string }> = {
   mensalidade: { label: "Mensalidade", className: "bg-blue-50 text-blue-600 border border-blue-200" },
   matricula:   { label: "Matrícula",   className: "bg-purple-50 text-purple-600 border border-purple-200" },
-  certificado: { label: "Certificado", className: "bg-orange-50 text-orange-600 border border-orange-200" },
+  certificado: { label: "Certificado", className: "bg-brand-50 text-brand-600 border border-brand-200" },
   outros:      { label: "Outros",      className: "bg-slate-100 text-slate-500 border border-slate-200" },
 }
 
@@ -70,7 +70,7 @@ export function BaixaTable({ baixas, matriculas, isAdmin, canEdit }: Props) {
             placeholder="Buscar por aluno, descrição..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+            className="w-full pl-8 pr-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
           />
         </div>
         <div className="flex gap-1.5 flex-wrap">
@@ -80,7 +80,7 @@ export function BaixaTable({ baixas, matriculas, isAdmin, canEdit }: Props) {
               onClick={() => setStatusFilter(s)}
               className={`text-xs font-semibold px-3 py-1.5 rounded-lg transition-all capitalize ${
                 statusFilter === s
-                  ? "bg-orange-500 text-white"
+                  ? "bg-brand-500 text-white"
                   : "bg-slate-100 text-slate-500 hover:bg-slate-200"
               }`}
             >

@@ -45,9 +45,9 @@ function toDateInputValue(value?: Date | string | null): string {
 
 const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 mb-1"
 const inputClass =
-  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
 const selectClass =
-  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 transition-all"
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 transition-all"
 
 export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }: Props) {
   const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
@@ -250,7 +250,7 @@ export function MatriculaFormModal({ mode, matricula, alunos, cursos, trigger }:
                 <button
                   type="submit"
                   disabled={loading}
-                  className="flex-1 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
+                  className="flex-1 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 text-white font-bold py-2 rounded-lg text-sm transition-all flex items-center justify-center gap-2"
                 >
                   {loading && <Loader2 size={14} className="animate-spin" />}
                   {mode === "create" ? "Criar Matrícula" : "Salvar"}

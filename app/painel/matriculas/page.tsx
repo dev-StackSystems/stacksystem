@@ -68,7 +68,7 @@ export default async function MatriculasPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="font-serif text-2xl font-bold text-slate-900 flex items-center gap-2">
-            <BookOpen size={22} className="text-orange-500" />
+            <BookOpen size={22} className="text-brand-500" />
             Matrículas
           </h1>
           <p className="text-sm text-slate-400 mt-0.5">Gestão de matrículas e vínculos aluno-curso</p>
@@ -79,7 +79,7 @@ export default async function MatriculasPage() {
             alunos={alunos}
             cursos={cursos}
             trigger={
-              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
+              <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
                 <BookOpen size={16} />
                 Nova Matrícula
               </button>

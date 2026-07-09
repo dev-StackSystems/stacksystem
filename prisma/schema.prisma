@@ -177,6 +177,13 @@ model Empresa {
   grupos        Grupo[]
   permissoes    PermissaoUsuario[]
 
+  // Financeiro
+  contatosFinanceiros   ContatoFinanceiro[]
+  contasFinanceiras     ContaFinanceira[]
+  categoriasFinanceiras CategoriaFinanceira[]
+  centrosCusto          CentroCusto[]
+  lancamentos           LancamentoFinanceiro[]
+
   @@map("empresas")
 }
 
@@ -576,4 +583,133 @@ model MensagemSala {
 
   @@index([salaId, criadaEm])
   @@map("mensagens_sala")
+}
+
+// ===========================================================================
+// FINANCEIRO — Módulo de gestão financeira (multi-tenant por empresaId)
+// Movimentos (lançamentos) de receita/despesa vinculados a um contato PF/PJ.
+// ===========================================================================
+
+// Contato financeiro: cliente/fornecedor identificado por CPF (PF) ou CNPJ (PJ)
+model ContatoFinanceiro {
+  id           String   @id @default(cuid())
+  empresaId    String
+  tipoPessoa   String   @default("PF")      // PF | PJ
+  documento    String?                       // CPF ou CNPJ (somente dígitos)
+  nome         String
+  email        String?
+  telefone     String?
+  papel        String   @default("cliente")  // cliente | fornecedor | ambos
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  lancamentos LancamentoFinanceiro[]
+
+  @@unique([empresaId, documento])
+  @@index([empresaId])
+  @@map("contatos_financeiros")
+}
+
+// Conta financeira: caixa, banco ou carteira, com saldo inicial
+model ContaFinanceira {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  tipo         String   @default("banco")    // caixa | banco | carteira
+  banco        String?
+  agencia      String?
+  numero       String?
+  saldoInicial Decimal  @default(0) @db.Decimal(12, 2)
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  lancamentos LancamentoFinanceiro[]
+
+  @@index([empresaId])
+  @@map("contas_financeiras")
+}
+
+// Categoria (plano de contas): natureza receita ou despesa
+model CategoriaFinanceira {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  natureza     String   @default("despesa")  // receita | despesa
+  cor          String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  lancamentos LancamentoFinanceiro[]
+
+  @@index([empresaId])
+  @@map("categorias_financeiras")
+}
+
+// Centro de custo / projeto — dimensão extra para classificar lançamentos
+model CentroCusto {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  descricao    String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa     Empresa                @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  lancamentos LancamentoFinanceiro[]
+
+  @@index([empresaId])
+  @@map("centros_custo")
+}
+
+// Lançamento financeiro — o "movimento" de receita ou despesa
+model LancamentoFinanceiro {
+  id              String   @id @default(cuid())
+  empresaId       String
+  tipo            String                        // receita | despesa
+  descricao       String
+  valor           Decimal  @db.Decimal(12, 2)
+  status          String   @default("pendente") // pago | pendente | cancelado
+  dataCompetencia DateTime @default(now())
+  dataVencimento  DateTime?
+  dataPagamento   DateTime?
+
+  contatoId       String?
+  contaId         String?
+  categoriaId     String?
+  centroCustoId   String?
+  documento       String?                       // snapshot CPF/CNPJ do contato
+
+  observacao      String?
+
+  // Recorrência / parcelamento
+  recorrente         Boolean @default(false)
+  frequencia         String?                    // mensal | semanal | quinzenal | anual
+  grupoRecorrenciaId String?
+  parcelaNum         Int?
+  parcelaTotal       Int?
+
+  // Conciliação bancária
+  conciliado      Boolean  @default(false)
+  fitId           String?                        // ID da transação no extrato (OFX)
+
+  criadoEm        DateTime @default(now())
+  atualizadoEm    DateTime @updatedAt
+
+  empresa     Empresa              @relation(fields: [empresaId],     references: [id], onDelete: Cascade)
+  contato     ContatoFinanceiro?   @relation(fields: [contatoId],     references: [id])
+  conta       ContaFinanceira?     @relation(fields: [contaId],       references: [id])
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId],   references: [id])
+  centroCusto CentroCusto?         @relation(fields: [centroCustoId], references: [id])
+
+  @@index([empresaId, dataCompetencia])
+  @@index([empresaId, status])
+  @@index([grupoRecorrenciaId])
+  @@map("lancamentos_financeiros")
 }

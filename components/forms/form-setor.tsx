@@ -79,7 +79,7 @@ export function SetorFormModal({ trigger, mode = "create", setor, empresas, isAd
                     value={empId}
                     onChange={e => setEmpId(e.target.value)}
                     required
-                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                    className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                   >
                     <option value="">Selecionar...</option>
                     {empresas.map(emp => <option key={emp.id} value={emp.id}>{emp.nome}</option>)}
@@ -94,7 +94,7 @@ export function SetorFormModal({ trigger, mode = "create", setor, empresas, isAd
                   onChange={e => setNome(e.target.value)}
                   required
                   placeholder="Ex: Financeiro, Pedagógico..."
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                 />
               </div>
 
@@ -104,7 +104,7 @@ export function SetorFormModal({ trigger, mode = "create", setor, empresas, isAd
                   value={descricao}
                   onChange={e => setDescricao(e.target.value)}
                   placeholder="Opcional"
-                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                  className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
                 />
               </div>
 
@@ -121,8 +121,8 @@ export function SetorFormModal({ trigger, mode = "create", setor, empresas, isAd
                           onClick={() => toggleModulo(m.key)}
                           className={`text-xs px-3 py-1.5 rounded-full border font-semibold transition-all ${
                             modulos.includes(m.key)
-                              ? "bg-orange-500 text-white border-orange-500"
-                              : "bg-slate-50 text-slate-600 border-slate-200 hover:border-orange-300"
+                              ? "bg-brand-500 text-white border-brand-500"
+                              : "bg-slate-50 text-slate-600 border-slate-200 hover:border-brand-300"
                           }`}
                         >
                           {m.label}
@@ -136,7 +136,7 @@ export function SetorFormModal({ trigger, mode = "create", setor, empresas, isAd
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
+                className="w-full bg-brand-500 hover:bg-brand-600 text-white font-bold py-2.5 rounded-xl text-sm transition-all flex items-center justify-center gap-2 disabled:opacity-60"
               >
                 {loading && <Loader2 size={15} className="animate-spin" />}
                 {mode === "edit" ? "Salvar" : "Criar Setor"}

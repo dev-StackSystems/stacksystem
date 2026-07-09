@@ -30,7 +30,7 @@ interface EmpresaData {
 }
 
 const inputClass =
-  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 transition-all"
+  "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:bg-white focus:ring-2 focus:ring-brand-100 transition-all"
 const labelClass = "block text-[10px] font-bold uppercase tracking-wide text-slate-400 mb-1"
 const sectionClass = "flex flex-col gap-3"
 const sectionTitleClass = "text-xs font-bold text-slate-500 uppercase tracking-widest border-b border-slate-100 pb-2"
@@ -307,7 +307,7 @@ export function EmpresaConfigForm({ empresa }: { empresa: EmpresaData }) {
         <button
           type="submit"
           disabled={loading}
-          className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-70 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all"
+          className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 disabled:opacity-70 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition-all"
         >
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           Salvar Alterações

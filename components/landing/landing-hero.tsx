@@ -1,28 +1,18 @@
 "use client"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { Zap, Target, Users } from "lucide-react"
+import { Zap } from "lucide-react"
+import { LANDINGS, type LandingConfig } from "@/lib/landings"
+import { iconeLanding } from "@/components/landing/icones"
 
 const scrollTo = (id: string) =>
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth" })
 
-const metrics = [
-  { label: "Receita Mensal", val: "R$ 48.200", up: true  },
-  { label: "Despesas",       val: "R$ 18.600", up: false },
-  { label: "Lucro Líquido",  val: "R$ 29.600", up: true  },
-  { label: "Crescimento",    val: "+34%",       up: true  },
-]
-
 const bars = [38, 60, 48, 75, 55, 88, 70, 100]
 const ease = [0.22, 1, 0.36, 1] as const
 
-const pills = [
-  { icon: Zap,    label: "Entrega Ágil" },
-  { icon: Target, label: "100% Personalizado" },
-  { icon: Users,  label: "Atendimento Direto" },
-]
-
-export default function Hero() {
+export default function Hero({ config = LANDINGS.stacksystems }: { config?: LandingConfig }) {
+  const { pills, metrics } = config
   return (
     <section
       id="inicio"
@@ -43,7 +33,7 @@ export default function Hero() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease }}
           >
-            <Badge>Sistemas para Empresas</Badge>
+            <Badge>{config.badge}</Badge>
           </motion.div>
 
           <motion.h1
@@ -52,11 +42,11 @@ export default function Hero() {
             transition={{ duration: 0.65, delay: 0.1, ease }}
             className="font-serif text-[clamp(42px,5.2vw,70px)] font-bold leading-[1.05] tracking-tight mt-6 mb-6 text-slate-900"
           >
-            Sistemas que<br />
-            <span className="text-gradient">transformam</span>
+            {config.headline.pre}<br />
+            <span className="text-gradient">{config.headline.destaque}</span>
             <br />
             <span className="relative inline-block">
-              sua empresa.
+              {config.headline.pos}
               <span className="absolute -bottom-1.5 left-0 w-full h-[3px] bg-gradient-to-r from-orange-400 to-transparent rounded-full" />
             </span>
           </motion.h1>
@@ -67,9 +57,7 @@ export default function Hero() {
             transition={{ duration: 0.65, delay: 0.2, ease }}
             className="text-slate-500 text-base leading-relaxed max-w-md mb-8"
           >
-            Desenvolvemos sistemas e soluções sob medida para otimizar a gestão,
-            automatizar processos e impulsionar os resultados do seu negócio.{" "}
-            <span className="text-slate-700 font-medium">Do planejamento à entrega.</span>
+            {config.sub}
           </motion.p>
 
           <motion.div
@@ -78,15 +66,18 @@ export default function Hero() {
             transition={{ duration: 0.55, delay: 0.28, ease }}
             className="flex flex-wrap gap-2 mb-8 justify-center lg:justify-start"
           >
-            {pills.map(({ icon: Icon, label }) => (
-              <div
-                key={label}
-                className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600"
-              >
-                <Icon size={12} className="text-orange-500 shrink-0" />
-                {label}
-              </div>
-            ))}
+            {pills.map(({ icon, label }) => {
+              const Icon = iconeLanding(icon)
+              return (
+                <div
+                  key={label}
+                  className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-full px-4 py-1.5 text-xs font-semibold text-slate-600"
+                >
+                  <Icon size={12} className="text-orange-500 shrink-0" />
+                  {label}
+                </div>
+              )
+            })}
           </motion.div>
 
           <motion.div
@@ -99,7 +90,7 @@ export default function Hero() {
               onClick={() => scrollTo("contato")}
               className="group relative bg-orange-500 hover:bg-orange-600 active:scale-[0.97] text-white font-bold px-8 py-3.5 rounded-xl text-sm uppercase tracking-[0.1em] transition-all animate-pulse-glow"
             >
-              Solicitar Proposta →
+              {config.ctaPrimario} →
             </button>
             <button
               onClick={() => scrollTo("solucoes")}
@@ -122,8 +113,8 @@ export default function Hero() {
 
             <div className="flex items-center justify-between mb-6 relative">
               <div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-semibold">Dashboard — Visão Geral</div>
-                <div className="text-white font-bold text-base mt-1 font-serif">Março 2025</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-[0.15em] font-semibold">{config.dashboardSubtitulo}</div>
+                <div className="text-white font-bold text-base mt-1 font-serif">{config.dashboardTitulo}</div>
               </div>
               <div className="flex gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-slate-700" />

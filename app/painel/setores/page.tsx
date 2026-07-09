@@ -37,8 +37,8 @@ export default async function SetoresPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center">
-            <Briefcase size={20} className="text-orange-500" />
+          <div className="w-10 h-10 rounded-xl bg-brand-50 border border-brand-100 flex items-center justify-center">
+            <Briefcase size={20} className="text-brand-500" />
           </div>
           <div>
             <h1 className="font-serif text-2xl font-bold text-slate-900">Setores</h1>
@@ -51,7 +51,7 @@ export default async function SetoresPage() {
             isAdmin={superAdmin}
             empresaId={session.user.empresaId}
             trigger={
-              <button className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-orange-200">
+              <button className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
                 <Plus size={16} />
                 Novo Setor
               </button>

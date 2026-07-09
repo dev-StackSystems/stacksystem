@@ -71,7 +71,7 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
               className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
                 tipoAtual.key === "personalizado"
                   ? "bg-slate-100 text-slate-600 border-slate-200"
-                  : "bg-orange-50 text-orange-600 border-orange-200"
+                  : "bg-brand-50 text-brand-600 border-brand-200"
               }`}
             >
               {tipoAtual.label}
@@ -81,7 +81,7 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
             <button
               onClick={handleAplicarTipo}
               disabled={aplicando || saving}
-              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60"
+              className="shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 border border-brand-200 px-3 py-1.5 rounded-lg transition-all disabled:opacity-60"
             >
               {aplicando ? (
                 <Loader2 size={12} className="animate-spin" />
@@ -123,7 +123,7 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
               key={modulo.key}
               className={`flex items-center justify-between gap-3 p-4 rounded-xl border transition-all ${
                 isAtivo
-                  ? "border-orange-200 bg-orange-50/50"
+                  ? "border-brand-200 bg-brand-50/50"
                   : "border-slate-100 bg-white"
               }`}
             >
@@ -144,11 +144,11 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
                 aria-label={isAtivo ? `Desabilitar ${modulo.label}` : `Habilitar ${modulo.label}`}
               >
                 {isLoading ? (
-                  <Loader2 size={18} className="animate-spin text-orange-400" />
+                  <Loader2 size={18} className="animate-spin text-brand-400" />
                 ) : (
                   <span
                     className={`flex items-center rounded-full transition-colors duration-200 px-0.5 ${
-                      isAtivo ? "bg-orange-500" : "bg-slate-200"
+                      isAtivo ? "bg-brand-500" : "bg-slate-200"
                     }`}
                     style={{ height: "22px", width: "40px" }}
                   >

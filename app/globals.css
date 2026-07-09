@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Cor de marca (brand) — padrão laranja (#f97316) ────────────
+   Sobrescrita por empresa no wrapper do painel via paletaBrand() (lib/tema.ts).
+   Valores são triplas "R G B" para uso com rgb(var(--brand-xxx) / <alpha>). */
+:root {
+  --brand-50:  255 240 224;
+  --brand-100: 255 226 197;
+  --brand-200: 252 191 138;
+  --brand-300: 250 156 84;
+  --brand-400: 250 138 49;
+  --brand-500: 249 115 22;
+  --brand-600: 224 103 20;
+  --brand-700: 189 87 17;
+  --brand-800: 159 74 14;
+  --brand-900: 130 60 11;
+  --brand-950: 95 44 8;
+}
+
 /* ── Keyframes ─────────────────────────────────────────────── */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
