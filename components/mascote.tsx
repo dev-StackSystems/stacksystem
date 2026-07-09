@@ -57,8 +57,8 @@ const RESPOSTA_PADRAO: EntradaFaq = {
   palavras: [],
   resposta:
     "Não encontrei uma resposta exata. Tente palavras como: " +
-    "\"login\", \"senha\", \"alunos\", \"matrícula\", \"curso\", " +
-    "\"sala\", \"usuário\", \"certificado\" ou \"financeiro\".",
+    "\"login\", \"senha\", \"alunos\", \"matrícula\", \"curso\", \"sala\", " +
+    "\"financeiro\", \"lançamento\", \"análise\", \"categoria\", \"orçamento\" ou \"cobrança\".",
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -116,16 +116,14 @@ const FAQ_LOGIN: EntradaFaq[] = [
     atalhos: [{ rotulo: "Recuperar senha", acao: "/login/esqueci-senha" }],
   },
   {
-    palavras: ["o que e", "stacksystems", "sistema", "plataforma", "para que serve"],
+    palavras: ["o que e", "stacksystems", "sistema", "plataforma", "para que serve", "barbeiro", "escolar", "vertical"],
     resposta:
-      "O **StackSystems** é uma plataforma de gestão desenvolvida pela **I3 Soluções**.\n\n" +
-      "Principais módulos:\n" +
-      "• 🎓 Gestão de alunos e matrículas\n" +
-      "• 📚 Cursos, módulos e aulas\n" +
-      "• 💰 Financeiro (cobranças e pagamentos)\n" +
-      "• 🏆 Certificados\n" +
-      "• 🎥 Salas de videoaula (WebRTC)\n\n" +
-      "É multi-empresa: cada organização tem seus dados separados.",
+      "O **StackSystems** é uma plataforma de gestão multi-empresa da **I3 Soluções**, com soluções por segmento:\n\n" +
+      "• 🎓 **Escolar** — alunos, matrículas, cursos e certificados\n" +
+      "• 💈 **Barbeiro** — agenda e serviços\n" +
+      "• 💰 **Financeiro** — gestão completa PF (pessoal) ou PJ (empresa)\n\n" +
+      "Recursos comuns: 🎥 salas de videoaula (WebRTC), 🤖 análise com **IA**, tema por empresa e dados separados por organização.\n\n" +
+      "Dica: acesse `/barbeiro`, `/escolar` ou `/financeiro` para conhecer cada solução.",
   },
 ]
 
@@ -170,13 +168,83 @@ const FAQ_PAINEL: EntradaFaq[] = [
       "Cursos são vinculados às matrículas dos alunos.",
   },
   {
-    palavras: ["financeiro", "pagamento", "baixa", "cobranca", "receber", "mensalidade", "valor"],
+    palavras: ["financeiro", "financas", "modulo financeiro", "gestao financeira", "pf", "pj", "cpf", "cnpj", "fluxo de caixa"],
     resposta:
-      "**Módulo Financeiro** → `/painel/baixas`\n\n" +
-      "• Registre **pagamentos** de matrículas\n" +
-      "• **Status:** pendente, pago, cancelado\n" +
-      "• Filtre por período, aluno ou status\n\n" +
-      "Cada baixa está vinculada a uma matrícula.",
+      "**Módulo Financeiro** → `/painel/financeiro`\n\n" +
+      "Gestão completa de receitas e despesas, em dois modelos:\n" +
+      "• **PF (pessoal)** — controle o salário e os gastos do dia a dia\n" +
+      "• **PJ (empresa)** — contas a pagar/receber, contatos CPF/CNPJ e centros de custo\n\n" +
+      "Menu: **Análise do Mês**, **Lançamentos**, **Categorias**, **Contas**, **Contatos**, **Orçamento**, **Relatórios**, **Aprovações** e **Cobrança**.\n\n" +
+      "O painel mostra saldo, receitas/despesas do mês, a receber, a pagar e contas em atraso.",
+    atalhos: [{ rotulo: "Abrir Financeiro", acao: "/painel/financeiro" }],
+  },
+  {
+    palavras: ["lancamento", "lancamentos", "receita", "despesa", "salario", "cadastrar gasto", "renda", "movimento", "parcelado", "recorrente"],
+    resposta:
+      "**Lançamentos** → `/painel/financeiro/lancamentos`\n\n" +
+      "• **Receita** (verde) ou **Despesa** (vermelho): valor, datas, contato, conta, categoria\n" +
+      "• Registre seu **salário**: crie uma Receita **recorrente mensal**\n" +
+      "• Suporta **parcelamento** e **recorrência** (semanal, mensal, anual)\n" +
+      "• **Rateio** por categoria e etiquetas (tags)\n\n" +
+      "Atalho: no Financeiro use os botões **Receita** e **Despesa**.",
+    atalhos: [{ rotulo: "Ver Lançamentos", acao: "/painel/financeiro/lancamentos" }],
+  },
+  {
+    palavras: ["analise", "resumo", "ia", "inteligencia", "resumo do mes", "analise do mes", "consultor", "recomendacao"],
+    resposta:
+      "**Análise do Mês (IA)** → `/painel/financeiro/resumo`\n\n" +
+      "A inteligência artificial lê seus lançamentos e monta um **resumo do mês**:\n" +
+      "• Renda, gastos, sobra e **taxa de poupança**\n" +
+      "• Divisão dos gastos entre **essencial**, **lazer** e **investimento**\n" +
+      "• Maiores categorias e **recomendações personalizadas**\n\n" +
+      "Escolha o mês/ano e clique em **Gerar análise**.",
+    atalhos: [{ rotulo: "Gerar análise", acao: "/painel/financeiro/resumo" }],
+  },
+  {
+    palavras: ["categoria", "categorias", "essencial", "lazer", "investimento", "plano de contas", "classe", "tipo de gasto"],
+    resposta:
+      "**Categorias** → `/painel/financeiro/categorias`\n\n" +
+      "É o seu plano de contas (receitas e despesas). Cada **despesa** recebe uma **classe**:\n" +
+      "• 🏠 **Essencial** — contas necessárias\n" +
+      "• 🎉 **Lazer** — supérfluos e diversão\n" +
+      "• 📈 **Investimento** — poupança e aplicações\n\n" +
+      "Essa classificação alimenta a **Análise do Mês** com IA.",
+    atalhos: [{ rotulo: "Ver Categorias", acao: "/painel/financeiro/categorias" }],
+  },
+  {
+    palavras: ["orcamento", "meta", "limite", "planejar gasto", "orcar"],
+    resposta:
+      "**Orçamento** → `/painel/financeiro/orcamento`\n\n" +
+      "Defina uma meta de valor por categoria e acompanhe o **previsto x realizado** do período, para não estourar o planejado.",
+    atalhos: [{ rotulo: "Ver Orçamento", acao: "/painel/financeiro/orcamento" }],
+  },
+  {
+    palavras: ["aprovacao", "aprovacoes", "aprovar", "alcada", "autorizar despesa"],
+    resposta:
+      "**Aprovações** → `/painel/financeiro/aprovacoes`\n\n" +
+      "Despesas acima do valor mínimo definido na empresa entram na fila para **aprovar** ou **reprovar** antes do pagamento.",
+    atalhos: [{ rotulo: "Ver Aprovações", acao: "/painel/financeiro/aprovacoes" }],
+  },
+  {
+    palavras: ["cobranca", "vencido", "atraso", "a receber", "contas vencidas", "receber"],
+    resposta:
+      "**Cobrança / Contas Vencidas** → `/painel/financeiro/cobranca`\n\n" +
+      "Lista os recebíveis **vencidos** por faixa de atraso (1–15, 16–30, 31–60, 60+ dias), com o total em aberto e os contatos.",
+    atalhos: [{ rotulo: "Ver Cobrança", acao: "/painel/financeiro/cobranca" }],
+  },
+  {
+    palavras: ["contato financeiro", "cliente", "fornecedor", "conta bancaria", "conta caixa", "contas financeiras"],
+    resposta:
+      "**Contatos** → `/painel/financeiro/contatos` — clientes e fornecedores (PF/PJ, com CPF/CNPJ).\n\n" +
+      "**Contas** → `/painel/financeiro/contas` — caixa, banco e carteira, com saldo inicial.\n\n" +
+      "Ambos podem ser vinculados aos lançamentos.",
+  },
+  {
+    palavras: ["mensalidade", "baixa", "baixas", "pagamento matricula"],
+    resposta:
+      "**Mensalidades (Baixas)** → `/painel/baixas`\n\n" +
+      "Registre pagamentos de matrículas (pendente, pago, cancelado). Cada baixa está vinculada a uma matrícula.\n\n" +
+      "Para o financeiro completo da empresa, use `/painel/financeiro`.",
   },
   {
     palavras: ["certificado", "certificados", "emitir certificado", "diploma", "conclusao"],
@@ -221,15 +289,9 @@ const FAQ_PAINEL: EntradaFaq[] = [
     palavras: ["onde", "caminho", "encontrar", "navegar", "menu", "fica", "mapa"],
     resposta:
       "**Mapa do sistema:**\n\n" +
-      "• `/painel` — Dashboard\n" +
-      "• `/painel/alunos` — Alunos\n" +
-      "• `/painel/matriculas` — Matrículas\n" +
-      "• `/painel/cursos` — Cursos\n" +
-      "• `/painel/baixas` — Financeiro\n" +
-      "• `/painel/certificados` — Certificados\n" +
-      "• `/painel/salas` — Salas de Videoaula\n" +
-      "• `/painel/usuarios` — Usuários\n" +
-      "• `/painel/configuracoes` — Configurações\n\n" +
+      "**Acadêmico:** `/painel/alunos` · `/painel/matriculas` · `/painel/cursos` · `/painel/certificados`\n\n" +
+      "**Financeiro:** `/painel/financeiro` (visão geral) · `/painel/financeiro/resumo` (Análise IA) · `/lancamentos` · `/categorias` · `/contas` · `/contatos` · `/orcamento` · `/relatorios` · `/aprovacoes` · `/cobranca`\n\n" +
+      "**Outros:** `/painel/salas` (videoaulas) · `/painel/usuarios` · `/painel/configuracoes`\n\n" +
       "Use a **barra lateral** para navegar.",
   },
 ]
@@ -258,7 +320,7 @@ const BOLHAS: Record<ModoStacky, { texto: string; sub: string }[]> = {
 
 const ATALHOS_INICIAIS: Record<"login" | "painel", string[]> = {
   login:  ["Como fazer login?", "Esqueci minha senha", "Não tenho acesso", "O que é o StackSystems?"],
-  painel: ["Como cadastrar alunos?", "Como criar uma matrícula?", "Como criar uma sala de aula?", "Mapa do sistema"],
+  painel: ["Como lançar meu salário e gastos?", "O que é a Análise do Mês com IA?", "Categorias essencial ou lazer", "Mapa do sistema"],
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -499,11 +561,13 @@ export default function Mascote({ modo = "landing" }: Props) {
     setMensagens(prev => [...prev, { de: "usuario", texto }])
     setInput("")
     setPensando(true)
+    // atraso "humano" determinístico (evita Math.random impuro no render)
+    const atraso = 500 + (texto.length % 6) * 80
     setTimeout(() => {
       const entrada = buscarResposta(texto, base)
       setMensagens(prev => [...prev, { de: "stacky", texto: entrada.resposta, atalhos: entrada.atalhos }])
       setPensando(false)
-    }, 500 + Math.random() * 400)
+    }, atraso)
   }
 
   function handleAtalho(a: Atalho) {

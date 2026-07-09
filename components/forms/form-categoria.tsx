@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react"
 import { X, Loader2 } from "lucide-react"
 import { useFormModal } from "@/lib/hooks/use-form-modal"
-import { NATUREZAS } from "@/lib/financeiro"
+import { NATUREZAS, CLASSES_CATEGORIA } from "@/lib/financeiro"
 
 type Mode = "create" | "edit"
 
@@ -10,6 +10,7 @@ export interface CategoriaData {
   id: string
   nome: string
   natureza: string
+  classe?: string | null
   cor?: string | null
   ativo: boolean
   _count?: { lancamentos: number }
@@ -21,7 +22,7 @@ const labelClass = "block text-[10px] font-bold uppercase tracking-[0.08em] text
 const inputClass = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 transition-all"
 const selectClass = "w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 outline-none focus:border-brand-400 transition-all"
 
-const EMPTY = { nome: "", natureza: "despesa", cor: "#64748b" }
+const EMPTY = { nome: "", natureza: "despesa", classe: "essencial", cor: "#64748b" }
 
 export function CategoriaFormModal({ mode, categoria, trigger }: Props) {
   const { open, setOpen, loading, setLoading, error, setError, close, closeAndRefresh } = useFormModal()
@@ -30,7 +31,7 @@ export function CategoriaFormModal({ mode, categoria, trigger }: Props) {
 
   useEffect(() => {
     if (open && categoria && mode === "edit") {
-      setForm({ nome: categoria.nome, natureza: categoria.natureza, cor: categoria.cor ?? "#64748b" })
+      setForm({ nome: categoria.nome, natureza: categoria.natureza, classe: categoria.classe ?? "essencial", cor: categoria.cor ?? "#64748b" })
       setAtivo(categoria.ativo)
     } else if (open) { setForm(EMPTY); setAtivo(true) }
     setError("")
@@ -85,6 +86,21 @@ export function CategoriaFormModal({ mode, categoria, trigger }: Props) {
                   <input type="color" value={form.cor} onChange={(e) => f("cor", e.target.value)} className="h-9 w-12 cursor-pointer rounded-lg border border-slate-200 bg-slate-50 p-0.5" />
                 </div>
               </div>
+
+              {form.natureza === "despesa" && (
+                <div>
+                  <label className={labelClass}>Classe do gasto</label>
+                  <select value={form.classe} onChange={(e) => f("classe", e.target.value)} className={selectClass}>
+                    {CLASSES_CATEGORIA.filter((c) => c.value !== "neutro").map((c) => (
+                      <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>
+                    ))}
+                    <option value="neutro">⚪ Neutro (sem classificar)</option>
+                  </select>
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    {CLASSES_CATEGORIA.find((c) => c.value === form.classe)?.hint ?? "Ajuda a IA a montar seu resumo do mês."}
+                  </p>
+                </div>
+              )}
 
               {mode === "edit" && (
                 <div className="flex items-center gap-3 p-3 rounded-xl border border-slate-200 bg-slate-50">

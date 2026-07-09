@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { getUsuarioAtual } from "@/lib/auth-helpers"
+import { normalizarClasse } from "@/lib/financeiro"
 import { PapelUsuario } from "@prisma/client"
 
 export async function GET() {
@@ -41,11 +42,14 @@ export async function POST(requisicao: NextRequest) {
   const empresaId = usuario.superAdmin ? (corpo.empresaId ?? null) : usuario.empresaId
   if (!empresaId) return NextResponse.json({ error: "Empresa é obrigatória." }, { status: 400 })
 
+  const nat = natureza === "receita" ? "receita" : "despesa"
+
   const categoria = await db.categoriaFinanceira.create({
     data: {
       empresaId,
       nome:     nome.trim(),
-      natureza: natureza === "receita" ? "receita" : "despesa",
+      natureza: nat,
+      classe:   normalizarClasse(corpo.classe, nat),
       cor:      cor?.trim() || null,
     },
     include: { _count: { select: { lancamentos: true } } },

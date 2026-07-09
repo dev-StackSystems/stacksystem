@@ -2,6 +2,7 @@
 import { useState } from "react"
 import { Pencil, Trash2, Loader2, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
 import { CategoriaFormModal, CategoriaData } from "@/components/forms/form-categoria"
+import { metaClasse } from "@/lib/financeiro"
 import { useRowAction } from "@/lib/hooks/use-row-action"
 
 interface Props { categorias: CategoriaData[]; isAdmin: boolean; canEdit: boolean }
@@ -40,6 +41,15 @@ export function CategoriasTable({ categorias, isAdmin, canEdit }: Props) {
               <div key={c.id} className={`flex items-center gap-3 px-6 py-3.5 hover:bg-slate-50/50 transition-colors ${!c.ativo ? "opacity-50" : ""}`}>
                 <span className="w-3 h-3 rounded-full shrink-0" style={{ background: c.cor ?? "#94a3b8" }} />
                 <span className="font-medium text-slate-700 flex-1">{c.nome}</span>
+                {!receita && (() => {
+                  const m = metaClasse(c.classe)
+                  return (
+                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full border hidden sm:inline-flex items-center gap-1"
+                      style={{ color: m.cor, borderColor: `${m.cor}44`, background: `${m.cor}14` }} title={m.hint}>
+                      {m.emoji} {m.label}
+                    </span>
+                  )
+                })()}
                 <span className={`text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1 ${receita ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-red-50 text-red-500 border border-red-200"}`}>
                   {receita ? <ArrowUpCircle size={12} /> : <ArrowDownCircle size={12} />}
                   {receita ? "Receita" : "Despesa"}

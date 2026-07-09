@@ -6,7 +6,7 @@ import Link from "next/link"
 import { PapelUsuario } from "@prisma/client"
 import {
   Wallet, TrendingUp, TrendingDown, Clock, AlertCircle, ArrowRight, CalendarClock,
-  ArrowUpCircle, ArrowDownCircle,
+  ArrowUpCircle, ArrowDownCircle, Sparkles,
 } from "lucide-react"
 import { LancamentoFormModal } from "@/components/forms/form-lancamento"
 
@@ -84,6 +84,9 @@ export default async function FinanceiroDashboard() {
               } />
             </>
           )}
+          <Link href="/painel/financeiro/resumo" className="flex items-center gap-2 bg-brand-500 hover:bg-brand-600 text-white font-bold px-4 py-2.5 rounded-xl text-sm transition-all shadow-sm shadow-brand-200">
+            <Sparkles size={16} /> Análise do Mês
+          </Link>
           <Link href="/painel/financeiro/lancamentos" className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2.5 rounded-xl text-sm transition-all">
             Ver Lançamentos <ArrowRight size={16} />
           </Link>

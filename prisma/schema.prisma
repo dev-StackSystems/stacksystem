@@ -644,6 +644,7 @@ model CategoriaFinanceira {
   empresaId    String
   nome         String
   natureza     String   @default("despesa")  // receita | despesa
+  classe       String?  // essencial | lazer | investimento | neutro (classificação de gasto, uso pessoal PF)
   cor          String?
   ativo        Boolean  @default(true)
   criadoEm     DateTime @default(now())

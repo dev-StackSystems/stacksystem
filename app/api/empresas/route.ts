@@ -13,6 +13,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { exigirSuperAdmin } from "@/lib/auth-helpers"
 import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS, CATEGORIAS_PADRAO } from "@/types/system"
+import { classePadraoCategoria } from "@/lib/financeiro"
 
 // ── GET /api/empresas ──────────────────────────────────────────────────────
 
@@ -112,8 +113,8 @@ export async function POST(requisicao: NextRequest) {
     const padrao = CATEGORIAS_PADRAO[gestaoFinanceira === "PF" ? "PF" : "PJ"]
     await db.categoriaFinanceira.createMany({
       data: [
-        ...padrao.receita.map(nome => ({ empresaId: empresa.id, nome, natureza: "receita" })),
-        ...padrao.despesa.map(nome => ({ empresaId: empresa.id, nome, natureza: "despesa" })),
+        ...padrao.receita.map(nome => ({ empresaId: empresa.id, nome, natureza: "receita", classe: classePadraoCategoria(nome, "receita") })),
+        ...padrao.despesa.map(nome => ({ empresaId: empresa.id, nome, natureza: "despesa", classe: classePadraoCategoria(nome, "despesa") })),
       ],
     })
     await db.contaFinanceira.create({ data: { empresaId: empresa.id, nome: "Caixa", tipo: "caixa" } })

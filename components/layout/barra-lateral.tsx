@@ -24,7 +24,7 @@ import {
   GraduationCap, BookOpen, Layers, DollarSign,
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
   Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw, PiggyBank,
-  ClipboardCheck, BellRing,
+  ClipboardCheck, BellRing, Sparkles,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 import type { ModuloCustom } from "@/lib/auth-helpers"
@@ -69,6 +69,7 @@ const GRUPOS_MODULOS: GrupoNav[] = [
     titulo: "Financeiro",
     itens: [
       { icone: Wallet,         rotulo: "Financeiro",      href: "/painel/financeiro",               modulo: "financeiro", exato: true },
+      { icone: Sparkles,       rotulo: "Análise do Mês",  href: "/painel/financeiro/resumo",        modulo: "financeiro" },
       { icone: ArrowRightLeft, rotulo: "Lançamentos",     href: "/painel/financeiro/lancamentos",   modulo: "financeiro" },
       { icone: Contact,        rotulo: "Contatos",        href: "/painel/financeiro/contatos",      modulo: "financeiro" },
       { icone: Landmark,       rotulo: "Contas",          href: "/painel/financeiro/contas",        modulo: "financeiro" },
