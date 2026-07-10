@@ -198,7 +198,7 @@ export function ResumoInteligente({ gestao }: { gestao: "PF" | "PJ" }) {
               <div className="text-sm leading-relaxed space-y-1">{renderTexto(data.texto)}</div>
               {data.fonte === "local" && (
                 <p className="mt-4 text-[11px] text-slate-400 border-t border-slate-100 pt-3">
-                  Dica: configure <code className="font-mono">ANTHROPIC_API_KEY</code> no ambiente para análises geradas pela IA da Claude.
+                  Dica: configure <code className="font-mono">GEMINI_API_KEY</code> (grátis no Google AI Studio) nas variáveis de ambiente para análises geradas por IA.
                 </p>
               )}
             </div>

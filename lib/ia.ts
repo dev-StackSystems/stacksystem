@@ -7,10 +7,13 @@
  * divisão essencial/lazer/investimento, categorias) e devolve um resumo em
  * linguagem natural com recomendações práticas.
  *
- * Usa a API da Claude (modelo claude-opus-4-8) quando a variável de ambiente
- * ANTHROPIC_API_KEY está configurada. Sem a chave — ou em caso de erro — cai
- * automaticamente em uma análise determinística local, para o recurso nunca
- * ficar indisponível.
+ * Ordem de provedores (usa o primeiro cuja chave existir):
+ *   1. Google Gemini  — GEMINI_API_KEY  (tier gratuito; grátis em aistudio.google.com)
+ *   2. Claude          — ANTHROPIC_API_KEY (paga; modelo claude-opus-4-8)
+ *   3. Análise determinística local — sempre disponível, sem chave nenhuma.
+ *
+ * Opcional: GEMINI_MODEL (padrão "gemini-2.5-flash").
+ * Qualquer falha de rede/HTTP cai para o próximo provedor / fallback local.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -98,26 +101,67 @@ function promptUsuario(d: DadosResumo): string {
 }
 
 export async function analisarFinancas(d: DadosResumo): Promise<ResultadoAnalise> {
-  const chave = process.env.ANTHROPIC_API_KEY
-  if (chave) {
-    try {
-      const client = new Anthropic({ apiKey: chave })
-      const resposta = await client.messages.create({
-        model: "claude-opus-4-8",
-        max_tokens: 2000,
-        system: SISTEMA,
-        messages: [{ role: "user", content: promptUsuario(d) }],
-      })
-      const texto = resposta.content
-        .map((b) => (b.type === "text" ? b.text : ""))
-        .join("\n")
-        .trim()
-      if (texto) return { texto, fonte: "ia" }
-    } catch (e) {
-      console.error("[ia] Falha ao chamar a Claude, usando análise local:", e)
-    }
+  // 1. Google Gemini (tier gratuito) — preferido quando GEMINI_API_KEY existe
+  if (process.env.GEMINI_API_KEY) {
+    const t = await tentarGemini(d)
+    if (t) return { texto: t, fonte: "ia" }
   }
+  // 2. Claude (paga) — se ANTHROPIC_API_KEY existir
+  if (process.env.ANTHROPIC_API_KEY) {
+    const t = await tentarClaude(d)
+    if (t) return { texto: t, fonte: "ia" }
+  }
+  // 3. Análise determinística local — sempre disponível
   return { texto: analiseLocal(d), fonte: "local" }
+}
+
+/** Google Gemini via REST (sem SDK). Retorna null em qualquer falha para cair no próximo provedor. */
+async function tentarGemini(d: DadosResumo): Promise<string | null> {
+  try {
+    const modelo = process.env.GEMINI_MODEL || "gemini-2.5-flash"
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY! },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: SISTEMA }] },
+          contents: [{ role: "user", parts: [{ text: promptUsuario(d) }] }],
+          // thinkingBudget: 0 evita que o "pensamento" do 2.5 consuma o orçamento e devolva texto vazio
+          generationConfig: { temperature: 0.7, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
+        }),
+      },
+    )
+    if (!res.ok) {
+      console.error("[ia] Gemini HTTP", res.status, await res.text().catch(() => ""))
+      return null
+    }
+    const json = await res.json()
+    const partes: { text?: string }[] = json?.candidates?.[0]?.content?.parts ?? []
+    const texto = partes.map((p) => p.text ?? "").join("").trim()
+    return texto || null
+  } catch (e) {
+    console.error("[ia] Gemini falhou:", e)
+    return null
+  }
+}
+
+/** Claude via SDK oficial (@anthropic-ai/sdk). */
+async function tentarClaude(d: DadosResumo): Promise<string | null> {
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+    const resposta = await client.messages.create({
+      model: "claude-opus-4-8",
+      max_tokens: 2000,
+      system: SISTEMA,
+      messages: [{ role: "user", content: promptUsuario(d) }],
+    })
+    const texto = resposta.content.map((b) => (b.type === "text" ? b.text : "")).join("\n").trim()
+    return texto || null
+  } catch (e) {
+    console.error("[ia] Claude falhou:", e)
+    return null
+  }
 }
 
 /** Análise determinística — usada quando não há chave de API ou a chamada falha. */
