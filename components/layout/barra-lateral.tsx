@@ -25,6 +25,7 @@ import {
   Award, Building2, ShieldCheck, Video, Briefcase, UsersRound,
   Wallet, ArrowRightLeft, Contact, Landmark, Tags, Target, FileBarChart, RefreshCw, PiggyBank,
   ClipboardCheck, BellRing, Sparkles,
+  Scissors, CalendarDays, UserCog,
 } from "lucide-react"
 import { LinkNavLateral } from "./link-nav-lateral"
 import type { ModuloCustom } from "@/lib/auth-helpers"
@@ -82,6 +83,16 @@ const GRUPOS_MODULOS: GrupoNav[] = [
       { icone: BellRing,       rotulo: "Cobrança",        href: "/painel/financeiro/cobranca",      modulo: "financeiro" },
       { icone: DollarSign,     rotulo: "Mensalidades",    href: "/painel/baixas",                   modulo: "baixas"       },
       { icone: Award,          rotulo: "Certificados",    href: "/painel/certificados",             modulo: "certificados" },
+    ],
+  },
+  {
+    titulo: "Barbearia",
+    itens: [
+      { icone: Scissors,     rotulo: "Painel",   href: "/painel/barbeiro",          modulo: "barbeiro", exato: true },
+      { icone: CalendarDays, rotulo: "Agenda",   href: "/painel/barbeiro/agenda",   modulo: "barbeiro_agenda" },
+      { icone: Users,        rotulo: "Clientes", href: "/painel/barbeiro/clientes", modulo: "barbeiro_clientes" },
+      { icone: Tags,         rotulo: "Serviços", href: "/painel/barbeiro/servicos", modulo: "barbeiro_servicos" },
+      { icone: UserCog,      rotulo: "Equipe",   href: "/painel/barbeiro/equipe",   modulo: "barbeiro_equipe" },
     ],
   },
 ]

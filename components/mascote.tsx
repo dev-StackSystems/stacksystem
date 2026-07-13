@@ -286,11 +286,23 @@ const FAQ_PAINEL: EntradaFaq[] = [
       "Acesso restrito ao **Administrador**.",
   },
   {
+    palavras: ["barbearia", "barbeiro", "agenda", "agendamento", "corte", "servico", "equipe", "salao", "horario"],
+    resposta:
+      "**Barbearia** → `/painel/barbeiro`\n\n" +
+      "• **Agenda** (`/painel/barbeiro/agenda`): marque horários por profissional; ao **concluir** o atendimento a receita entra automaticamente no Financeiro\n" +
+      "• **Serviços**: cortes, barba... com duração e preço\n" +
+      "• **Equipe**: seus barbeiros/profissionais\n" +
+      "• **Clientes**: carteira com histórico de visitas\n\n" +
+      "O Painel mostra os agendamentos e a **receita do dia**.",
+    atalhos: [{ rotulo: "Abrir Agenda", acao: "/painel/barbeiro/agenda" }],
+  },
+  {
     palavras: ["onde", "caminho", "encontrar", "navegar", "menu", "fica", "mapa"],
     resposta:
       "**Mapa do sistema:**\n\n" +
       "**Acadêmico:** `/painel/alunos` · `/painel/matriculas` · `/painel/cursos` · `/painel/certificados`\n\n" +
       "**Financeiro:** `/painel/financeiro` (visão geral) · `/painel/financeiro/resumo` (Análise IA) · `/lancamentos` · `/categorias` · `/contas` · `/contatos` · `/orcamento` · `/relatorios` · `/aprovacoes` · `/cobranca`\n\n" +
+      "**Barbearia:** `/painel/barbeiro` (painel) · `/painel/barbeiro/agenda` · `/servicos` · `/equipe` · `/clientes`\n\n" +
       "**Outros:** `/painel/salas` (videoaulas) · `/painel/usuarios` · `/painel/configuracoes`\n\n" +
       "Use a **barra lateral** para navegar.",
   },

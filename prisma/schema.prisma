@@ -189,6 +189,12 @@ model Empresa {
   lancamentos           LancamentoFinanceiro[]
   orcamentos            Orcamento[]
 
+  // Barbearia
+  barbeiros         Barbeiro[]
+  servicosBarbearia ServicoBarbearia[]
+  clientesBarbearia ClienteBarbearia[]
+  agendamentos      Agendamento[]
+
   @@map("empresas")
 }
 
@@ -766,4 +772,93 @@ model RateioLancamento {
 
   @@index([lancamentoId])
   @@map("rateios_lancamento")
+}
+
+// ===========================================================================
+// BARBEARIA — Agenda, clientes, serviços e equipe (sistema "barbeiro")
+// ===========================================================================
+
+// Equipe — barbeiros/profissionais que realizam os atendimentos
+model Barbeiro {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  apelido      String?
+  telefone     String?
+  cor          String   @default("#c9a84c")   // cor do profissional na agenda
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa      Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  agendamentos Agendamento[]
+
+  @@index([empresaId])
+  @@map("barbeiros")
+}
+
+// Catálogo de serviços (cortes, barba...) com duração e preço
+model ServicoBarbearia {
+  id           String   @id @default(cuid())
+  empresaId    String
+  nome         String
+  duracaoMin   Int      @default(30)
+  preco        Decimal  @default(0) @db.Decimal(10, 2)
+  cor          String?
+  ativo        Boolean  @default(true)
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  empresa      Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  agendamentos Agendamento[]
+
+  @@index([empresaId])
+  @@map("servicos_barbearia")
+}
+
+// Clientes da barbearia (independente dos contatos financeiros)
+model ClienteBarbearia {
+  id           String    @id @default(cuid())
+  empresaId    String
+  nome         String
+  telefone     String?
+  email        String?
+  nascimento   DateTime?
+  observacao   String?
+  ativo        Boolean   @default(true)
+  criadoEm     DateTime  @default(now())
+  atualizadoEm DateTime  @updatedAt
+
+  empresa      Empresa       @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  agendamentos Agendamento[]
+
+  @@index([empresaId, nome])
+  @@map("clientes_barbearia")
+}
+
+// Agendamento / atendimento
+model Agendamento {
+  id            String   @id @default(cuid())
+  empresaId     String
+  barbeiroId    String
+  servicoId     String
+  clienteId     String?
+  clienteAvulso String?                        // nome digitado quando não há cadastro
+  dataHora      DateTime
+  duracaoMin    Int      @default(30)          // snapshot do serviço
+  preco         Decimal  @default(0) @db.Decimal(10, 2)   // snapshot do serviço
+  status        String   @default("agendado")  // agendado | concluido | cancelado | faltou
+  observacao    String?
+  lancamentoId  String?                        // id do LancamentoFinanceiro gerado ao concluir
+  criadoEm      DateTime @default(now())
+  atualizadoEm  DateTime @updatedAt
+
+  empresa  Empresa           @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  barbeiro Barbeiro          @relation(fields: [barbeiroId], references: [id])
+  servico  ServicoBarbearia  @relation(fields: [servicoId], references: [id])
+  cliente  ClienteBarbearia? @relation(fields: [clienteId], references: [id])
+
+  @@index([empresaId, dataHora])
+  @@index([empresaId, status])
+  @@map("agendamentos")
 }

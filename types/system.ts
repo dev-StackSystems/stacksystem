@@ -46,6 +46,12 @@ export const TIPOS_SISTEMA = [
     modulos:  ["financeiro"],
   },
   {
+    key:      "barbeiro",
+    label:    "Barbearia / Salão",
+    descricao: "Agenda, clientes, serviços e equipe para barbearias e salões masculinos",
+    modulos:  ["barbeiro", "barbeiro_agenda", "barbeiro_clientes", "barbeiro_servicos", "barbeiro_equipe", "financeiro"],
+  },
+  {
     key:      "personalizado",
     label:    "Personalizado",
     descricao: "Configure os módulos manualmente",
@@ -66,6 +72,11 @@ export const MODULOS_DISPONIVEIS = [
   { key: "financeiro",   label: "Financeiro",     grupo: "Financeiro" },
   { key: "baixas",       label: "Mensalidades",   grupo: "Financeiro" },
   { key: "certificados", label: "Certificados",   grupo: "Financeiro" },
+  { key: "barbeiro",          label: "Painel da Barbearia", grupo: "Barbearia" },
+  { key: "barbeiro_agenda",   label: "Agenda",              grupo: "Barbearia" },
+  { key: "barbeiro_clientes", label: "Clientes",            grupo: "Barbearia" },
+  { key: "barbeiro_servicos", label: "Serviços",            grupo: "Barbearia" },
+  { key: "barbeiro_equipe",   label: "Equipe",              grupo: "Barbearia" },
 ] as const
 
 // Tipo utilitário para as chaves de módulo
@@ -115,3 +126,14 @@ export const CATEGORIAS_PADRAO: Record<GestaoFinanceira, { receita: string[]; de
     despesa: ["Folha de Pagamento", "Impostos e Taxas", "Fornecedores", "Aluguel", "Marketing", "Despesas Administrativas"],
   },
 }
+
+/**
+ * Serviços padrão semeados ao criar uma empresa do tipo "barbeiro".
+ * { nome, duracaoMin, preco }
+ */
+export const SERVICOS_PADRAO: { nome: string; duracaoMin: number; preco: number }[] = [
+  { nome: "Corte",          duracaoMin: 30, preco: 40 },
+  { nome: "Barba",          duracaoMin: 20, preco: 30 },
+  { nome: "Corte + Barba",  duracaoMin: 45, preco: 60 },
+  { nome: "Sobrancelha",    duracaoMin: 10, preco: 15 },
+]

@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest"
 import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS } from "./system"
 
 describe("TIPOS_SISTEMA", () => {
-  it("contém 6 tipos", () => {
-    expect(TIPOS_SISTEMA).toHaveLength(6)
+  it("contém 7 tipos", () => {
+    expect(TIPOS_SISTEMA).toHaveLength(7)
   })
 
   it("cada tipo tem key, label, descricao e modulos", () => {
@@ -37,8 +37,8 @@ describe("TIPOS_SISTEMA", () => {
 })
 
 describe("MODULOS_DISPONIVEIS", () => {
-  it("contém 8 módulos", () => {
-    expect(MODULOS_DISPONIVEIS).toHaveLength(8)
+  it("contém 13 módulos", () => {
+    expect(MODULOS_DISPONIVEIS).toHaveLength(13)
   })
 
   it("cada módulo tem key, label e grupo", () => {
@@ -55,8 +55,8 @@ describe("MODULOS_DISPONIVEIS", () => {
     expect(unicas.size).toBe(chaves.length)
   })
 
-  it("grupos são apenas Acadêmico, Conteúdo ou Financeiro", () => {
-    const gruposValidos = new Set(["Acadêmico", "Conteúdo", "Financeiro"])
+  it("grupos são apenas Acadêmico, Conteúdo, Financeiro ou Barbearia", () => {
+    const gruposValidos = new Set(["Acadêmico", "Conteúdo", "Financeiro", "Barbearia"])
     for (const modulo of MODULOS_DISPONIVEIS) {
       expect(gruposValidos.has(modulo.grupo)).toBe(true)
     }

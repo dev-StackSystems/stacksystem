@@ -116,6 +116,12 @@ export function EmpresaModulosManager({ empresaId, modulosAtivos, tipoSistema }:
             salas:        "Videoconferências WebRTC",
             baixas:       "Controle de pagamentos e baixas",
             certificados: "Emissão de certificados",
+            financeiro:   "Gestão financeira (receitas/despesas)",
+            barbeiro:          "Painel do dia da barbearia",
+            barbeiro_agenda:   "Agenda e agendamentos",
+            barbeiro_clientes: "Carteira de clientes",
+            barbeiro_servicos: "Catálogo de serviços e preços",
+            barbeiro_equipe:   "Profissionais / barbeiros",
           }
 
           return (

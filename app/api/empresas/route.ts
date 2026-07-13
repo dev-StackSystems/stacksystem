@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
 import { exigirSuperAdmin } from "@/lib/auth-helpers"
-import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS, CATEGORIAS_PADRAO } from "@/types/system"
+import { TIPOS_SISTEMA, MODULOS_DISPONIVEIS, CATEGORIAS_PADRAO, SERVICOS_PADRAO } from "@/types/system"
 import { classePadraoCategoria } from "@/lib/financeiro"
 
 // ── GET /api/empresas ──────────────────────────────────────────────────────
@@ -118,6 +118,13 @@ export async function POST(requisicao: NextRequest) {
       ],
     })
     await db.contaFinanceira.create({ data: { empresaId: empresa.id, nome: "Caixa", tipo: "caixa" } })
+  }
+
+  // Empresa do tipo barbearia já nasce com serviços padrão
+  if (tipoSistema === "barbeiro") {
+    await db.servicoBarbearia.createMany({
+      data: SERVICOS_PADRAO.map(s => ({ empresaId: empresa.id, nome: s.nome, duracaoMin: s.duracaoMin, preco: s.preco })),
+    })
   }
 
   return NextResponse.json(empresa, { status: 201 })
