@@ -37,8 +37,8 @@ describe("TIPOS_SISTEMA", () => {
 })
 
 describe("MODULOS_DISPONIVEIS", () => {
-  it("contém 13 módulos", () => {
-    expect(MODULOS_DISPONIVEIS).toHaveLength(13)
+  it("contém 24 módulos", () => {
+    expect(MODULOS_DISPONIVEIS).toHaveLength(24)
   })
 
   it("cada módulo tem key, label e grupo", () => {

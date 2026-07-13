@@ -14,42 +14,52 @@
  * Tipos de sistema disponíveis para uma empresa.
  * Cada tipo define quais módulos são ativados automaticamente ao criar a empresa.
  */
+/**
+ * Módulos individuais do sistema Financeiro — cada tela é um módulo próprio,
+ * toglável no gerenciador (igual ao barbeiro). `financeiro` é a Visão Geral.
+ */
+export const MODULOS_FINANCEIRO = [
+  "financeiro", "financeiro_resumo", "financeiro_lancamentos", "financeiro_categorias",
+  "financeiro_contas", "financeiro_contatos", "financeiro_centros", "financeiro_orcamento",
+  "financeiro_relatorios", "financeiro_conciliacao", "financeiro_aprovacoes", "financeiro_cobranca",
+] as const
+
 export const TIPOS_SISTEMA = [
   {
     key:      "escola",
     label:    "Sistema Escolar",
     descricao: "Gestão de cursinhos, escolas e instituições de ensino",
-    modulos:  ["alunos", "matriculas", "cursos", "aulas", "certificados", "salas", "baixas", "financeiro"],
+    modulos:  ["alunos", "matriculas", "cursos", "aulas", "certificados", "salas", "baixas", ...MODULOS_FINANCEIRO],
   },
   {
     key:      "treinamento",
     label:    "Centro de Treinamento",
     descricao: "Academias, centros esportivos e treinamento físico",
-    modulos:  ["alunos", "matriculas", "cursos", "aulas", "salas", "baixas", "financeiro"],
+    modulos:  ["alunos", "matriculas", "cursos", "aulas", "salas", "baixas", ...MODULOS_FINANCEIRO],
   },
   {
     key:      "consultoria",
     label:    "Consultoria / Cursos Online",
     descricao: "Consultorias, coaching e cursos online",
-    modulos:  ["alunos", "matriculas", "cursos", "certificados", "baixas", "salas", "financeiro"],
+    modulos:  ["alunos", "matriculas", "cursos", "certificados", "baixas", "salas", ...MODULOS_FINANCEIRO],
   },
   {
     key:      "clinica",
     label:    "Clínica / Saúde",
     descricao: "Clínicas, consultórios e serviços de saúde",
-    modulos:  ["alunos", "matriculas", "baixas", "salas", "certificados", "financeiro"],
+    modulos:  ["alunos", "matriculas", "baixas", "salas", "certificados", ...MODULOS_FINANCEIRO],
   },
   {
     key:      "financeiro",
     label:    "Gestão Financeira",
     descricao: "Controle financeiro para pessoas físicas e jurídicas (CPF/CNPJ)",
-    modulos:  ["financeiro"],
+    modulos:  [...MODULOS_FINANCEIRO],
   },
   {
     key:      "barbeiro",
     label:    "Barbearia / Salão",
     descricao: "Agenda, clientes, serviços e equipe para barbearias e salões masculinos",
-    modulos:  ["barbeiro", "barbeiro_agenda", "barbeiro_clientes", "barbeiro_servicos", "barbeiro_equipe", "financeiro"],
+    modulos:  ["barbeiro", "barbeiro_agenda", "barbeiro_clientes", "barbeiro_servicos", "barbeiro_equipe", ...MODULOS_FINANCEIRO],
   },
   {
     key:      "personalizado",
@@ -69,7 +79,18 @@ export const MODULOS_DISPONIVEIS = [
   { key: "cursos",       label: "Cursos",         grupo: "Acadêmico"  },
   { key: "aulas",        label: "Aulas",          grupo: "Conteúdo"   },
   { key: "salas",        label: "Salas de Aula",  grupo: "Conteúdo"   },
-  { key: "financeiro",   label: "Financeiro",     grupo: "Financeiro" },
+  { key: "financeiro",             label: "Financeiro · Visão Geral", grupo: "Financeiro" },
+  { key: "financeiro_resumo",      label: "Análise do Mês (IA)",      grupo: "Financeiro" },
+  { key: "financeiro_lancamentos", label: "Lançamentos",              grupo: "Financeiro" },
+  { key: "financeiro_categorias",  label: "Categorias",               grupo: "Financeiro" },
+  { key: "financeiro_contas",      label: "Contas",                   grupo: "Financeiro" },
+  { key: "financeiro_contatos",    label: "Contatos",                 grupo: "Financeiro" },
+  { key: "financeiro_centros",     label: "Centros de Custo",         grupo: "Financeiro" },
+  { key: "financeiro_orcamento",   label: "Orçamento",                grupo: "Financeiro" },
+  { key: "financeiro_relatorios",  label: "Relatórios",               grupo: "Financeiro" },
+  { key: "financeiro_conciliacao", label: "Conciliação",              grupo: "Financeiro" },
+  { key: "financeiro_aprovacoes",  label: "Aprovações",               grupo: "Financeiro" },
+  { key: "financeiro_cobranca",    label: "Cobrança",                 grupo: "Financeiro" },
   { key: "baixas",       label: "Mensalidades",   grupo: "Financeiro" },
   { key: "certificados", label: "Certificados",   grupo: "Financeiro" },
   { key: "barbeiro",          label: "Painel da Barbearia", grupo: "Barbearia" },
