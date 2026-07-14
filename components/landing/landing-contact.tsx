@@ -2,7 +2,7 @@
 import { useState } from "react"
 import { motion } from "motion/react"
 import { Badge } from "@/components/ui/badge"
-import { Mail, User, MessageSquare, Send, CheckCircle, Building2, Shield, Zap, FileCheck } from "lucide-react"
+import { Mail, User, MessageSquare, Send, CheckCircle, Building2, Shield, Zap, FileCheck, Loader2 } from "lucide-react"
 
 const ease = [0.22, 1, 0.36, 1] as const
 
@@ -15,10 +15,28 @@ const trustItems = [
 export default function Contact() {
   const [form, setForm] = useState({ nome: "", empresa: "", email: "", mensagem: "" })
   const [sent, setSent] = useState(false)
+  const [enviando, setEnviando] = useState(false)
+  const [erro, setErro] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (form.nome && form.email && form.mensagem) setSent(true)
+    setErro("")
+    if (!form.nome || !form.email || !form.mensagem) return
+    setEnviando(true)
+    try {
+      const res = await fetch("/api/contato", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, origem: typeof window !== "undefined" ? window.location.pathname : "" }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErro(data.error ?? "Não foi possível enviar. Tente novamente."); return }
+      setSent(true)
+    } catch {
+      setErro("Erro de conexão. Verifique sua internet e tente novamente.")
+    } finally {
+      setEnviando(false)
+    }
   }
 
   return (
@@ -116,6 +134,10 @@ export default function Contact() {
               />
             </div>
 
+            {erro && (
+              <div className="mb-5 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 font-medium">{erro}</div>
+            )}
+
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
@@ -123,10 +145,13 @@ export default function Contact() {
               </div>
               <button
                 type="submit"
-                className="group bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-bold px-8 py-3.5 rounded-xl text-sm uppercase tracking-[0.1em] transition-all shadow-xl shadow-orange-200 flex items-center gap-2.5"
+                disabled={enviando}
+                className="group bg-orange-500 hover:bg-orange-600 active:scale-95 disabled:opacity-70 disabled:active:scale-100 text-white font-bold px-8 py-3.5 rounded-xl text-sm uppercase tracking-[0.1em] transition-all shadow-xl shadow-orange-200 flex items-center gap-2.5"
               >
-                Solicitar Contato
-                <Send size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                {enviando ? "Enviando..." : "Solicitar Contato"}
+                {enviando
+                  ? <Loader2 size={14} className="animate-spin" />
+                  : <Send size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />}
               </button>
             </div>
           </motion.form>
